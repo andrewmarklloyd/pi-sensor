@@ -29,6 +29,7 @@ var (
 	userName     = flag.String("username", os.Getenv("KAFKA_USERNAME"), "The SASL username")
 	passwd       = flag.String("passwd", os.Getenv("KAFKA_PASSWORD"), "The SASL password")
 	topic        = flag.String("topic", os.Getenv("KAFKA_TOPIC"), "The topic to consume")
+	sensorSource = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")
 	certFile     = flag.String("certificate", "", "The optional certificate file for client authentication")
 	keyFile      = flag.String("key", "", "The optional key file for client authentication")
 	caFile       = flag.String("ca", "", "The optional certificate authority file for TLS client authentication")
@@ -150,21 +151,20 @@ func initPin() {
 		if currentStatus != lastStatus {
 			lastStatus = currentStatus
 			logger.Printf("Current status: %s", currentStatus)
-			produce(fmt.Sprintf("{\"state\":\"%s\"}", currentStatus))
+			produce(fmt.Sprintf("{\"state\":\"%s\",\"source\":\"%s\"}", currentStatus, *sensorSource))
 		}
 		time.Sleep(time.Second)
 	}
 }
 
 func produce(message string) {
-	partition, offset, err := syncProducer.SendMessage(&sarama.ProducerMessage{
+	_, _, err := syncProducer.SendMessage(&sarama.ProducerMessage{
 		Topic: *topic,
 		Value: sarama.StringEncoder(message),
 	})
 	if err != nil {
 		logger.Fatalln("failed to send message to ", *topic, err)
 	}
-	logger.Printf("wrote message at partition: %d, offset: %d", partition, offset)
 }
 
 func main() {
