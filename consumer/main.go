@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/Shopify/sarama"
+	"github.com/ivanbeldad/kasa-go"
 )
 
 func init() {
@@ -31,6 +32,11 @@ var (
 	verifySSL = flag.Bool("verify", false, "Optional verify ssl certificates chain")
 	useTLS    = flag.Bool("tls", true, "Use TLS to communicate with the cluster")
 	logMsg    = flag.Bool("logmsg", false, "True to log consumed messages to console")
+
+	kasaUsername = flag.String("kasaUsername", os.Getenv("KASA_USERNAME"), "The Kasa/TP Link cloud username")
+	kasaPassword = flag.String("kasaPassword", os.Getenv("KASA_PASSWORD"), "The Kasa/TP Link cloud password")
+	kasaAPI      kasa.API
+	hs100        kasa.HS100
 
 	logger = log.New(os.Stdout, "[Pi-Sensor Consumer] ", log.LstdFlags)
 )
@@ -74,22 +80,7 @@ func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 	return nil
 }
 
-func main() {
-	flag.Parse()
-
-	if *brokers == "" {
-		log.Fatalln("at least one broker is required")
-	}
-	splitBrokers := strings.Split(*brokers, ",")
-
-	if *userName == "" {
-		log.Fatalln("SASL username is required")
-	}
-
-	if *passwd == "" {
-		log.Fatalln("SASL password is required")
-	}
-
+func configConsumer() {
 	conf := sarama.NewConfig()
 	conf.Producer.Retry.Max = 1
 	conf.Producer.RequiredAcks = sarama.WaitForAll
@@ -115,6 +106,7 @@ func main() {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	splitBrokers := strings.Split(*brokers, ",")
 	client, err := sarama.NewConsumerGroup(splitBrokers, *group, conf)
 	if err != nil {
 		log.Panicf("Error creating consumer group client: %v", err)
@@ -156,4 +148,35 @@ func main() {
 	if err = client.Close(); err != nil {
 		log.Panicf("Error closing client: %v", err)
 	}
+}
+
+func configOutlet() {
+	// kasaAPI, err := kasa.Connect(*kasaUsername, *kasaPassword)
+	// if err != nil {
+	// 	log.Fatalln(err)
+	// }
+
+	// devices, _ := kasaAPI.GetDevicesInfo()
+	// for _, device := range devices {
+	// 	fmt.Println(device)
+	// }
+}
+
+func main() {
+	flag.Parse()
+
+	if *brokers == "" {
+		log.Fatalln("at least one broker is required")
+	}
+
+	if *userName == "" {
+		log.Fatalln("SASL username is required")
+	}
+
+	if *passwd == "" {
+		log.Fatalln("SASL password is required")
+	}
+	// configOutlet()
+	configConsumer()
+
 }
