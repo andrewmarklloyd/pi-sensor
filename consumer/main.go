@@ -20,11 +20,11 @@ func init() {
 }
 
 var (
-	brokers   = flag.String("brokers", os.Getenv("KAFKA_BROKERS"), "The Kafka brokers to connect to, as a comma separated list")
-	userName  = flag.String("username", os.Getenv("KAFKA_USERNAME"), "The SASL username")
-	passwd    = flag.String("passwd", os.Getenv("KAFKA_PASSWORD"), "The SASL password")
-	topic     = flag.String("topic", os.Getenv("KAFKA_TOPIC"), "The topic to consume")
-	group     = flag.String("group", os.Getenv("KAFKA_CONSUMER_GROUP"), "The consumer group id")
+	brokers   = flag.String("brokers", os.Getenv("CLOUDKARAFKA_BROKERS"), "The Kafka brokers to connect to, as a comma separated list")
+	userName  = flag.String("username", os.Getenv("CLOUDKARAFKA_USERNAME"), "The SASL username")
+	passwd    = flag.String("passwd", os.Getenv("CLOUDKARAFKA_PASSWORD"), "The SASL password")
+	topic     = flag.String("topic", os.Getenv("CLOUDKARAFKA_TOPIC"), "The topic to consume")
+	group     = flag.String("group", os.Getenv("CLOUDKARAFKA_CONSUMER_GROUP"), "The consumer group id")
 	algorithm = flag.String("algorithm", "sha512", "The SASL SCRAM SHA algorithm sha256 or sha512 as mechanism")
 	certFile  = flag.String("certificate", "", "The optional certificate file for client authentication")
 	keyFile   = flag.String("key", "", "The optional key file for client authentication")
