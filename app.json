@@ -8,7 +8,7 @@
   ],
   "repository": "https://github.com/andrewmarklloyd/pi-sensor",
   "scripts": {
-    "build": "./scripts/build.sh"
+    "heroku-postbuild": "./scripts/build.sh"
   },
   "env": {
     "GIN_MODE": {

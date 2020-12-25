@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/dghubble/sessions"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
@@ -18,5 +21,6 @@ func NewServer() {
 	router.Use(static.Serve("/", static.LocalFile("./frontend/build", true)))
 
 	// Start and run the server
-	router.Run(":5000")
+
+	router.Run(fmt.Sprintf(":%s", os.Getenv("PORT")))
 }
