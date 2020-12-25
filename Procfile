@@ -1,1 +1,1 @@
-worker: bin/consumer
+web: bin/consumer
