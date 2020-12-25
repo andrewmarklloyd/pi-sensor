@@ -8,3 +8,6 @@ nvm install
 nvm use
 npm install
 npm run build
+cd ../../
+mkdir -p frontend/
+mv consumer/frontend/build frontend/
