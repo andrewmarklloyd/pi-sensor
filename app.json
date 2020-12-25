@@ -1,0 +1,27 @@
+{
+  "name": "Pi Sensor consumer",
+  "description": "Consumes realtime raspberry pi sensors to build a dashboard",
+  "keywords": [
+    "raspberry-pi",
+    "react",
+    "golang"
+  ],
+  "repository": "https://github.com/andrewmarklloyd/pi-sensor",
+  "scripts": {
+    "postdeploy": "cd consumer/frontend && npm run build"
+  },
+  "env": {
+    "GIN_MODE": {
+      "description": "Run production gin server",
+      "value": "release"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/go"
+    },
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
