@@ -176,7 +176,7 @@ func main() {
 	if *passwd == "" {
 		log.Fatalln("SASL password is required")
 	}
-	// configOutlet()
-	configConsumer()
 
+	configConsumer()
+	NewServer()
 }
