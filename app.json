@@ -15,10 +15,5 @@
       "description": "Run production gin server",
       "value": "release"
     }
-  },
-  "buildpacks": [
-    {
-      "url": "heroku/go"
-    }
-  ]
+  }
 }
