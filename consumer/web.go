@@ -2,15 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 
-	"github.com/dghubble/sessions"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 )
-
-// sessionStore encodes and decodes session data stored in signed cookies
-var sessionStore *sessions.CookieStore
 
 // NewServer returns a new ServeMux with app routes.
 func NewServer() {
@@ -20,7 +17,11 @@ func NewServer() {
 	// Serve frontend static files
 	router.Use(static.Serve("/", static.LocalFile("./frontend/build", true)))
 
-	// Start and run the server
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatalln("PORT must be set")
+	}
 
-	router.Run(fmt.Sprintf(":%s", os.Getenv("PORT")))
+	fmt.Println(fmt.Sprintf("Running web server on port %s", port))
+	router.Run(fmt.Sprintf(":%s", port))
 }
