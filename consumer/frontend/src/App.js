@@ -1,25 +1,29 @@
-import logo from './logo.svg';
+import { setupWebSocket, subscribeToChange } from './api';
+import React, { Component } from 'react';
 import './App.css';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
+class App extends Component {
+  constructor(props) {
+    super(props);
+    setupWebSocket();
+    subscribeToChange((data) => this.setState({
+      data
+    }));
+  }
+
+  state = {
+    data: 'no data yet'
+  };
+
+  render() {
+    return (
+      <div className="App">
+        <p className="App-intro">
+        Door status: {this.state.data.state}
         </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+      </div>
+    );
+  }
 }
 
 export default App;
