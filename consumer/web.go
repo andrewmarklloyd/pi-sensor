@@ -21,6 +21,8 @@ const (
 	pongWait = 60 * time.Second
 )
 
+var ws *websocket.Conn
+
 var upgrader = websocket.Upgrader{}
 
 // spaHandler implements the http.Handler interface, so we can use it
@@ -82,7 +84,6 @@ func NewServer() {
 	// allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
 	upgrader.CheckOrigin = func(r *http.Request) bool {
 		// TODO: only allow specified origins
-		fmt.Println(r.URL)
 		return true
 	}
 
@@ -96,16 +97,20 @@ func NewServer() {
 	log.Fatal(srv.ListenAndServe())
 }
 
+func send(example string) {
+	fmt.Println("Sending message")
+	if ws != nil {
+		ws.WriteMessage(websocket.TextMessage, []byte(example))
+	}
+}
+
 func websocketHandler(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	log.Println("New websocket connection")
-	ws, err := upgrader.Upgrade(w, req, nil)
+	var err error
+	ws, err = upgrader.Upgrade(w, req, nil)
 	if err != nil {
 		log.Println("upgrade:", err)
 		return
 	}
 
-	defer ws.Close()
 	ws.SetReadLimit(maxMessageSize)
-	ws.WriteMessage(websocket.TextMessage, []byte("hello"))
 }

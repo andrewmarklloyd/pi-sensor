@@ -1,4 +1,4 @@
-import { setupWebSocket } from './api';
+import { setupWebSocket, subscribeToChange } from './api';
 import React, { Component } from 'react';
 import './App.css';
 
@@ -6,17 +6,20 @@ class App extends Component {
   constructor(props) {
     super(props);
     setupWebSocket();
+    subscribeToChange((data) => this.setState({
+      data
+    }));
   }
 
   state = {
-    timestamp: 'no timestamp yet'
+    data: 'no data yet'
   };
 
   render() {
     return (
       <div className="App">
         <p className="App-intro">
-        This is the timer value: {this.state.timestamp}
+        Door status: {this.state.data.state}
         </p>
       </div>
     );

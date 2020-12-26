@@ -1,18 +1,40 @@
+
+var ws = new WebSocket(`ws://localhost:8080/ws`);
+
 function setupWebSocket(){
   console.log("setting up websocket")
   // if (location.protocol == "https:") {
-  //   this.ws = new WebSocket(`wss://${location.host}/ws`);
+  //   ws = new WebSocket(`wss://${location.host}/ws`);
   // } else {
-  //   this.ws = new WebSocket(`ws://${location.host}/ws`);
+  //   ws = new WebSocket(`ws://${location.host}/ws`);
   // }
 
-  var ws = new WebSocket(`ws://localhost:8080/ws`);
-  // this.ws.onclose = function(){
-  //   setTimeout(setupWebSocket, 1000);
-  // }
+  // var ws = new WebSocket(`ws://localhost:8080/ws`);
+  ws.onclose = function(){
+    console.log("Closed connection")
+    // setTimeout(setupWebSocket, 1000);
+  }
+
   ws.onopen = function(evt) {
-    console.log("opened")
+    console.log("Opened connection")
+  }
+
+  // ws.onmessage = function(evt) {
+  //   var data = JSON.parse(evt.data)
+  //   console.log(data.state, data.source)
+  // }
+
+  ws.onerror = function(evt) {
+    console.log("Websocket error: " + evt.data);
   }
 }
 
-export { setupWebSocket };
+function subscribeToChange(cb) {
+  ws.onmessage = function(evt) {
+    var data = JSON.parse(evt.data)
+    console.log(data.state, data.source)
+    cb(data)
+  }
+}
+
+export { setupWebSocket, subscribeToChange };
