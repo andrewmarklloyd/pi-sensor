@@ -1,9 +1,18 @@
-import openSocket from 'socket.io-client';
-const  socket = openSocket('http://localhost:8000');
+function setupWebSocket(){
+  console.log("setting up websocket")
+  // if (location.protocol == "https:") {
+  //   this.ws = new WebSocket(`wss://${location.host}/ws`);
+  // } else {
+  //   this.ws = new WebSocket(`ws://${location.host}/ws`);
+  // }
 
-function subscribeToTimer(cb) {
-  socket.on('timer', timestamp => cb(null, timestamp));
-  socket.emit('subscribeToTimer', 1000);
+  var ws = new WebSocket(`ws://localhost:8080/ws`);
+  // this.ws.onclose = function(){
+  //   setTimeout(setupWebSocket, 1000);
+  // }
+  ws.onopen = function(evt) {
+    console.log("opened")
+  }
 }
 
-export { subscribeToTimer };
+export { setupWebSocket };

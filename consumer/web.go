@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -72,32 +71,33 @@ func NewServer() {
 	// Set the router as the default one shipped with Gin
 	router := gmux.NewRouter().StrictSlash(true)
 	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
+	router.Handle("/ws", http.HandlerFunc(websocketHandler))
 	router.PathPrefix("/").Handler(spa)
-	// router.Handle("/ws", http.HandlerFunc(websocketHandler))
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatalln("PORT must be set")
 	}
 
+	// allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		// TODO: only allow specified origins
+		fmt.Println(r.URL)
+		return true
+	}
+
 	srv := &http.Server{
 		Handler: router,
-		Addr:    "127.0.0.1:" + port,
+		Addr:    "0.0.0.0:" + port,
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
-
 	log.Fatal(srv.ListenAndServe())
 }
 
-// welcomeHandler shows a welcome message and login button.
-func welcomeHandler(w http.ResponseWriter, req *http.Request) {
-	page, _ := ioutil.ReadFile(fmt.Sprintf(".%sindex.html", publicDir))
-	fmt.Fprintf(w, string(page))
-}
-
 func websocketHandler(w http.ResponseWriter, req *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	log.Println("New websocket connection")
 	ws, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {

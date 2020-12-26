@@ -1,14 +1,11 @@
-import logo from './logo.svg';
-import { subscribeToTimer } from './api';
+import { setupWebSocket } from './api';
 import React, { Component } from 'react';
 import './App.css';
 
 class App extends Component {
   constructor(props) {
     super(props);
-    subscribeToTimer((err, timestamp) => this.setState({ 
-      timestamp 
-    }));
+    setupWebSocket();
   }
 
   state = {
