@@ -177,7 +177,7 @@ func main() {
 	if *passwd == "" {
 		log.Fatalln("SASL password is required")
 	}
-	// NewServer()
+
 	go func() {
 		NewServer()
 	}()
