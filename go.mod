@@ -10,6 +10,7 @@ require (
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/google/uuid v1.1.2
 	github.com/googollee/go-socket.io v1.4.4
+	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/ivanbeldad/kasa-go v0.0.0-20201031100518-9b33fa73f8a7
