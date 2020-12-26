@@ -1,5 +1,10 @@
-
-var ws = new WebSocket(`ws://localhost:8080/ws`);
+var ws
+if (window.location.protocol === "https:") {
+  ws = new WebSocket(`wss://${window.location.host}/ws`);
+} else {
+  ws = new WebSocket(`ws://${window.location.host}/ws`);
+}
+// var ws = new WebSocket(`ws://${window.location.host}/ws`);
 
 function setupWebSocket(){
   console.log("setting up websocket")
