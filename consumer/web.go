@@ -24,6 +24,8 @@ var ws *websocket.Conn
 
 var upgrader = websocket.Upgrader{}
 
+var newClientHandlerFunc func()
+
 // spaHandler implements the http.Handler interface, so we can use it
 // to respond to HTTP requests. The path to the static directory and
 // path to the index file within that static directory are used to
@@ -68,7 +70,8 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewServer returns a new ServeMux with app routes.
-func NewServer() {
+func NewServer(newClientHanlder func()) {
+	newClientHandlerFunc = newClientHandler
 	// Set the router as the default one shipped with Gin
 	router := gmux.NewRouter().StrictSlash(true)
 	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
@@ -109,6 +112,6 @@ func websocketHandler(w http.ResponseWriter, req *http.Request) {
 		log.Println("upgrade:", err)
 		return
 	}
-
+	newClientHandlerFunc()
 	ws.SetReadLimit(maxMessageSize)
 }

@@ -39,11 +39,14 @@ function setupSockets(app) {
   }
 
   ws.onmessage = function(evt) {
-    var data = JSON.parse(evt.data)
-    console.log(data.state, data.source)
-    app.setState({
-      data
-    })
+    try {
+      var data = JSON.parse(evt.data)
+      app.setState({
+        data
+      })
+    } catch(e) {
+      console.log("Error parsing json:", e)
+    }
   }
   
   ws.onopen = function(evt) {

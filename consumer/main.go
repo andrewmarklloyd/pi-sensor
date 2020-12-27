@@ -47,6 +47,8 @@ var (
 	logger = log.New(os.Stdout, "[Pi-Sensor Consumer] ", log.LstdFlags)
 
 	mockData []string
+
+	latestMessage string
 )
 
 func createTLSConfiguration() (t *tls.Config) {
@@ -81,9 +83,10 @@ func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 	// The `ConsumeClaim` itself is called within a goroutine, see:
 	// https://github.com/Shopify/sarama/blob/master/consumer_group.go#L27-L29
 	for message := range claim.Messages() {
-		log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
-		session.MarkMessage(message, "")
-		send(string(message.Value))
+		latestMessage = string(message.Value)
+		log.Printf("Message consumed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
+		// session.MarkMessage(message, "")
+		send(latestMessage)
 	}
 
 	return nil
@@ -91,13 +94,11 @@ func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 
 func configConsumer() {
 	conf := sarama.NewConfig()
-	conf.Producer.Retry.Max = 1
-	conf.Producer.RequiredAcks = sarama.WaitForAll
-	conf.Producer.Return.Successes = true
 	conf.Metadata.Full = true
 	conf.Version = sarama.V0_10_2_0
 	conf.ClientID = "sasl_scram_client"
 	conf.Metadata.Full = true
+	conf.Consumer.Offsets.Initial = sarama.OffsetNewest
 	conf.Net.SASL.Enable = true
 	conf.Net.SASL.User = *userName
 	conf.Net.SASL.Password = *passwd
@@ -116,7 +117,8 @@ func configConsumer() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	splitBrokers := strings.Split(*brokers, ",")
-	client, err := sarama.NewConsumerGroup(splitBrokers, *group, conf)
+	client, err := sarama.NewClient(splitBrokers, conf)
+	consumerClient, err := sarama.NewConsumerGroupFromClient(*group, client)
 	if err != nil {
 		log.Panicf("Error creating consumer group client: %v", err)
 	}
@@ -130,7 +132,7 @@ func configConsumer() {
 			// server-side rebalance happens, the consumer session will need to be
 			// recreated to get the new claims
 
-			if err := client.Consume(ctx, []string{*topic}, &consumer); err != nil {
+			if err := consumerClient.Consume(ctx, []string{*topic}, &consumer); err != nil {
 				log.Panicf("Error from consumer: %v", err)
 			}
 			// check if context was cancelled, signaling that the consumer should stop
@@ -176,6 +178,12 @@ func getMockData() string {
 	return mockData[rand.Intn(len(mockData))]
 }
 
+func newClientHandler() {
+	if latestMessage != "" {
+		send(latestMessage)
+	}
+}
+
 func main() {
 	flag.Parse()
 
@@ -199,13 +207,14 @@ func main() {
 		logger.Println("Running in test mode")
 		cronLib := cron.New()
 		cronLib.AddFunc(fmt.Sprintf("@every %ds", 5), func() {
-			send(getMockData())
+			latestMessage = getMockData()
+			send(latestMessage)
 		})
 		cronLib.Start()
-		NewServer()
+		NewServer(newClientHandler)
 	} else {
 		go func() {
-			NewServer()
+			NewServer(newClientHandler)
 		}()
 		configConsumer()
 	}
