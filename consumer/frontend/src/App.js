@@ -29,7 +29,7 @@ class App extends Component {
 
 function setupSockets(app) {
   if (window.location.protocol === "https:") {
-    ws = new WebSocket(`wss://${window.location.origin}/ws`);
+    ws = new WebSocket(`wss://${window.location.host}/ws`);
   } else {
     ws = new WebSocket(`ws://localhost:8080/ws`);
   }
