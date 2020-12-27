@@ -1,8 +1,8 @@
 var ws
 if (window.location.protocol === "https:") {
-  ws = new WebSocket(`wss://${window.location.host}/ws`);
+  ws = new WebSocket(`wss://${window.location.origin}/ws`);
 } else {
-  ws = new WebSocket(`ws://${window.location.host}/ws`);
+  ws = new WebSocket(`ws://localhost:8080/ws`);
 }
 // var ws = new WebSocket(`ws://${window.location.host}/ws`);
 

@@ -4,15 +4,19 @@ import (
 	"context"
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/ivanbeldad/kasa-go"
+	"github.com/robfig/cron/v3"
 )
 
 func init() {
@@ -38,7 +42,11 @@ var (
 	kasaAPI      kasa.API
 	hs100        kasa.HS100
 
+	testMode = flag.String("testMode", os.Getenv("TEST_MODE"), "Test mode for local development")
+
 	logger = log.New(os.Stdout, "[Pi-Sensor Consumer] ", log.LstdFlags)
+
+	mockData []string
 )
 
 func createTLSConfiguration() (t *tls.Config) {
@@ -163,6 +171,11 @@ func configOutlet() {
 	// }
 }
 
+func getMockData() string {
+	rand.Seed(time.Now().Unix()) // initialize global pseudo random generator
+	return mockData[rand.Intn(len(mockData))]
+}
+
 func main() {
 	flag.Parse()
 
@@ -178,9 +191,22 @@ func main() {
 		log.Fatalln("SASL password is required")
 	}
 
-	go func() {
+	if *testMode == "true" {
+		mockData = make([]string, 0)
+		mockData = append(mockData,
+			"{\"state\":\"OPEN\",\"source\":\"office-door\"}",
+			"{\"state\":\"CLOSED\",\"source\":\"office-door\"}")
+		logger.Println("Running in test mode")
+		cronLib := cron.New()
+		cronLib.AddFunc(fmt.Sprintf("@every %ds", 5), func() {
+			send(getMockData())
+		})
+		cronLib.Start()
 		NewServer()
-	}()
-
-	configConsumer()
+	} else {
+		go func() {
+			NewServer()
+		}()
+		configConsumer()
+	}
 }

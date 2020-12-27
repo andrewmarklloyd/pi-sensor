@@ -15,6 +15,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/ivanbeldad/kasa-go v0.0.0-20201031100518-9b33fa73f8a7
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/stianeikeland/go-rpio v4.2.0+incompatible
 	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c
 	golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0 // indirect

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -98,7 +97,6 @@ func NewServer() {
 }
 
 func send(example string) {
-	fmt.Println("Sending message")
 	if ws != nil {
 		ws.WriteMessage(websocket.TextMessage, []byte(example))
 	}
