@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/andrewmarklloyd/pi-sensor/consumer/internal/pkg/state"
 	"github.com/ivanbeldad/kasa-go"
 	"github.com/robfig/cron/v3"
 )
@@ -198,6 +199,8 @@ func main() {
 	if *passwd == "" {
 		log.Fatalln("SASL password is required")
 	}
+
+	state := state.Init()
 
 	if *testMode == "true" {
 		mockData = make([]string, 0)
