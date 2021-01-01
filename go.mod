@@ -1,4 +1,4 @@
-module github.coms/andrewmarklloyd/pi-sensor
+module github.com/andrewmarklloyd/pi-sensor
 
 go 1.15
 
