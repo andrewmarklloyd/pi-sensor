@@ -201,7 +201,14 @@ func main() {
 		log.Fatalln("SASL password is required")
 	}
 
-	stateConfig, _ = state.ReadState()
+	var err error
+	stateConfig, err = state.ReadState()
+	if err != nil {
+		logger.Println("Error reading state file, creating default state file. Error:", err.Error())
+		stateConfig = state.StateConfig{
+			Sensors: make(map[string]string),
+		}
+	}
 
 	if *testMode == "true" {
 		mockData = make([]string, 0)
