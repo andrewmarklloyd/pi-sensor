@@ -48,8 +48,9 @@ var (
 
 	logger = log.New(os.Stdout, "[Pi-Sensor Consumer] ", log.LstdFlags)
 
-	mockData    []string
-	stateConfig state.StateConfig
+	mockData []string
+
+	stateClient state.Client
 )
 
 type Message struct {
@@ -174,7 +175,11 @@ func getMockData() string {
 }
 
 func newClientHandler() {
-	for k, v := range stateConfig.Sensors {
+	state, err := stateClient.ReadAllState()
+	if err != nil {
+		logger.Println(err)
+	}
+	for k, v := range state {
 		send(fmt.Sprintf("{\"source\":\"%s\",\"state\":\"%s\"}", k, v))
 	}
 }
@@ -182,8 +187,11 @@ func newClientHandler() {
 func saveState(latestMessage string) {
 	message := Message{}
 	json.Unmarshal([]byte(latestMessage), &message)
-	stateConfig.Sensors[message.Source] = message.State
-	state.WriteState(stateConfig)
+	logger.Println(message.Source, message.State)
+	err := stateClient.WriteState(message.Source, message.State)
+	if err != nil {
+		logger.Println(err)
+	}
 }
 
 func main() {
@@ -201,14 +209,8 @@ func main() {
 		log.Fatalln("SASL password is required")
 	}
 
-	var err error
-	stateConfig, err = state.ReadState()
-	if err != nil {
-		logger.Println("Error reading state file, creating default state file. Error:", err.Error())
-		stateConfig = state.StateConfig{
-			Sensors: make(map[string]string),
-		}
-	}
+	stateClient = state.Client{}
+	stateClient.Init()
 
 	if *testMode == "true" {
 		mockData = make([]string, 0)
