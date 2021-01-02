@@ -1,6 +1,6 @@
 module github.com/andrewmarklloyd/pi-sensor
 
-go 1.15
+go 1.14.3
 
 require (
 	github.com/Shopify/sarama v1.27.2
