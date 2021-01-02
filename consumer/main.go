@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -47,10 +48,14 @@ var (
 
 	logger = log.New(os.Stdout, "[Pi-Sensor Consumer] ", log.LstdFlags)
 
-	mockData []string
-
-	latestMessage string
+	mockData    []string
+	stateConfig state.StateConfig
 )
+
+type Message struct {
+	Source string
+	State  string
+}
 
 func createTLSConfiguration() (t *tls.Config) {
 	t = &tls.Config{
@@ -84,10 +89,11 @@ func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 	// The `ConsumeClaim` itself is called within a goroutine, see:
 	// https://github.com/Shopify/sarama/blob/master/consumer_group.go#L27-L29
 	for message := range claim.Messages() {
-		latestMessage = string(message.Value)
+		latestMessage := string(message.Value)
 		log.Printf("Message consumed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
 		// session.MarkMessage(message, "")
-		send(latestMessage)
+		saveState(latestMessage)
+		send(string(message.Value))
 	}
 
 	return nil
@@ -162,27 +168,22 @@ func configConsumer() {
 	}
 }
 
-func configOutlet() {
-	// kasaAPI, err := kasa.Connect(*kasaUsername, *kasaPassword)
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
-
-	// devices, _ := kasaAPI.GetDevicesInfo()
-	// for _, device := range devices {
-	// 	fmt.Println(device)
-	// }
-}
-
 func getMockData() string {
-	rand.Seed(time.Now().Unix()) // initialize global pseudo random generator
+	rand.Seed(time.Now().Unix())
 	return mockData[rand.Intn(len(mockData))]
 }
 
 func newClientHandler() {
-	if latestMessage != "" {
-		send(latestMessage)
+	for k, v := range stateConfig.Sensors {
+		send(fmt.Sprintf("{\"source\":\"%s\",\"state\":\"%s\"}", k, v))
 	}
+}
+
+func saveState(latestMessage string) {
+	message := Message{}
+	json.Unmarshal([]byte(latestMessage), &message)
+	stateConfig.Sensors[message.Source] = message.State
+	state.WriteState(stateConfig)
 }
 
 func main() {
@@ -200,7 +201,7 @@ func main() {
 		log.Fatalln("SASL password is required")
 	}
 
-	state := state.Init()
+	stateConfig, _ = state.ReadState()
 
 	if *testMode == "true" {
 		mockData = make([]string, 0)
@@ -210,7 +211,8 @@ func main() {
 		logger.Println("Running in test mode")
 		cronLib := cron.New()
 		cronLib.AddFunc(fmt.Sprintf("@every %ds", 5), func() {
-			latestMessage = getMockData()
+			latestMessage := getMockData()
+			saveState(latestMessage)
 			send(latestMessage)
 		})
 		cronLib.Start()
