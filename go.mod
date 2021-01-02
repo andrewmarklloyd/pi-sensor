@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/Shopify/sarama v1.27.2
-	github.com/go-redis/redis/v8 v8.4.4
+	github.com/go-redis/redis/v8 v8.4.3
 	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0
