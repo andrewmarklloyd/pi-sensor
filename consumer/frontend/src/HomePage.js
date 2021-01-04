@@ -1,52 +1,47 @@
 // @flow
 
-import * as React from "react";
+import React, { Component } from "react";
 
 import {
   Page,
   Grid,
-  StampCard,
 } from "tabler-react";
 
 import SiteWrapper from "./SiteWrapper";
 import Sensor from "./Sensor";
 
-function Home() {
-  return (
-    <SiteWrapper>
-      <Page.Content title="Dashboard">
-      <Grid.Row cards={true}>
-        <Grid.Col sm={6} lg={3}>
-          <Sensor/>
-        </Grid.Col>
-        <Grid.Col sm={6} lg={3}>
-          <StampCard
-            color="secondary"
-            icon="zap-off"
-            header={
-              <a href="#">
-                Garage Door
-              </a>
-            }
-            footer={"timestamp"}
-          />
-        </Grid.Col>
-        <Grid.Col sm={6} lg={3}>
-          <StampCard
-            color="green"
-            icon="lock"
-            header={
-              <a href="#">
-                Front Door
-              </a>
-            }
-            footer={"timestamp"}
-          />
-        </Grid.Col>
-      </Grid.Row>
-      </Page.Content>
-    </SiteWrapper>
-  );
+class Home extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { data: [] }
+  }
+
+  componentDidMount() {
+    fetch('http://localhost:8080/sensors')
+    .then(res => res.json())
+    .then(json => {
+      this.setState({data: json})
+    })
+    .catch(err => {
+      console.log(err)
+    })
+  }
+
+  render() {
+    return (
+      <SiteWrapper>
+        <Page.Content title="Dashboard">
+        <Grid.Row cards={true}>
+          <Grid.Col sm={6} lg={3}>
+            {Object.keys(this.state.data).map(key => (
+              <Sensor name={key}/>
+            ))}
+          </Grid.Col>
+        </Grid.Row>
+        </Page.Content>
+      </SiteWrapper>
+    );
+  }
 }
 
 export default Home;

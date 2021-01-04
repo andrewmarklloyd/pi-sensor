@@ -26,7 +26,7 @@ class Sensor extends Component {
         color={this.state.color}
         icon={this.state.icon}
         header={
-          <a href="#">
+          <a href="/">
             {this.state.source}
           </a>
         }
@@ -53,9 +53,9 @@ function setupSockets(sensorComponent) {
       var data = JSON.parse(evt.data)
       var state = data.state
       component.setState({
-        color: state == "OPEN" ? "red" : "green",
+        color: state === "OPEN" ? "red" : "green",
         source: data.source,
-        icon: state == "OPEN" ? "unlock" : "lock",
+        icon: state === "OPEN" ? "unlock" : "lock",
         timestamp: "10 min ago"
       })
     } catch(e) {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -187,11 +188,26 @@ func newClientHandler() {
 func saveState(latestMessage string) {
 	message := Message{}
 	json.Unmarshal([]byte(latestMessage), &message)
-	logger.Println(message.Source, message.State)
 	err := stateClient.WriteState(message.Source, message.State)
 	if err != nil {
 		logger.Println(err)
 	}
+}
+
+func getSensors(w http.ResponseWriter, req *http.Request) {
+	if *testMode == "true" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	}
+	state, err := stateClient.ReadAllState()
+	if err != nil {
+		logger.Println(err)
+	}
+	var jsonData []byte
+	jsonData, err = json.Marshal(state)
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Fprintf(w, string(jsonData))
 }
 
 func main() {
@@ -225,10 +241,10 @@ func main() {
 			send(latestMessage)
 		})
 		cronLib.Start()
-		NewServer(newClientHandler)
+		NewServer(newClientHandler, getSensors)
 	} else {
 		go func() {
-			NewServer(newClientHandler)
+			NewServer(newClientHandler, getSensors)
 		}()
 		configConsumer()
 	}

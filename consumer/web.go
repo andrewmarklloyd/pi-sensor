@@ -70,12 +70,13 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewServer returns a new ServeMux with app routes.
-func NewServer(newClientHanlder func()) {
+func NewServer(newClientHandler func(), sensorHandler http.HandlerFunc) {
 	newClientHandlerFunc = newClientHandler
 	// Set the router as the default one shipped with Gin
 	router := gmux.NewRouter().StrictSlash(true)
 	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
 	router.Handle("/ws", http.HandlerFunc(websocketHandler))
+	router.Handle("/sensors", sensorHandler)
 	router.PathPrefix("/").Handler(spa)
 
 	port := os.Getenv("PORT")
