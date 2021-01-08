@@ -7,25 +7,28 @@ import {
 class Sensor extends Component {
   constructor(props) {
     super(props)
-    console.log("Sensor.js source:", this.props.source, this.props.socket)
-    this.props.socket.on("Office Door", function(message) {
-      console.log("hard coded source")
-    })
     this.props.socket.on(this.props.source, function(message) {
       console.log(this.props.source, " has a new message:", message);
-      //   try {
-  //     // var data = JSON.parse(evt.data)
-  //     // console.log(data)
-  //     // var state = data.state
-  //     // component.setState({
-  //     //   color: state === "OPEN" ? "red" : "green",
-  //     //   source: data.source,
-  //     //   icon: state === "OPEN" ? "unlock" : "lock",
-  //     //   timestamp: "10 min ago"
-  //     // })
-  //   } catch(e) {
-  //     console.log("Error parsing json:", e)
-  //   }
+      // try {
+      //   var data = JSON.parse(evt.data)
+      //   console.log(data)
+      //   var state = data.state
+      //   component.setState({
+      //     color: state === "OPEN" ? "red" : "green",
+      //     source: data.source,
+      //     icon: state === "OPEN" ? "unlock" : "lock",
+      //     timestamp: "10 min ago"
+      //   })
+      // } catch(e) {
+      //   console.log("Error parsing json:", e)
+      // }
+    })
+  }
+
+  componentDidMount() {
+    console.log("componentDidMount")
+    this.props.socket.on("office-door", function(message) {
+      console.log("message in Sensor component", message)
     })
   }
 
