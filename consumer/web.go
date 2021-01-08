@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
+	gosocketio "github.com/ambelovsky/gosf-socketio"
+	"github.com/ambelovsky/gosf-socketio/transport"
 	gmux "github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 )
 
 const (
@@ -20,11 +21,9 @@ const (
 	pongWait = 60 * time.Second
 )
 
-var ws *websocket.Conn
-
-var upgrader = websocket.Upgrader{}
-
 var newClientHandlerFunc func()
+
+var channel *gosocketio.Channel
 
 // spaHandler implements the http.Handler interface, so we can use it
 // to respond to HTTP requests. The path to the static directory and
@@ -33,6 +32,11 @@ var newClientHandlerFunc func()
 type spaHandler struct {
 	staticPath string
 	indexPath  string
+}
+
+type ChatMessage struct {
+	Name    string `json:"name"`
+	Message string `json:"message"`
 }
 
 // ServeHTTP inspects the URL path to locate a file within the static dir
@@ -72,22 +76,22 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // NewServer returns a new ServeMux with app routes.
 func NewServer(newClientHandler func(), sensorHandler http.HandlerFunc) {
 	newClientHandlerFunc = newClientHandler
-	// Set the router as the default one shipped with Gin
 	router := gmux.NewRouter().StrictSlash(true)
-	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
-	router.Handle("/ws", http.HandlerFunc(websocketHandler))
+	server := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
+	server.On(gosocketio.OnConnection, func(c *gosocketio.Channel) {
+		log.Println("New client connected")
+		channel = c
+		channel.Join("sensor")
+	})
+
+	router.Handle("/socket.io/", server)
 	router.Handle("/sensors", sensorHandler)
+	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
 	router.PathPrefix("/").Handler(spa)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatalln("PORT must be set")
-	}
-
-	// allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
-	upgrader.CheckOrigin = func(r *http.Request) bool {
-		// TODO: only allow specified origins
-		return true
 	}
 
 	srv := &http.Server{
@@ -100,19 +104,8 @@ func NewServer(newClientHandler func(), sensorHandler http.HandlerFunc) {
 	log.Fatal(srv.ListenAndServe())
 }
 
-func send(example string) {
-	if ws != nil {
-		ws.WriteMessage(websocket.TextMessage, []byte(example))
+func send(source string, data string) {
+	if channel != nil {
+		channel.BroadcastTo("sensor", source, data)
 	}
-}
-
-func websocketHandler(w http.ResponseWriter, req *http.Request) {
-	var err error
-	ws, err = upgrader.Upgrade(w, req, nil)
-	if err != nil {
-		log.Println("upgrade:", err)
-		return
-	}
-	newClientHandlerFunc()
-	ws.SetReadLimit(maxMessageSize)
 }

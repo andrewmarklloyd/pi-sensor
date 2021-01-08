@@ -1,6 +1,7 @@
 // @flow
 
 import React, { Component } from "react";
+import socketIOClient from "socket.io-client";
 
 import {
   Page,
@@ -10,10 +11,20 @@ import {
 import SiteWrapper from "./SiteWrapper";
 import Sensor from "./Sensor";
 
+var socket
+
 class Home extends Component {
   constructor(props) {
     super(props)
     this.state = { data: [] }
+    if (window.location.protocol === "https:") {
+      socket = socketIOClient.connect(`wss://${window.location.host}/ws`, { transports: ['websocket'] });
+    } else {
+      socket = socketIOClient.connect(`ws://localhost:8080`, { transports: ['websocket'] });
+    }
+    socket.on("office-door", function(message) {
+      console.log("message in home component:", message)
+    })
   }
 
   componentDidMount() {
@@ -30,11 +41,11 @@ class Home extends Component {
   render() {
     return (
       <SiteWrapper>
-        <Page.Content title="Dashboard">
+        <Page.Content>
         <Grid.Row cards={true}>
           <Grid.Col sm={6} lg={3}>
             {Object.keys(this.state.data).map(key => (
-              <Sensor name={key}/>
+              <Sensor key={key} source={key} socket={socket}/>
             ))}
           </Grid.Col>
         </Grid.Row>

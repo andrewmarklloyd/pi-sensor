@@ -95,7 +95,7 @@ func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 		log.Printf("Message consumed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
 		// session.MarkMessage(message, "")
 		saveState(latestMessage)
-		send(string(message.Value))
+		// send(string(message.Value))
 	}
 
 	return nil
@@ -181,7 +181,7 @@ func newClientHandler() {
 		logger.Println(err)
 	}
 	for k, v := range state {
-		send(fmt.Sprintf("{\"source\":\"%s\",\"state\":\"%s\"}", k, v))
+		send(k, fmt.Sprintf("{\"source\":\"%s\",\"state\":\"%s\"}", k, v))
 	}
 }
 
@@ -229,16 +229,16 @@ func main() {
 	stateClient.Init()
 
 	if *testMode == "true" {
-		mockData = make([]string, 0)
-		mockData = append(mockData,
-			"{\"state\":\"OPEN\",\"source\":\"office-door\"}",
-			"{\"state\":\"CLOSED\",\"source\":\"office-door\"}")
+		// mockData = make([]map[string]string, 0)
+		// mockData = append(mockData,
+		// 	"{\"state\":\"OPEN\",\"source\":\"office-door\"}",
+		// 	"{\"state\":\"CLOSED\",\"source\":\"office-door\"}")
 		logger.Println("Running in test mode")
 		cronLib := cron.New()
 		cronLib.AddFunc(fmt.Sprintf("@every %ds", 5), func() {
-			latestMessage := getMockData()
-			saveState(latestMessage)
-			send(latestMessage)
+			// latestMessage := getMockData()
+			// saveState(latestMessage)
+			send("office-door", "{\"state\":\"OPEN\",\"source\":\"office-door\"}")
 		})
 		cronLib.Start()
 		NewServer(newClientHandler, getSensors)
