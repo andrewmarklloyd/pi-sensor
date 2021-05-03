@@ -28,7 +28,7 @@ class Home extends Component {
   }
 
   componentDidMount() {
-    fetch('http://localhost:8080/sensors')
+    fetch('/sensors')
     .then(res => res.json())
     .then(json => {
       this.setState({data: json})
