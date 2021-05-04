@@ -1,1 +1,1 @@
-web: bin/consumer
+web: bin/server
