@@ -35,7 +35,9 @@ func main() {
 	}
 
 	mqttClient := newMQTTClient(*brokerurl, *topic)
-	mqttClient.Subscribe()
+	mqttClient.Subscribe(func(message string) {
+		logger.Println(message)
+	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))

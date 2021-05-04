@@ -1,10 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"sync"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
+
+type fn func(string)
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
 	logger.Println("Connected")
@@ -39,9 +41,13 @@ func (c mqttClient) Cleanup() {
 	c.client.Disconnect(250)
 }
 
-func (c mqttClient) Subscribe() {
-	topic := c.topic
-	token := c.client.Subscribe(topic, 1, nil)
-	token.Wait()
-	fmt.Printf("Subscribed to topic %s", topic)
+func (c mqttClient) Subscribe(subscribeHandler fn) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	if token := c.client.Subscribe(c.topic, 0, func(client mqtt.Client, msg mqtt.Message) {
+		subscribeHandler(string(msg.Payload()))
+	}); token.Wait() && token.Error() != nil {
+		logger.Fatal(token.Error())
+	}
 }
