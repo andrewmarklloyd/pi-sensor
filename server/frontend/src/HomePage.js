@@ -22,16 +22,10 @@ class Home extends Component {
     } else {
       socket = socketIOClient.connect(`ws://localhost:8080`, { transports: ['websocket'] });
     }
+    socket.on("connect", function() {
+      console.log("connected")
+    })
     socket.on("garage", function(message) {
-      console.log("message in home component:", message)
-    })
-    socket.on("sensor", function(message) {
-      console.log("message in home component:", message)
-    })
-    socket.on("status", function(message) {
-      console.log("message in home component:", message)
-    })
-    socket.on("sensor/status", function(message) {
       console.log("message in home component:", message)
     })
   }

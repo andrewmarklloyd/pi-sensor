@@ -18,6 +18,8 @@ const (
 	maxMessageSize = 8192
 	// Time allowed to read the next pong message from the peer.
 	pongWait = 60 * time.Second
+
+	channelName = "sensor"
 )
 
 var newClientHandlerFunc func()
@@ -34,7 +36,7 @@ func newWebServer(port string, sensorHandler http.HandlerFunc) webServer {
 	server.On(gosocketio.OnConnection, func(c *gosocketio.Channel) {
 		logger.Println("New client connected")
 		channel = c
-		channel.Join("sensor")
+		channel.Join(channelName)
 	})
 	router.Handle("/socket.io/", server)
 	router.Handle("/sensors", sensorHandler)
@@ -60,7 +62,7 @@ func (s webServer) startServer() {
 func (s webServer) sendMessage(source string, data string) {
 	if channel != nil {
 		logger.Println("sending message", source, data)
-		channel.BroadcastTo("sensor", source, data)
+		channel.BroadcastTo(channelName, source, data)
 	} else {
 		logger.Println("channel is nil")
 	}

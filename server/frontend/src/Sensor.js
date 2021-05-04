@@ -7,7 +7,7 @@ import {
 class Sensor extends Component {
   constructor(props) {
     super(props)
-    this.props.socket.on(this.props.source, function(message) {
+    this.props.socket.on("garage", function(message) {
       console.log(this.props.source, " has a new message:", message);
       // try {
       //   var data = JSON.parse(evt.data)
@@ -27,7 +27,7 @@ class Sensor extends Component {
 
   componentDidMount() {
     console.log("componentDidMount")
-    this.props.socket.on("office-door", function(message) {
+    this.props.socket.on("garage", function(message) {
       console.log("message in Sensor component", message)
     })
   }
