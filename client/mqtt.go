@@ -40,7 +40,7 @@ func (c mqttClient) Cleanup() {
 }
 
 func (c mqttClient) publish(sensorSource string, currentStatus string) {
-	text := fmt.Sprintf("%s:%s", sensorSource, currentStatus)
+	text := fmt.Sprintf("%s|%s", sensorSource, currentStatus)
 	token := c.client.Publish(c.topic, 0, false, text)
 	token.Wait()
 }

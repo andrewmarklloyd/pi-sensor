@@ -25,6 +25,43 @@ var newClientHandlerFunc func()
 
 var channel *gosocketio.Channel
 
+type webServer struct {
+	server *http.Server
+}
+
+func newWebServer(port string, sensorHandler http.HandlerFunc) webServer {
+	router := gmux.NewRouter().StrictSlash(true)
+	server := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
+	server.On(gosocketio.OnConnection, func(c *gosocketio.Channel) {
+		logger.Println("New client connected")
+		channel = c
+		channel.Join("sensor")
+	})
+	router.Handle("/socket.io/", server)
+	router.Handle("/sensors", sensorHandler)
+	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
+	router.PathPrefix("/").Handler(spa)
+
+	srv := &http.Server{
+		Handler:      router,
+		Addr:         "0.0.0.0:" + port,
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+	return webServer{
+		server: srv,
+	}
+}
+
+func (s webServer) startServer() {
+	logger.Println("Starting web server")
+	logger.Fatal(s.server.ListenAndServe())
+}
+
+func (s webServer) sendMessage(payload string) {
+
+}
+
 // spaHandler implements the http.Handler interface, so we can use it
 // to respond to HTTP requests. The path to the static directory and
 // path to the index file within that static directory are used to
@@ -39,10 +76,6 @@ type ChatMessage struct {
 	Message string `json:"message"`
 }
 
-// ServeHTTP inspects the URL path to locate a file within the static dir
-// on the SPA handler. If a file is found, it will be served. If not, the
-// file located at the index path on the SPA handler will be served. This
-// is suitable behavior for serving an SPA (single page application).
 func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// get the absolute path to prevent directory traversal
 	path, err := filepath.Abs(r.URL.Path)

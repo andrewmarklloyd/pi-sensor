@@ -31,6 +31,7 @@ class Home extends Component {
     fetch('http://localhost:8080/sensors')
     .then(res => res.json())
     .then(json => {
+      console.log(json)
       this.setState({data: json})
     })
     .catch(err => {

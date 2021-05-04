@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"html"
 	"log"
 	"net/http"
 	"os"
@@ -24,7 +23,16 @@ var (
 	stateClient state.Client
 )
 
+func getSensors(w http.ResponseWriter, req *http.Request) {
+	if *testMode == "true" {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	}
+	fmt.Fprintf(w, "[\"garage\"]")
+	// fmt.Fprintf(w, fmt.Sprintf("{\"message\":\"%s\"}", "garage|OPEN"))
+}
+
 func main() {
+	logger.Println("Initializing server")
 	flag.Parse()
 
 	if *brokerurl == "" {
@@ -33,19 +41,22 @@ func main() {
 	if *topic == "" {
 		log.Fatalln("topic to publish to is required")
 	}
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatalln("PORT must be set")
+	}
+
+	var webServer webServer
+	webServer = newWebServer(port, getSensors)
 
 	mqttClient := newMQTTClient(*brokerurl, *topic)
 	mqttClient.Subscribe(func(message string) {
+		webServer.sendMessage(fmt.Sprintf("{\"message\":\"%s\"}", message))
 		logger.Println(message)
 	})
+	// go func() {
+	webServer.startServer()
+	// }()
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
-	})
-
-	http.HandleFunc("/hi", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hi")
-	})
-
-	log.Fatal(http.ListenAndServe(":8081", nil))
+	// on new web connections, send the last message for each topic to websocket clients
 }
