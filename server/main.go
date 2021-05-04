@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/andrewmarklloyd/pi-sensor/server/internal/pkg/state"
 )
@@ -27,7 +28,7 @@ func getSensors(w http.ResponseWriter, req *http.Request) {
 	if *testMode == "true" {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 	}
-	fmt.Fprintf(w, "[\"garage\"]")
+	fmt.Fprintf(w, "[{\"garage\":\"OPEN\"}]")
 	// fmt.Fprintf(w, fmt.Sprintf("{\"message\":\"%s\"}", "garage|OPEN"))
 }
 
@@ -51,12 +52,10 @@ func main() {
 
 	mqttClient := newMQTTClient(*brokerurl, *topic)
 	mqttClient.Subscribe(func(message string) {
-		webServer.sendMessage(fmt.Sprintf("{\"message\":\"%s\"}", message))
-		logger.Println(message)
+		s := strings.Split(message, "|")
+		webServer.sendMessage(s[0], s[1])
 	})
-	// go func() {
 	webServer.startServer()
-	// }()
 
 	// on new web connections, send the last message for each topic to websocket clients
 }

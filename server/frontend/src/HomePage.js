@@ -22,13 +22,22 @@ class Home extends Component {
     } else {
       socket = socketIOClient.connect(`ws://localhost:8080`, { transports: ['websocket'] });
     }
-    socket.on("office-door", function(message) {
+    socket.on("garage", function(message) {
+      console.log("message in home component:", message)
+    })
+    socket.on("sensor", function(message) {
+      console.log("message in home component:", message)
+    })
+    socket.on("status", function(message) {
+      console.log("message in home component:", message)
+    })
+    socket.on("sensor/status", function(message) {
       console.log("message in home component:", message)
     })
   }
 
   componentDidMount() {
-    fetch('http://localhost:8080/sensors')
+    fetch('/sensors')
     .then(res => res.json())
     .then(json => {
       console.log(json)
@@ -45,13 +54,22 @@ class Home extends Component {
         <Page.Content>
         <Grid.Row cards={true}>
           <Grid.Col sm={6} lg={3}>
-            {Object.keys(this.state.data).map(key => (
-              <Sensor key={key} source={key} socket={socket}/>
-            ))}
+            <Sensor key="garage" source="garage" socket={socket}/>
           </Grid.Col>
         </Grid.Row>
         </Page.Content>
       </SiteWrapper>
+      // <SiteWrapper>
+      //   <Page.Content>
+      //   <Grid.Row cards={true}>
+      //     <Grid.Col sm={6} lg={3}>
+      //       {Object.keys(this.state.data).map(key => (
+      //         <Sensor key={key} source={key} socket={socket}/>
+      //       ))}
+      //     </Grid.Col>
+      //   </Grid.Row>
+      //   </Page.Content>
+      // </SiteWrapper>
     );
   }
 }

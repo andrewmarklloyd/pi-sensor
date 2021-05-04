@@ -50,7 +50,7 @@ func main() {
 		logger.Println("Cleaning up")
 		mqttClient.Cleanup()
 		pinClient.Cleanup()
-		os.Exit(1)
+		os.Exit(0)
 	}()
 
 	lastStatus := "CLOSED"
@@ -62,6 +62,6 @@ func main() {
 			logger.Printf("Current status: %s", currentStatus)
 			mqttClient.publish(*sensorSource, currentStatus)
 		}
-		time.Sleep(time.Second)
+		time.Sleep(10 * time.Second)
 	}
 }

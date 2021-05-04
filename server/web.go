@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -58,8 +57,13 @@ func (s webServer) startServer() {
 	logger.Fatal(s.server.ListenAndServe())
 }
 
-func (s webServer) sendMessage(payload string) {
-
+func (s webServer) sendMessage(source string, data string) {
+	if channel != nil {
+		logger.Println("sending message", source, data)
+		channel.BroadcastTo("sensor", source, data)
+	} else {
+		logger.Println("channel is nil")
+	}
 }
 
 // spaHandler implements the http.Handler interface, so we can use it
@@ -69,11 +73,6 @@ func (s webServer) sendMessage(payload string) {
 type spaHandler struct {
 	staticPath string
 	indexPath  string
-}
-
-type ChatMessage struct {
-	Name    string `json:"name"`
-	Message string `json:"message"`
 }
 
 func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -104,41 +103,4 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// otherwise, use http.FileServer to serve the static dir
 	http.FileServer(http.Dir(h.staticPath)).ServeHTTP(w, r)
-}
-
-// NewServer returns a new ServeMux with app routes.
-func NewServer(newClientHandler func(), sensorHandler http.HandlerFunc) {
-	newClientHandlerFunc = newClientHandler
-	router := gmux.NewRouter().StrictSlash(true)
-	server := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
-	server.On(gosocketio.OnConnection, func(c *gosocketio.Channel) {
-		log.Println("New client connected")
-		channel = c
-		channel.Join("sensor")
-	})
-
-	router.Handle("/socket.io/", server)
-	router.Handle("/sensors", sensorHandler)
-	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
-	router.PathPrefix("/").Handler(spa)
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatalln("PORT must be set")
-	}
-
-	srv := &http.Server{
-		Handler: router,
-		Addr:    "0.0.0.0:" + port,
-		// Good practice: enforce timeouts for servers you create!
-		WriteTimeout: 15 * time.Second,
-		ReadTimeout:  15 * time.Second,
-	}
-	log.Fatal(srv.ListenAndServe())
-}
-
-func send(source string, data string) {
-	if channel != nil {
-		channel.BroadcastTo("sensor", source, data)
-	}
 }
