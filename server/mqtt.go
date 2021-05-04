@@ -22,7 +22,7 @@ type mqttClient struct {
 func newMQTTClient(brokerurl string, topic string) mqttClient {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(brokerurl)
-	opts.SetClientID("go_mqtt_client")
+	opts.SetClientID("go_mqtt_sever")
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
 	client := mqtt.NewClient(opts)
