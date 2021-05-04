@@ -39,7 +39,7 @@ func main() {
 
 	mqttClient := newMQTTClient(*brokerurl, *topic)
 
-	mockMode := os.Getenv("TEST_MODE") == "true"
+	mockMode := os.Getenv("MOCK_MODE") == "true"
 	pinClient := newPinClient(pinNum, mockMode)
 	logger.Println(pinClient)
 
