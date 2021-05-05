@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/gofrs/uuid"
 )
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
@@ -19,10 +20,18 @@ type mqttClient struct {
 	topic  string
 }
 
-func newMQTTClient(brokerurl string, topic string) mqttClient {
+func newMQTTClient(brokerurl string, topic string, sensorSource string, mockMode bool) mqttClient {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(brokerurl)
-	opts.SetClientID("go_mqtt_client")
+	var clientID string
+	if mockMode {
+		u, _ := uuid.NewV4()
+		clientID = u.String()
+	} else {
+		clientID = sensorSource
+	}
+	logger.Println("Starting MQTT client with id", clientID)
+	opts.SetClientID(clientID)
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
 	client := mqtt.NewClient(opts)

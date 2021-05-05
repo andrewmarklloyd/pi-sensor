@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	gosocketio "github.com/ambelovsky/gosf-socketio"
@@ -22,11 +21,6 @@ const (
 
 	channelName = "sensor"
 )
-
-type Message struct {
-	Source string `json:"source"`
-	Status string `json:"status"`
-}
 
 type newClientHandlerFunc func()
 
@@ -68,12 +62,7 @@ func (s webServer) startServer() {
 }
 
 func (s webServer) sendMessage(message string) {
-	messageSplit := strings.Split(message, "|")
-	messageStruct := Message{
-		Source: messageSplit[0],
-		Status: messageSplit[1],
-	}
-	logger.Println("Broadcasting to all:", messageStruct)
+	messageStruct := toStruct(message)
 	s.socketServer.BroadcastToAll("sensor/status", messageStruct)
 }
 

@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/gofrs/uuid"
 )
 
 type fn func(string)
@@ -17,14 +18,23 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 }
 
 type mqttClient struct {
-	client mqtt.Client
-	topic  string
+	client   mqtt.Client
+	topic    string
+	mockMode bool
 }
 
-func newMQTTClient(brokerurl string, topic string) mqttClient {
+func newMQTTClient(brokerurl string, topic string, mockMode bool) mqttClient {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(brokerurl)
-	opts.SetClientID("server")
+	var clientID string
+	if mockMode {
+		u, _ := uuid.NewV4()
+		clientID = u.String()
+	} else {
+		clientID = "server"
+	}
+	logger.Println("Starting MQTT client with id", clientID)
+	opts.SetClientID(clientID)
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectLostHandler
 	client := mqtt.NewClient(opts)
@@ -34,6 +44,7 @@ func newMQTTClient(brokerurl string, topic string) mqttClient {
 	return mqttClient{
 		client,
 		topic,
+		mockMode,
 	}
 }
 

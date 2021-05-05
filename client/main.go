@@ -14,6 +14,7 @@ var (
 	brokerurl    = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The MQTT broker to connect")
 	topic        = flag.String("topic", os.Getenv("TOPIC"), "The topic to consume")
 	sensorSource = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")
+	mockFlag     = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
 	logger       = log.New(os.Stdout, "[Pi-Senser Client] ", log.LstdFlags)
 )
 
@@ -29,6 +30,7 @@ func main() {
 	if *sensorSource == "" {
 		log.Fatalln("sensorSource is required")
 	}
+	mockMode, _ := strconv.ParseBool(*mockFlag)
 
 	defaultPin := 15
 	pinNum, err := strconv.Atoi(os.Getenv("GPIO_PIN"))
@@ -37,11 +39,8 @@ func main() {
 		pinNum = defaultPin
 	}
 
-	mqttClient := newMQTTClient(*brokerurl, *topic)
-
-	mockMode := os.Getenv("MOCK_MODE") == "true"
+	mqttClient := newMQTTClient(*brokerurl, *topic, *sensorSource, mockMode)
 	pinClient := newPinClient(pinNum, mockMode)
-	logger.Println(pinClient)
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
