@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/andrewmarklloyd/pi-sensor/server/internal/pkg/state"
 )
@@ -52,8 +51,7 @@ func main() {
 
 	mqttClient := newMQTTClient(*brokerurl, *topic)
 	mqttClient.Subscribe(func(message string) {
-		s := strings.Split(message, "|")
-		webServer.sendMessage(s[0], s[1])
+		webServer.sendMessage(message)
 	})
 	webServer.startServer()
 

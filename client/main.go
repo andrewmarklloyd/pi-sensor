@@ -62,6 +62,6 @@ func main() {
 			logger.Printf("Current status: %s", currentStatus)
 			mqttClient.publish(*sensorSource, currentStatus)
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 }

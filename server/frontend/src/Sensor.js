@@ -7,29 +7,22 @@ import {
 class Sensor extends Component {
   constructor(props) {
     super(props)
-    this.props.socket.on("garage", function(message) {
-      console.log(this.props.source, " has a new message:", message);
-      // try {
-      //   var data = JSON.parse(evt.data)
-      //   console.log(data)
-      //   var state = data.state
-      //   component.setState({
-      //     color: state === "OPEN" ? "red" : "green",
-      //     source: data.source,
-      //     icon: state === "OPEN" ? "unlock" : "lock",
-      //     timestamp: "10 min ago"
-      //   })
-      // } catch(e) {
-      //   console.log("Error parsing json:", e)
-      // }
+    var source = this.state.source
+    var component = this
+    this.props.socket.on("sensor/status", function(data) {
+      if (data.source == source) {
+        component.setState({
+          color: data.status === "OPEN" ? "red" : "green",
+          source: data.source,
+          icon: data.status === "OPEN" ? "unlock" : "lock",
+          timestamp: "10 min ago"
+        })  
+      }
     })
   }
 
   componentDidMount() {
-    console.log("componentDidMount")
-    this.props.socket.on("garage", function(message) {
-      console.log("message in Sensor component", message)
-    })
+    
   }
 
   state = {

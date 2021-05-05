@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	gosocketio "github.com/ambelovsky/gosf-socketio"
@@ -22,23 +23,29 @@ const (
 	channelName = "sensor"
 )
 
+type Message struct {
+	Source string `json:"source"`
+	Status string `json:"status"`
+}
+
 var newClientHandlerFunc func()
 
 var channel *gosocketio.Channel
 
 type webServer struct {
-	server *http.Server
+	httpServer   *http.Server
+	socketServer *gosocketio.Server
 }
 
 func newWebServer(port string, sensorHandler http.HandlerFunc) webServer {
 	router := gmux.NewRouter().StrictSlash(true)
-	server := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
-	server.On(gosocketio.OnConnection, func(c *gosocketio.Channel) {
+	socketServer := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
+	socketServer.On(gosocketio.OnConnection, func(c *gosocketio.Channel) {
 		logger.Println("New client connected")
 		channel = c
-		channel.Join(channelName)
+		// channel.Join(channelName)
 	})
-	router.Handle("/socket.io/", server)
+	router.Handle("/socket.io/", socketServer)
 	router.Handle("/sensors", sensorHandler)
 	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
 	router.PathPrefix("/").Handler(spa)
@@ -50,19 +57,24 @@ func newWebServer(port string, sensorHandler http.HandlerFunc) webServer {
 		ReadTimeout:  15 * time.Second,
 	}
 	return webServer{
-		server: srv,
+		httpServer:   srv,
+		socketServer: socketServer,
 	}
 }
 
 func (s webServer) startServer() {
 	logger.Println("Starting web server")
-	logger.Fatal(s.server.ListenAndServe())
+	logger.Fatal(s.httpServer.ListenAndServe())
 }
 
-func (s webServer) sendMessage(source string, data string) {
+func (s webServer) sendMessage(message string) {
 	if channel != nil {
-		logger.Println("sending message", source, data)
-		channel.BroadcastTo(channelName, source, data)
+		messageSplit := strings.Split(message, "|")
+		message := Message{
+			Source: messageSplit[0],
+			Status: messageSplit[1],
+		}
+		s.socketServer.BroadcastToAll("sensor/status", message)
 	} else {
 		logger.Println("channel is nil")
 	}

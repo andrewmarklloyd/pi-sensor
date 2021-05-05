@@ -17,29 +17,27 @@ class Home extends Component {
   constructor(props) {
     super(props)
     this.state = { data: [] }
+    var url
     if (window.location.protocol === "https:") {
-      socket = socketIOClient.connect(`wss://${window.location.host}/ws`, { transports: ['websocket'] });
+      url = `wss://${window.location.host}/ws`
     } else {
-      socket = socketIOClient.connect(`ws://localhost:8080`, { transports: ['websocket'] });
+      url = "ws://localhost:8080"
     }
+    socket = socketIOClient.connect(`${url}`, { transports: ['websocket'] });
     socket.on("connect", function() {
       console.log("connected")
-    })
-    socket.on("garage", function(message) {
-      console.log("message in home component:", message)
     })
   }
 
   componentDidMount() {
-    fetch('/sensors')
-    .then(res => res.json())
-    .then(json => {
-      console.log(json)
-      this.setState({data: json})
-    })
-    .catch(err => {
-      console.log(err)
-    })
+    // fetch('/sensors')
+    // .then(res => res.json())
+    // .then(json => {
+    //   this.setState({data: json})
+    // })
+    // .catch(err => {
+    //   console.log(err)
+    // })
   }
 
   render() {
@@ -48,7 +46,10 @@ class Home extends Component {
         <Page.Content>
         <Grid.Row cards={true}>
           <Grid.Col sm={6} lg={3}>
-            <Sensor key="garage" source="garage" socket={socket}/>
+            <Sensor source="garage" socket={socket}/>
+          </Grid.Col>
+          <Grid.Col sm={6} lg={3}>
+            <Sensor source="front-door" socket={socket}/>
           </Grid.Col>
         </Grid.Row>
         </Page.Content>
