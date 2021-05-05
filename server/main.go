@@ -2,12 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
-	"net/http"
 	"os"
-
-	"github.com/andrewmarklloyd/pi-sensor/server/internal/pkg/state"
 )
 
 func init() {
@@ -17,18 +13,16 @@ func init() {
 var (
 	brokerurl = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
 	topic     = flag.String("topic", os.Getenv("TOPIC"), "The topic to subscribe")
-	testMode  = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
+	mockMode  = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
 	logger    = log.New(os.Stdout, "[Pi-Sensor Server] ", log.LstdFlags)
-
-	stateClient state.Client
 )
 
-func getSensors(w http.ResponseWriter, req *http.Request) {
-	if *testMode == "true" {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-	}
-	fmt.Fprintf(w, "[{\"garage\":\"OPEN\"}]")
-	// fmt.Fprintf(w, fmt.Sprintf("{\"message\":\"%s\"}", "garage|OPEN"))
+var _webServer webServer
+
+func newClientHandler() {
+	logger.Println("New client handler, sending status for all")
+	// get latest status for all sensors and send them to the client
+	_webServer.sendMessage("garage|OPEN")
 }
 
 func main() {
@@ -46,14 +40,11 @@ func main() {
 		log.Fatalln("PORT must be set")
 	}
 
-	var webServer webServer
-	webServer = newWebServer(port, getSensors)
+	_webServer = newWebServer(port, newClientHandler)
 
 	mqttClient := newMQTTClient(*brokerurl, *topic)
 	mqttClient.Subscribe(func(message string) {
-		webServer.sendMessage(message)
+		_webServer.sendMessage(message)
 	})
-	webServer.startServer()
-
-	// on new web connections, send the last message for each topic to websocket clients
+	_webServer.startServer()
 }

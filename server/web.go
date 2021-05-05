@@ -28,7 +28,7 @@ type Message struct {
 	Status string `json:"status"`
 }
 
-var newClientHandlerFunc func()
+type newClientHandlerFunc func()
 
 var channel *gosocketio.Channel
 
@@ -37,16 +37,16 @@ type webServer struct {
 	socketServer *gosocketio.Server
 }
 
-func newWebServer(port string, sensorHandler http.HandlerFunc) webServer {
+func newWebServer(port string, newClientHandler newClientHandlerFunc) webServer {
 	router := gmux.NewRouter().StrictSlash(true)
 	socketServer := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
 	socketServer.On(gosocketio.OnConnection, func(c *gosocketio.Channel) {
 		logger.Println("New client connected")
 		channel = c
-		// channel.Join(channelName)
+		// c.BroadcastTo("chat", "message", msg)
+		newClientHandler()
 	})
 	router.Handle("/socket.io/", socketServer)
-	router.Handle("/sensors", sensorHandler)
 	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
 	router.PathPrefix("/").Handler(spa)
 
@@ -68,17 +68,13 @@ func (s webServer) startServer() {
 }
 
 func (s webServer) sendMessage(message string) {
-	if channel != nil {
-		messageSplit := strings.Split(message, "|")
-		message := Message{
-			Source: messageSplit[0],
-			Status: messageSplit[1],
-		}
-		logger.Println("Broadcasting to all:", message)
-		s.socketServer.BroadcastToAll("sensor/status", message)
-	} else {
-		logger.Println("channel is nil")
+	messageSplit := strings.Split(message, "|")
+	messageStruct := Message{
+		Source: messageSplit[0],
+		Status: messageSplit[1],
 	}
+	logger.Println("Broadcasting to all:", messageStruct)
+	s.socketServer.BroadcastToAll("sensor/status", messageStruct)
 }
 
 // spaHandler implements the http.Handler interface, so we can use it
