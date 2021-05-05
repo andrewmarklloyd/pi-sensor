@@ -1,5 +1,8 @@
 # pi-sensor
 
-Companion kafka producer and consumer apps to send and receive messages about changes in magnetic sensor status.
+### Goals
+client
+- raspberry pi reads sensor status every n seconds. if the status has changed since last time then send an mqtt message to the server <open|closed>
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+server
+- 
