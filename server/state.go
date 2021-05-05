@@ -2,35 +2,32 @@ package main
 
 import (
 	"context"
-	"os"
 
 	"github.com/go-redis/redis/v8"
 )
 
-// Client allows reading and writing state of the sensors
-type Client struct {
-	redisClient redis.Client
-}
-
 var ctx = context.Background()
 
-// Init configures the state client
-func (s *Client) Init() error {
-	options, err := redis.ParseURL(os.Getenv("REDIS_URL"))
-	if err != nil {
-		return err
-	}
-	s.redisClient = *redis.NewClient(options)
-
-	return nil
+type redisClient struct {
+	client redis.Client
 }
 
-// ReadAllState gets all keys and values in state
-func (s *Client) ReadAllState() (map[string]string, error) {
+func newRedisClient(redisURL string) (redisClient, error) {
+	redisClient := redisClient{}
+	options, err := redis.ParseURL(redisURL)
+	if err != nil {
+		return redisClient, err
+	}
+	redisClient.client = *redis.NewClient(options)
+
+	return redisClient, nil
+}
+
+func (r *redisClient) ReadAllState() (map[string]string, error) {
 	state := make(map[string]string)
-	keys := s.redisClient.Keys(ctx, "*").Val()
+	keys := r.client.Keys(ctx, "*").Val()
 	for _, k := range keys {
-		val, err := s.redisClient.Get(ctx, k).Result()
+		val, err := r.client.Get(ctx, k).Result()
 		if err != nil {
 			return state, err
 		}
@@ -39,9 +36,8 @@ func (s *Client) ReadAllState() (map[string]string, error) {
 	return state, nil
 }
 
-// ReadState returns the sensor state
-func (s *Client) ReadState(key string) (string, error) {
-	val, err := s.redisClient.Get(ctx, key).Result()
+func (r *redisClient) ReadState(key string) (string, error) {
+	val, err := r.client.Get(ctx, key).Result()
 	if err != nil {
 		return "", err
 	}
@@ -49,9 +45,8 @@ func (s *Client) ReadState(key string) (string, error) {
 	return val, nil
 }
 
-// WriteState sets the sensor state
-func (s *Client) WriteState(key string, value string) error {
-	err := s.redisClient.Set(ctx, key, value, 0).Err()
+func (r *redisClient) WriteState(key string, value string) error {
+	err := r.client.Set(ctx, key, value, 0).Err()
 	if err != nil {
 		return err
 	}
