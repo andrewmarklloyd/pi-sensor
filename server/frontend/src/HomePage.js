@@ -19,7 +19,7 @@ class Home extends Component {
     this.state = { data: [] }
     var url
     if (window.location.protocol === "https:") {
-      url = `wss://${window.location.host}/ws`
+      url = `wss://${window.location.host}`
     } else {
       url = "ws://localhost:8080"
     }
