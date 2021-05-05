@@ -74,6 +74,7 @@ func (s webServer) sendMessage(message string) {
 			Source: messageSplit[0],
 			Status: messageSplit[1],
 		}
+		logger.Println("Broadcasting to all:", message)
 		s.socketServer.BroadcastToAll("sensor/status", message)
 	} else {
 		logger.Println("channel is nil")
