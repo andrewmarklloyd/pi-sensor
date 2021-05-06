@@ -8,7 +8,11 @@ import (
 
 	gosocketio "github.com/ambelovsky/gosf-socketio"
 	"github.com/ambelovsky/gosf-socketio/transport"
+	"github.com/dghubble/gologin/v2"
+	"github.com/dghubble/gologin/v2/google"
 	gmux "github.com/gorilla/mux"
+	"golang.org/x/oauth2"
+	googleOAuth2 "golang.org/x/oauth2/google"
 )
 
 const (
@@ -31,7 +35,7 @@ type webServer struct {
 	socketServer *gosocketio.Server
 }
 
-func newWebServer(port string, newClientHandler newClientHandlerFunc) webServer {
+func newWebServer(serverConfig ServerConfig, newClientHandler newClientHandlerFunc) webServer {
 	router := gmux.NewRouter().StrictSlash(true)
 	socketServer := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
 	socketServer.On(gosocketio.OnConnection, func(c *gosocketio.Channel) {
@@ -41,12 +45,21 @@ func newWebServer(port string, newClientHandler newClientHandlerFunc) webServer 
 		newClientHandler()
 	})
 	router.Handle("/socket.io/", socketServer)
+	oauth2Config := &oauth2.Config{
+		ClientID:     serverConfig.googleConfig.clientId,
+		ClientSecret: serverConfig.googleConfig.clientSecret,
+		RedirectURL:  serverConfig.googleConfig.redirectUrl,
+		Endpoint:     googleOAuth2.Endpoint,
+		Scopes:       []string{"profile", "email"},
+	}
+	stateConfig := gologin.DebugOnlyCookieConfig
+	router.Handle("/google/login", google.StateHandler(stateConfig, google.LoginHandler(oauth2Config, nil)))
 	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
 	router.PathPrefix("/").Handler(spa)
 
 	srv := &http.Server{
 		Handler:      router,
-		Addr:         "0.0.0.0:" + port,
+		Addr:         "0.0.0.0:" + serverConfig.port,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}

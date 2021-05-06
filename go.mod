@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/ambelovsky/gosf-socketio v0.0.0-20201109193639-add9d32f8b19
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dghubble/gologin/v2 v2.3.0 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.3.4
 	github.com/go-redis/redis/v8 v8.4.3
 	github.com/gofrs/uuid v4.0.0+incompatible // indirect
@@ -12,6 +13,7 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/stianeikeland/go-rpio v4.2.0+incompatible
+	golang.org/x/oauth2 v0.0.0-20210427180440-81ed05c6b58c // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -23,11 +23,11 @@ type mqttClient struct {
 	mockMode bool
 }
 
-func newMQTTClient(brokerurl string, topic string, mockMode bool) mqttClient {
+func newMQTTClient(serverConfig ServerConfig) mqttClient {
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker(brokerurl)
+	opts.AddBroker(serverConfig.brokerurl)
 	var clientID string
-	if mockMode {
+	if serverConfig.mockMode {
 		u, _ := uuid.NewV4()
 		clientID = u.String()
 	} else {
@@ -43,8 +43,8 @@ func newMQTTClient(brokerurl string, topic string, mockMode bool) mqttClient {
 	}
 	return mqttClient{
 		client,
-		topic,
-		mockMode,
+		serverConfig.topic,
+		serverConfig.mockMode,
 	}
 }
 
