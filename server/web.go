@@ -1,30 +1,37 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	gosocketio "github.com/ambelovsky/gosf-socketio"
 	"github.com/ambelovsky/gosf-socketio/transport"
 	"github.com/dghubble/gologin/v2"
 	"github.com/dghubble/gologin/v2/google"
+	"github.com/dghubble/sessions"
 	gmux "github.com/gorilla/mux"
 	"golang.org/x/oauth2"
 	googleOAuth2 "golang.org/x/oauth2/google"
 )
 
 const (
-	publicDir = "/frontend/build/"
-
 	// Maximum message size allowed from peer.
 	maxMessageSize = 8192
 	// Time allowed to read the next pong message from the peer.
 	pongWait = 60 * time.Second
 
-	channelName = "sensor"
+	publicDir      = "/frontend/build/"
+	channelName    = "sensor"
+	sessionName    = "pi-sensor"
+	sessionUserKey = "9024685F-97A4-441E-90D3-F0F11AA7A602"
+	post           = "post"
 )
+
+var sessionStore *sessions.CookieStore
 
 type newClientHandlerFunc func()
 
@@ -52,8 +59,10 @@ func newWebServer(serverConfig ServerConfig, newClientHandler newClientHandlerFu
 		Endpoint:     googleOAuth2.Endpoint,
 		Scopes:       []string{"profile", "email"},
 	}
+	sessionStore = sessions.NewCookieStore([]byte(serverConfig.googleConfig.sessionSecret), nil)
 	stateConfig := gologin.DebugOnlyCookieConfig
 	router.Handle("/google/login", google.StateHandler(stateConfig, google.LoginHandler(oauth2Config, nil)))
+	router.Handle("/google/callback", google.StateHandler(stateConfig, google.CallbackHandler(oauth2Config, issueSession(serverConfig), nil)))
 	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
 	router.PathPrefix("/").Handler(spa)
 
@@ -116,4 +125,26 @@ func (h spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// otherwise, use http.FileServer to serve the static dir
 	http.FileServer(http.Dir(h.staticPath)).ServeHTTP(w, r)
+}
+
+// issueSession issues a cookie session after successful Google login
+func issueSession(serverConfig ServerConfig) http.Handler {
+	fn := func(w http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+		googleUser, err := google.UserFromContext(ctx)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !strings.Contains(serverConfig.googleConfig.authorizedUsers, googleUser.Email) {
+			http.Redirect(w, req, fmt.Sprintf("%serror.html", publicDir), http.StatusFound)
+			return
+		}
+		// 2. Implement a success handler to issue some form of session
+		session := sessionStore.New(sessionName)
+		session.Values[sessionUserKey] = googleUser.Id
+		session.Save(w)
+		http.Redirect(w, req, "/", http.StatusFound)
+	}
+	return http.HandlerFunc(fn)
 }
