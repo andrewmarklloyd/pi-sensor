@@ -26,7 +26,7 @@ const (
 
 	publicDir      = "/frontend/build/"
 	channelName    = "sensor"
-	sessionName    = "pi-sensor"
+	sessionName    = "pi-sensor" // TODO need to make this dynamic?
 	sessionUserKey = "9024685F-97A4-441E-90D3-F0F11AA7A602"
 	post           = "post"
 )
@@ -63,8 +63,9 @@ func newWebServer(serverConfig ServerConfig, newClientHandler newClientHandlerFu
 	stateConfig := gologin.DebugOnlyCookieConfig
 	router.Handle("/google/login", google.StateHandler(stateConfig, google.LoginHandler(oauth2Config, nil)))
 	router.Handle("/google/callback", google.StateHandler(stateConfig, google.CallbackHandler(oauth2Config, issueSession(serverConfig), nil)))
+	router.HandleFunc("/logout", logoutHandler)
 	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
-	router.PathPrefix("/").Handler(spa)
+	router.PathPrefix("/").Handler(requireLogin(spa))
 
 	srv := &http.Server{
 		Handler:      router,
@@ -147,4 +148,33 @@ func issueSession(serverConfig ServerConfig) http.Handler {
 		http.Redirect(w, req, "/", http.StatusFound)
 	}
 	return http.HandlerFunc(fn)
+}
+
+// logoutHandler destroys the session on posts and redirects to home.
+func logoutHandler(w http.ResponseWriter, req *http.Request) {
+	logger.Println("Logging out user")
+	if req.Method == post {
+		sessionStore.Destroy(w, sessionName)
+	}
+	http.Redirect(w, req, "/", http.StatusFound)
+}
+
+// requireLogin redirects unauthenticated users to the login route.
+func requireLogin(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, req *http.Request) {
+		if !isAuthenticated(req) {
+			http.Redirect(w, req, "/google/login", http.StatusFound)
+			return
+		}
+		next.ServeHTTP(w, req)
+	}
+	return http.HandlerFunc(fn)
+}
+
+// isAuthenticated returns true if the user has a signed session cookie.
+func isAuthenticated(req *http.Request) bool {
+	if _, err := sessionStore.Get(req, sessionName); err == nil {
+		return true
+	}
+	return false
 }
