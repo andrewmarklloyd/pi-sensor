@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -33,7 +32,11 @@ var _redisClient redisClient
 func newClientHandler() {
 	state, _ := _redisClient.ReadAllState()
 	for k, v := range state {
-		_webServer.sendMessage(fmt.Sprintf("%s|%s", k, v))
+		messageStruct := Message{
+			Source: k,
+			Status: v,
+		}
+		_webServer.sendMessage(toString(messageStruct))
 	}
 }
 
