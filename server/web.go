@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -24,11 +25,12 @@ const (
 	// Time allowed to read the next pong message from the peer.
 	pongWait = 60 * time.Second
 
-	publicDir      = "/frontend/build/"
-	channelName    = "sensor"
-	sessionName    = "pi-sensor" // TODO need to make this dynamic?
-	sessionUserKey = "9024685F-97A4-441E-90D3-F0F11AA7A602"
-	post           = "post"
+	publicDir         = "/frontend/build/"
+	channelName       = "sensor"
+	sessionName       = "pi-sensor" // TODO need to make this dynamic?
+	sessionUserKey    = "9024685F-97A4-441E-90D3-F0F11AA7A602"
+	post              = "post"
+	sensorListChannel = "sensor/list"
 )
 
 var sessionStore *sessions.CookieStore
@@ -84,9 +86,22 @@ func (s webServer) startServer() {
 	logger.Fatal(s.httpServer.ListenAndServe())
 }
 
-func (s webServer) sendMessage(message string) {
+func (s webServer) sendMessage(channel string, message string) {
 	messageStruct := toStruct(message)
-	s.socketServer.BroadcastToAll("sensor/status", messageStruct)
+	s.socketServer.BroadcastToAll(channel, messageStruct)
+}
+
+func (s webServer) sendSensorList(sensors map[string]string) {
+	sensorList := Sensors{}
+	for k, v := range sensors {
+		m := Message{
+			k,
+			v,
+		}
+		sensorList.Array = append(sensorList.Array, m)
+	}
+	json, _ := json.Marshal(sensorList)
+	s.socketServer.BroadcastToAll(sensorListChannel, string(json))
 }
 
 // spaHandler implements the http.Handler interface, so we can use it

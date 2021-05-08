@@ -17,6 +17,7 @@ class Home extends Component {
   constructor(props) {
     super(props)
     this.state = { data: [] }
+    var component = this
     var url
     if (window.location.protocol === "https:") {
       url = `wss://${window.location.host}`
@@ -27,17 +28,9 @@ class Home extends Component {
     socket.on("connect", function() {
       console.log("connected")
     })
-  }
-
-  componentDidMount() {
-    // fetch('/sensors')
-    // .then(res => res.json())
-    // .then(json => {
-    //   this.setState({data: json})
-    // })
-    // .catch(err => {
-    //   console.log(err)
-    // })
+    socket.on("sensor/list", function(data) {
+      component.setState(JSON.parse(data))
+    })
   }
 
   render() {
@@ -46,25 +39,13 @@ class Home extends Component {
         <Page.Content>
         <Grid.Row cards={true}>
           <Grid.Col sm={6} lg={3}>
-            <Sensor source="garage" socket={socket}/>
-          </Grid.Col>
-          <Grid.Col sm={6} lg={3}>
-            <Sensor source="front-door" socket={socket}/>
+            {this.state.data.map(item => (
+              <Sensor key={item.source} source={item.source} socket={socket}/>
+            ))}
           </Grid.Col>
         </Grid.Row>
         </Page.Content>
       </SiteWrapper>
-      // <SiteWrapper>
-      //   <Page.Content>
-      //   <Grid.Row cards={true}>
-      //     <Grid.Col sm={6} lg={3}>
-      //       {Object.keys(this.state.data).map(key => (
-      //         <Sensor key={key} source={key} socket={socket}/>
-      //       ))}
-      //     </Grid.Col>
-      //   </Grid.Row>
-      //   </Page.Content>
-      // </SiteWrapper>
     );
   }
 }

@@ -14,6 +14,10 @@ type Message struct {
 	Status string `json:"status"`
 }
 
+type Sensors struct {
+	Array []Message `json:"data"`
+}
+
 func toString(m Message) string {
 	return fmt.Sprintf("%s%s%s", m.Source, delimiter, m.Status)
 }

@@ -26,6 +26,10 @@ var (
 	logger = log.New(os.Stdout, "[Pi-Sensor Server] ", log.LstdFlags)
 )
 
+const (
+	sensorStatusChannel = "sensor/status"
+)
+
 var _webServer webServer
 var _redisClient redisClient
 
@@ -36,8 +40,9 @@ func newClientHandler() {
 			Source: k,
 			Status: v,
 		}
-		_webServer.sendMessage(toString(messageStruct))
+		_webServer.sendMessage(sensorStatusChannel, toString(messageStruct))
 	}
+	_webServer.sendSensorList(state)
 }
 
 func main() {
@@ -94,10 +99,13 @@ func main() {
 	mqttClient.Subscribe(func(message string) {
 		messageStruct := toStruct(message)
 		_redisClient.WriteState(messageStruct.Source, messageStruct.Status)
-		_webServer.sendMessage(message)
+		_webServer.sendMessage(sensorStatusChannel, message)
 	})
-	// var err error
-	_redisClient, _ = newRedisClient(serverConfig.redisurl)
 
+	var err error
+	_redisClient, err = newRedisClient(serverConfig.redisurl)
+	if err != nil {
+		logger.Fatalln("Error creating redis client:", err)
+	}
 	_webServer.startServer()
 }
