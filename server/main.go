@@ -7,10 +7,6 @@ import (
 	"strconv"
 )
 
-func init() {
-
-}
-
 var (
 	brokerurl       = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
 	topic           = flag.String("topic", os.Getenv("TOPIC"), "The topic to subscribe")
@@ -34,15 +30,12 @@ var _webServer webServer
 var _redisClient redisClient
 
 func newClientHandler() {
-	state, _ := _redisClient.ReadAllState()
-	for k, v := range state {
-		messageStruct := Message{
-			Source: k,
-			Status: v,
-		}
-		_webServer.sendMessage(sensorStatusChannel, toString(messageStruct))
+	state, err := _redisClient.ReadAllState()
+	if err != nil {
+		logger.Println("Error getting state from redis:", err)
+	} else {
+		_webServer.sendSensorList(state)
 	}
-	_webServer.sendSensorList(state)
 }
 
 func main() {

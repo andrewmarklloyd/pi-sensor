@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import translateStatus from "./DataModel";
 
 import {
   StampCard,
@@ -11,10 +12,11 @@ class Sensor extends Component {
     var component = this
     this.props.socket.on("sensor/status", function(data) {
       if (data.source == source) {
+        var state = translateStatus(data.status)
         component.setState({
-          color: data.status === "OPEN" ? "red" : "green",
+          color: state.status,
           source: data.source,
-          icon: data.status === "OPEN" ? "unlock" : "lock",
+          icon: state.status,
           timestamp: "10 min ago"
         })  
       }
@@ -35,7 +37,7 @@ class Sensor extends Component {
   render() {
     return (
       <StampCard
-        color={this.state.color}
+        color={this.props.color || this.state.color}
         icon={this.props.icon || this.state.icon}
         header={
           <a href="/">

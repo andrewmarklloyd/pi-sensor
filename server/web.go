@@ -48,7 +48,6 @@ func newWebServer(serverConfig ServerConfig, newClientHandler newClientHandlerFu
 	router := gmux.NewRouter().StrictSlash(true)
 	socketServer := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
 	socketServer.On(gosocketio.OnConnection, func(c *gosocketio.Channel) {
-		logger.Println("New client connected")
 		channel = c
 		// c.BroadcastTo("chat", "message", msg)
 		newClientHandler()
