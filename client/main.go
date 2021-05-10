@@ -58,8 +58,7 @@ func main() {
 		currentStatus = pinClient.CurrentStatus()
 		if currentStatus != lastStatus {
 			lastStatus = currentStatus
-			logger.Printf("Current status: %s", currentStatus)
-			mqttClient.publish(*sensorSource, currentStatus)
+			mqttClient.publish(*sensorSource, currentStatus, time.Now().UTC().Unix())
 		}
 		time.Sleep(5 * time.Second)
 	}

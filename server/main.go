@@ -89,9 +89,10 @@ func main() {
 	_webServer = newWebServer(serverConfig, newClientHandler)
 
 	mqttClient := newMQTTClient(serverConfig)
-	mqttClient.Subscribe(func(message string) {
-		messageStruct := toStruct(message)
-		_redisClient.WriteState(messageStruct.Source, messageStruct.Status)
+	mqttClient.Subscribe(func(messageString string) {
+		message := toStruct(messageString)
+		logger.Println(messageString)
+		_redisClient.WriteState(message.Source, messageString)
 		_webServer.sendMessage(sensorStatusChannel, message)
 	})
 

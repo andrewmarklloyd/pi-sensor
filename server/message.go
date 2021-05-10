@@ -10,8 +10,9 @@ const (
 )
 
 type Message struct {
-	Source string `json:"source"`
-	Status string `json:"status"`
+	Source    string `json:"source"`
+	Status    string `json:"status"`
+	Timestamp string `json:"timestamp"`
 }
 
 type Sensors struct {
@@ -19,13 +20,14 @@ type Sensors struct {
 }
 
 func toString(m Message) string {
-	return fmt.Sprintf("%s%s%s", m.Source, delimiter, m.Status)
+	return fmt.Sprintf("%s%s%s%s%s", m.Source, delimiter, m.Status, delimiter, m.Timestamp)
 }
 
 func toStruct(s string) Message {
 	messageSplit := strings.Split(s, delimiter)
 	return Message{
-		Source: messageSplit[0],
-		Status: messageSplit[1],
+		Source:    messageSplit[0],
+		Status:    messageSplit[1],
+		Timestamp: messageSplit[2],
 	}
 }

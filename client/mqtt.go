@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gofrs/uuid"
@@ -48,8 +49,10 @@ func (c mqttClient) Cleanup() {
 	c.client.Disconnect(250)
 }
 
-func (c mqttClient) publish(sensorSource string, currentStatus string) {
-	text := fmt.Sprintf("%s|%s", sensorSource, currentStatus)
+func (c mqttClient) publish(sensorSource string, currentStatus string, timestamp int64) {
+	ts := strconv.FormatInt(timestamp, 10)
+	text := fmt.Sprintf("%s|%s|%s", sensorSource, currentStatus, ts)
+	logger.Println(text)
 	token := c.client.Publish(c.topic, 0, false, text)
 	token.Wait()
 }

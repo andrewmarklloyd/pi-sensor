@@ -10,7 +10,7 @@ import {
 
 import SiteWrapper from "./SiteWrapper";
 import Sensor from "./Sensor";
-import translateStatus from "./DataModel";
+import { translateStatus, timeSince } from "./DataModel";
 
 var socket
 
@@ -18,7 +18,6 @@ class Home extends Component {
   constructor(props) {
     super(props)
     this.state = { data: [] }
-    var component = this
     var url
     if (window.location.protocol === "https:") {
       url = `wss://${window.location.host}`
@@ -32,7 +31,18 @@ class Home extends Component {
   componentDidMount() {
     var component = this
     socket.on("sensor/list", function(data) {
-      component.setState(JSON.parse(data))
+      var d = JSON.parse(data)
+      var sensors = []
+      d.data.forEach(element => {
+        sensors.push({
+          source: element.source,
+          status: element.status,
+          timestamp: element.timestamp,
+          timesince: timeSince(element.timestamp),
+          icon: "zap-off"
+        })
+      })
+      component.setState({data: sensors})
     })
   }
 
@@ -45,7 +55,7 @@ class Home extends Component {
           <Grid.Col sm={6} lg={3}>
             {this.state.data.map(item => (
               state = translateStatus(item.status),
-              <Sensor key={item.source} source={item.source} socket={socket} status={item.status} icon={state.icon} color={state.color}/>
+              <Sensor key={item.source} source={item.source} socket={socket} status={item.status} icon={state.icon} color={state.color} timestamp={item.timestamp} timesince={item.timesince}/>
             ))}
           </Grid.Col>
         </Grid.Row>

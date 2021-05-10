@@ -85,18 +85,14 @@ func (s webServer) startServer() {
 	logger.Fatal(s.httpServer.ListenAndServe())
 }
 
-func (s webServer) sendMessage(channel string, message string) {
-	messageStruct := toStruct(message)
-	s.socketServer.BroadcastToAll(channel, messageStruct)
+func (s webServer) sendMessage(channel string, message Message) {
+	s.socketServer.BroadcastToAll(channel, message)
 }
 
 func (s webServer) sendSensorList(sensors map[string]string) {
 	sensorList := Sensors{}
-	for k, v := range sensors {
-		m := Message{
-			k,
-			v,
-		}
+	for _, v := range sensors {
+		m := toStruct(v)
 		sensorList.Array = append(sensorList.Array, m)
 	}
 	json, _ := json.Marshal(sensorList)

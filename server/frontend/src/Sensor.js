@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import translateStatus from "./DataModel";
+import { translateStatus, timeSince } from "./DataModel";
 
 import {
   StampCard,
@@ -12,39 +12,50 @@ class Sensor extends Component {
     var component = this
     this.props.socket.on("sensor/status", function(data) {
       if (data.source == source) {
-        var state = translateStatus(data.status)
+        var updated = translateStatus(data.status)
         component.setState({
-          color: state.status,
+          color: updated.color,
           source: data.source,
-          icon: state.status,
-          timestamp: "10 min ago"
-        })  
+          icon: updated.icon,
+          timestamp: data.timestamp,
+          timesince: timeSince(data.timestamp)
+        })
       }
     })
   }
 
-  componentDidMount() {
-    
-  }
-
   state = {
-    color: "grey",
+    color: "",
     source: this.props.source,
     icon: "zap-off",
-    timestamp: "Unknown"
+    timestamp: "",
+    timesince: ""
   };
+
+  componentDidMount() {
+    var component = this
+    setInterval(() => {
+      component.setState({
+        color: component.state.color !== "" ? component.state.color : component.props.color,
+        source: component.state.source !== "" ? component.state.source : component.props.source,
+        icon: component.state.icon !== "" ? component.state.icon : component.props.icon,
+        timestamp: component.state.timestamp !== "" ? component.state.timestamp : component.props.timestamp,
+        timesince: timeSince(component.state.timestamp !== "" ? component.state.timestamp : component.props.timestamp)
+      })
+    }, 60000)
+  }
 
   render() {
     return (
       <StampCard
-        color={this.props.color || this.state.color}
-        icon={this.props.icon || this.state.icon}
+        color={this.state.color !== "" ? this.state.color : this.props.color}
+        icon={this.state.icon !== "zap-off" ? this.state.icon : this.props.icon}
         header={
           <a href="/">
             {this.props.source}
           </a>
         }
-        footer={this.props.timestamp || this.state.timestamp}
+        footer={this.state.timesince !== "" ? this.state.timesince : this.props.timesince}
       />
     );
   }
