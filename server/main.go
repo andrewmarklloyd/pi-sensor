@@ -91,7 +91,6 @@ func main() {
 	mqttClient := newMQTTClient(serverConfig)
 	mqttClient.Subscribe(func(messageString string) {
 		message := toStruct(messageString)
-		logger.Println(messageString)
 		_redisClient.WriteState(message.Source, messageString)
 		_webServer.sendMessage(sensorStatusChannel, message)
 	})

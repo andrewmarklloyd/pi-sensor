@@ -52,7 +52,6 @@ func (c mqttClient) Cleanup() {
 func (c mqttClient) publish(sensorSource string, currentStatus string, timestamp int64) {
 	ts := strconv.FormatInt(timestamp, 10)
 	text := fmt.Sprintf("%s|%s|%s", sensorSource, currentStatus, ts)
-	logger.Println(text)
 	token := c.client.Publish(c.topic, 0, false, text)
 	token.Wait()
 }
