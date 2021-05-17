@@ -7,6 +7,7 @@ type ServerConfig struct {
 	port         string
 	mockMode     bool
 	googleConfig GoogleConfig
+	twilioConfig TwilioConfig
 }
 
 type GoogleConfig struct {
@@ -15,4 +16,11 @@ type GoogleConfig struct {
 	clientSecret    string
 	redirectUrl     string
 	sessionSecret   string
+}
+
+type TwilioConfig struct {
+	accountSID string
+	authToken  string
+	to         string
+	from       string
 }

@@ -8,16 +8,20 @@ import (
 )
 
 var (
-	brokerurl       = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
-	topic           = flag.String("topic", os.Getenv("TOPIC"), "The topic to subscribe")
-	redisurl        = flag.String("redisurl", os.Getenv("REDIS_URL"), "The redis cluster to connect to")
-	mockFlag        = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
-	port            = flag.String("port", os.Getenv("PORT"), "Port for the web server")
-	authorizedusers = flag.String("authorizedusers", os.Getenv("AUTHORIZED_USERS"), "")
-	clientid        = flag.String("clientid", os.Getenv("GOOGLE_CLIENT_ID"), "")
-	clientsecret    = flag.String("clientsecret", os.Getenv("GOOGLE_CLIENT_SECRET"), "")
-	redirecturl     = flag.String("redirecturl", os.Getenv("REDIRECT_URL"), "")
-	sessionsecret   = flag.String("sessionsecret", os.Getenv("SESSION_SECRET"), "")
+	brokerurl        = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
+	topic            = flag.String("topic", os.Getenv("TOPIC"), "The topic to subscribe")
+	redisurl         = flag.String("redisurl", os.Getenv("REDIS_URL"), "The redis cluster to connect to")
+	mockFlag         = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
+	port             = flag.String("port", os.Getenv("PORT"), "Port for the web server")
+	authorizedusers  = flag.String("authorizedusers", os.Getenv("AUTHORIZED_USERS"), "")
+	clientid         = flag.String("clientid", os.Getenv("GOOGLE_CLIENT_ID"), "")
+	clientsecret     = flag.String("clientsecret", os.Getenv("GOOGLE_CLIENT_SECRET"), "")
+	redirecturl      = flag.String("redirecturl", os.Getenv("REDIRECT_URL"), "")
+	sessionsecret    = flag.String("sessionsecret", os.Getenv("SESSION_SECRET"), "")
+	twilioaccountsid = flag.String("twilioaccountsid", os.Getenv("TWILIO_ACCOUNT_SID"), "")
+	twilioauthtoken  = flag.String("twilioauthtoken", os.Getenv("TWILIO_AUTH_TOKEN"), "")
+	twilioto         = flag.String("twilioto", os.Getenv("TWILIO_TO"), "")
+	twiliofrom       = flag.String("twiliofrom", os.Getenv("TWILIO_FROM"), "")
 
 	logger = log.New(os.Stdout, "[Pi-Sensor Server] ", log.LstdFlags)
 )
@@ -69,6 +73,19 @@ func main() {
 	if *sessionsecret == "" {
 		logger.Fatalln("sessionsecret must be set")
 	}
+	if *twilioaccountsid == "" {
+		logger.Fatalln("twilioaccountsid must be set")
+	}
+	if *twilioauthtoken == "" {
+		logger.Fatalln("twilioauthtoken must be set")
+	}
+	if *twilioto == "" {
+		logger.Fatalln("twilioto must be set")
+	}
+	if *twiliofrom == "" {
+		logger.Fatalln("twiliofrom must be set")
+	}
+
 	mockMode, _ := strconv.ParseBool(*mockFlag)
 
 	serverConfig := ServerConfig{
@@ -83,6 +100,12 @@ func main() {
 			clientSecret:    *clientsecret,
 			redirectUrl:     *redirecturl,
 			sessionSecret:   *sessionsecret,
+		},
+		twilioConfig: TwilioConfig{
+			accountSID: *twilioaccountsid,
+			authToken:  *twilioauthtoken,
+			to:         *twilioto,
+			from:       *twiliofrom,
 		},
 	}
 
