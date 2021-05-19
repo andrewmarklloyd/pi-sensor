@@ -11,7 +11,7 @@ class Sensor extends Component {
     var source = this.state.source
     var component = this
     this.props.socket.on("sensor/status", function(data) {
-      if (data.source == source) {
+      if (data.source === source) {
         var updated = translateStatus(data.status)
         component.setState({
           color: updated.color,
