@@ -54,7 +54,7 @@ class Home extends Component {
         <Grid.Row cards={true}>
           <Grid.Col sm={6} lg={3}>
             {this.state.data.map(item => (
-              state = translateStatus(item.status),
+              state = translateStatus(item.status), // eslint-disable-line no-sequences
               <Sensor key={item.source} source={item.source} socket={socket} status={item.status} icon={state.icon} color={state.color} timestamp={item.timestamp} timesince={item.timesince}/>
             ))
             }
