@@ -115,6 +115,12 @@ func main() {
 	mqttClient := newMQTTClient(serverConfig)
 	mqttClient.Subscribe(func(messageString string) {
 		message := toStruct(messageString)
+		lastMessageString, _ := _redisClient.ReadState(message.Source)
+		lastMessage := toStruct(lastMessageString)
+		// TODO: add feature flag
+		alertIfOpen(lastMessage, message)
+		_redisClient.WriteState(message.Source, messageString)
+		_webServer.sendMessage(sensorStatusChannel, message)
 		err := _redisClient.WriteState(message.Source, messageString)
 		if err == nil {
 			_webServer.sendMessage(sensorStatusChannel, message)
@@ -130,3 +136,39 @@ func main() {
 	}
 	_webServer.startServer()
 }
+
+func alertIfOpen(lastMessage Message, currentMessage Message) {
+	logger.Println(lastMessage, currentMessage)
+	if lastMessage.Status == "CLOSED" && currentMessage.Status == "OPEN" {
+		logger.Println("Door was just opened")
+	} else if lastMessage.Status == "OPEN" && currentMessage.Status == "CLOSED" {
+		logger.Println("Door was just closed")
+	} else {
+		// intentionally do nothing
+	}
+}
+
+// func configureOpenAlert(statusInterval int) {
+// 	cronLib.AddFunc(fmt.Sprintf("@every %ds", statusInterval), func() {
+// 		state, err := util.ReadState()
+// 		if err != nil {
+// 			log.Println(fmt.Sprintf("Error getting armed status: %s", err))
+// 			return
+// 		}
+// 		if state.FirstReportedOpenTime != "" {
+// 			firstReportedOpenTime, _ := time.Parse(time.RFC3339, state.FirstReportedOpenTime)
+// 			now := time.Now()
+// 			maxTimeSinceDoorOpened := now.Add(-maxDoorOpenedTime)
+// 			if firstReportedOpenTime.Before(maxTimeSinceDoorOpened) && !state.AlertNotified {
+// 				message := fmt.Sprintf("Door opened for longer than %s", maxDoorOpenedTime)
+// 				if testMessageMode {
+// 					log.Println(message)
+// 				} else {
+// 					messenger.SendMessage(message)
+// 				}
+// 				state.AlertNotified = true
+// 				util.WriteState(state)
+// 			}
+// 		}
+// 	})
+// }
