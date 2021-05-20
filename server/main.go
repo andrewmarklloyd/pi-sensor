@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -114,8 +115,12 @@ func main() {
 	mqttClient := newMQTTClient(serverConfig)
 	mqttClient.Subscribe(func(messageString string) {
 		message := toStruct(messageString)
-		_redisClient.WriteState(message.Source, messageString)
-		_webServer.sendMessage(sensorStatusChannel, message)
+		err := _redisClient.WriteState(message.Source, messageString)
+		if err == nil {
+			_webServer.sendMessage(sensorStatusChannel, message)
+		} else {
+			logger.Println(fmt.Errorf("Error writing state to Redis: %s", err))
+		}
 	})
 
 	var err error

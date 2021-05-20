@@ -46,9 +46,7 @@ func (r *redisClient) ReadState(key string) (string, error) {
 }
 
 func (r *redisClient) WriteState(key string, value string) error {
-	// err := r.client.Set(ctx, key, value, 0).Err()
 	d := r.client.Set(ctx, key, value, 0)
-	logger.Println(d)
 	err := d.Err()
 	if err != nil {
 		return err
