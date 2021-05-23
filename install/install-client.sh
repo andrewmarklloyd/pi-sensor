@@ -11,9 +11,14 @@ releaseURL=$(curl -s https://api.github.com/repos/andrewmarklloyd/pi-sensor/rele
 curl -sL -o /tmp/release.tar.gz "${releaseURL}"
 tar xvfz /tmp/release.tar.gz -C "${archive_path}"
 
+mv "${archive_path}/pi-sensor" ${install_dir}
+mv "${archive_path}/run.sh" ${install_dir}
+
 # Configure Heroku to get secrets
 echo "Enter the Heroku API key to configure the app:"
 read -s HEROKU_API_KEY
+echo "Enter the name of the sensor source (example: garage, front-door, back-door, etc.)"
+read -s SENSOR_SOURCE
 
 tokenCheckError=$(curl -s -n https://api.heroku.com/apps/pi-sensor/config-vars \
   -H "Accept: application/vnd.heroku+json; version=3" \
@@ -24,9 +29,10 @@ if [[ ${tokenCheckError} != "null" ]]; then
 fi
 
 # use ~ as a delimiter
-sed "s~{{.HEROKU_API_KEY}}~${HEROKU_API_KEY}~" \
-     ${archive_path}/install/pi-sensor.service.tmpl \
-     > ${archive_path}/install/pi-alarm.service
+sed -e "s~{{.HEROKU_API_KEY}}~${HEROKU_API_KEY}~" \
+    -e "s~{{.SENSOR_SOURCE}}~${SENSOR_SOURCE}~" \
+    ${archive_path}/pi-sensor.service.tmpl \
+    > ${archive_path}/pi-sensor.service
 
 sudo mv ${archive_path}/pi-sensor.service /etc/systemd/system/
 sudo systemctl enable pi-sensor.service
