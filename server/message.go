@@ -24,10 +24,18 @@ func toString(m Message) string {
 }
 
 func toStruct(s string) Message {
-	messageSplit := strings.Split(s, delimiter)
-	return Message{
-		Source:    messageSplit[0],
-		Status:    messageSplit[1],
-		Timestamp: messageSplit[2],
+	if s == "" {
+		return Message{
+			Source:    "",
+			Status:    "",
+			Timestamp: "",
+		}
+	} else {
+		messageSplit := strings.Split(s, delimiter)
+		return Message{
+			Source:    messageSplit[0],
+			Status:    messageSplit[1],
+			Timestamp: messageSplit[2],
+		}
 	}
 }

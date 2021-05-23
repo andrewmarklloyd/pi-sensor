@@ -159,6 +159,6 @@ func alertIfOpen(lastMessage Message, currentMessage Message, messenger Messenge
 	} else if lastMessage.Status == "OPEN" && currentMessage.Status == "CLOSED" {
 		// intentionally do nothing
 	} else {
-		logger.Println("Something unexpected has occured, door status was not changed from open to closed OR from closed to open.")
+		logger.Println(fmt.Sprintf("Door status was not changed from open to closed OR from closed to open. Last status: %s, current status: %s", lastMessage.Status, currentMessage.Status))
 	}
 }
