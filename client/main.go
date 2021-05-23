@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -32,7 +33,7 @@ func main() {
 	}
 	mockMode, _ := strconv.ParseBool(*mockFlag)
 
-	defaultPin := 15
+	defaultPin := 18
 	pinNum, err := strconv.Atoi(os.Getenv("GPIO_PIN"))
 	if err != nil {
 		logger.Printf("Failed to parse GPIO_PIN env var, using default %d", defaultPin)
@@ -57,6 +58,7 @@ func main() {
 	for true {
 		currentStatus = pinClient.CurrentStatus()
 		if currentStatus != lastStatus {
+			logger.Println(fmt.Sprintf("%s is %s", *sensorSource, currentStatus))
 			lastStatus = currentStatus
 			mqttClient.publish(*sensorSource, currentStatus, time.Now().UTC().Unix())
 		}
