@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 var (
@@ -29,6 +30,7 @@ var (
 
 const (
 	sensorStatusChannel = "sensor/status"
+	openTimeout         = 5 * time.Minute
 )
 
 var _webServer webServer
@@ -110,15 +112,29 @@ func main() {
 		},
 	}
 
+	messenger := newMessenger(serverConfig.twilioConfig)
+	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
 	_webServer = newWebServer(serverConfig, newClientHandler)
-
 	mqttClient := newMQTTClient(serverConfig)
 	mqttClient.Subscribe(func(messageString string) {
 		message := toStruct(messageString)
 		lastMessageString, _ := _redisClient.ReadState(message.Source)
 		lastMessage := toStruct(lastMessageString)
-		// TODO: add feature flag
-		alertIfOpen(lastMessage, message)
+		alertIfOpen(lastMessage, message, messenger)
+		if message.Status == "OPEN" {
+			timer := time.AfterFunc(openTimeout, func() {
+				messenger.SendMessage(fmt.Sprintf("Door opened longer than %s", openTimeout))
+			})
+			delayTimerMap[message.Source] = timer
+		} else if message.Status == "CLOSED" {
+			currentTimer := delayTimerMap[message.Source]
+			if currentTimer != nil {
+				currentTimer.Stop()
+			}
+		} else {
+			logger.Println(fmt.Sprintf("Message status '%s' not recognized", message.Status))
+		}
+
 		_redisClient.WriteState(message.Source, messageString)
 		_webServer.sendMessage(sensorStatusChannel, message)
 		err := _redisClient.WriteState(message.Source, messageString)
@@ -137,38 +153,12 @@ func main() {
 	_webServer.startServer()
 }
 
-func alertIfOpen(lastMessage Message, currentMessage Message) {
-	logger.Println(lastMessage, currentMessage)
+func alertIfOpen(lastMessage Message, currentMessage Message, messenger Messenger) {
 	if lastMessage.Status == "CLOSED" && currentMessage.Status == "OPEN" {
-		logger.Println("Door was just opened")
+		messenger.SendMessage("Door was just opened")
 	} else if lastMessage.Status == "OPEN" && currentMessage.Status == "CLOSED" {
-		logger.Println("Door was just closed")
-	} else {
 		// intentionally do nothing
+	} else {
+		logger.Println("Something unexpected has occured, door status was not changed from open to closed OR from closed to open.")
 	}
 }
-
-// func configureOpenAlert(statusInterval int) {
-// 	cronLib.AddFunc(fmt.Sprintf("@every %ds", statusInterval), func() {
-// 		state, err := util.ReadState()
-// 		if err != nil {
-// 			log.Println(fmt.Sprintf("Error getting armed status: %s", err))
-// 			return
-// 		}
-// 		if state.FirstReportedOpenTime != "" {
-// 			firstReportedOpenTime, _ := time.Parse(time.RFC3339, state.FirstReportedOpenTime)
-// 			now := time.Now()
-// 			maxTimeSinceDoorOpened := now.Add(-maxDoorOpenedTime)
-// 			if firstReportedOpenTime.Before(maxTimeSinceDoorOpened) && !state.AlertNotified {
-// 				message := fmt.Sprintf("Door opened for longer than %s", maxDoorOpenedTime)
-// 				if testMessageMode {
-// 					log.Println(message)
-// 				} else {
-// 					messenger.SendMessage(message)
-// 				}
-// 				state.AlertNotified = true
-// 				util.WriteState(state)
-// 			}
-// 		}
-// 	})
-// }
