@@ -123,7 +123,7 @@ func main() {
 		alertIfOpen(lastMessage, message, messenger)
 		if message.Status == "OPEN" {
 			timer := time.AfterFunc(openTimeout, func() {
-				messenger.SendMessage(fmt.Sprintf("Door opened longer than %s", openTimeout))
+				messenger.SendMessage(fmt.Sprintf("%s opened longer than %s", message.Source, openTimeout))
 			})
 			delayTimerMap[message.Source] = timer
 		} else if message.Status == "CLOSED" {
@@ -155,7 +155,7 @@ func main() {
 
 func alertIfOpen(lastMessage Message, currentMessage Message, messenger Messenger) {
 	if lastMessage.Status == "CLOSED" && currentMessage.Status == "OPEN" {
-		messenger.SendMessage("Door was just opened")
+		messenger.SendMessage(fmt.Sprintf("%s was just opened", currentMessage.Source))
 	} else if lastMessage.Status == "OPEN" && currentMessage.Status == "CLOSED" {
 		// intentionally do nothing
 	} else {
