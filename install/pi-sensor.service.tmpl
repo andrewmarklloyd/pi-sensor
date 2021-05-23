@@ -3,14 +3,14 @@ Description=Pi-Sensor
 After=network.target
 
 [Service]
-ExecStart=/home/pi/pi-sensor
+ExecStart=/home/pi/run.sh
 WorkingDirectory=/home/pi/
 StandardOutput=inherit
 StandardError=inherit
 Restart=always
 User=pi
-Environment=CLOUDMQTT_URL={{.CLOUDMQTT_URL}}
-Environment=TOPIC={{.TOPIC}}
+Environment=HEROKU_APP={{.HEROKU_APP}}
+Environment=HEROKU_API_KEY={{.HEROKU_API_KEY}}
 Environment=SENSOR_SOURCE={{.SENSOR_SOURCE}}
 
 [Install]

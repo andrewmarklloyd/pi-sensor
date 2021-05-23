@@ -19,4 +19,4 @@ jobs:
         goarch: ${{ matrix.goarch }}
         project_path: "./client"
         binary_name: "pi-sensor"
-        extra_files: README.md install/pi-sensor.service.tmpl
+        extra_files: install/pi-sensor.service.tmpl install/run.sh
