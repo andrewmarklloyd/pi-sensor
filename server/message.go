@@ -15,6 +15,11 @@ type Message struct {
 	Timestamp string `json:"timestamp"`
 }
 
+type Heartbeat struct {
+	Source    string `json:"source"`
+	Timestamp string `json:"timestamp"`
+}
+
 type Sensors struct {
 	Array []Message `json:"data"`
 }
@@ -37,5 +42,13 @@ func toStruct(s string) Message {
 			Status:    messageSplit[1],
 			Timestamp: messageSplit[2],
 		}
+	}
+}
+
+func toHeartbeat(s string) Heartbeat {
+	heartbeatSplit := strings.Split(s, delimiter)
+	return Heartbeat{
+		Source:    heartbeatSplit[0],
+		Timestamp: heartbeatSplit[1],
 	}
 }

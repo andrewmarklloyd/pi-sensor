@@ -11,7 +11,6 @@ import (
 
 var (
 	brokerurl        = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
-	topic            = flag.String("topic", os.Getenv("TOPIC"), "The topic to subscribe")
 	redisurl         = flag.String("redisurl", os.Getenv("REDIS_URL"), "The redis cluster to connect to")
 	mockFlag         = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
 	port             = flag.String("port", os.Getenv("PORT"), "Port for the web server")
@@ -26,11 +25,15 @@ var (
 	twiliofrom       = flag.String("twiliofrom", os.Getenv("TWILIO_FROM"), "")
 
 	logger = log.New(os.Stdout, "[Pi-Sensor Server] ", log.LstdFlags)
+
+	mockMode bool
 )
 
 const (
-	sensorStatusChannel = "sensor/status"
-	openTimeout         = 5 * time.Minute
+	sensorStatusChannel    = "sensor/status"
+	sensorHeartbeatChannel = "sensor/heartbeat"
+	openTimeout            = 5 * time.Minute
+	heartbeatTimeout       = 15 * time.Second
 )
 
 var _webServer webServer
@@ -51,9 +54,6 @@ func main() {
 
 	if *brokerurl == "" {
 		logger.Fatalln("at least one broker is required")
-	}
-	if *topic == "" {
-		logger.Fatalln("topic to publish to is required")
 	}
 	if *redisurl == "" {
 		logger.Fatalln("redisurl is required")
@@ -89,11 +89,10 @@ func main() {
 		logger.Fatalln("twiliofrom must be set")
 	}
 
-	mockMode, _ := strconv.ParseBool(*mockFlag)
+	mockMode, _ = strconv.ParseBool(*mockFlag)
 
 	serverConfig := ServerConfig{
 		brokerurl: *brokerurl,
-		topic:     *topic,
 		redisurl:  *redisurl,
 		port:      *port,
 		mockMode:  mockMode,
@@ -116,7 +115,7 @@ func main() {
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
 	_webServer = newWebServer(serverConfig, newClientHandler)
 	mqttClient := newMQTTClient(serverConfig)
-	mqttClient.Subscribe(func(messageString string) {
+	mqttClient.Subscribe(sensorStatusChannel, func(messageString string) {
 		message := toStruct(messageString)
 		lastMessageString, _ := _redisClient.ReadState(message.Source)
 		lastMessage := toStruct(lastMessageString)
@@ -145,6 +144,20 @@ func main() {
 		}
 	})
 
+	var heartbeatMap map[string]*time.Timer = make(map[string]*time.Timer)
+	mqttClient.Subscribe(sensorHeartbeatChannel, func(messageString string) {
+		heartbeat := toHeartbeat(messageString)
+		logger.Println("Heartbeat from:", heartbeatMap)
+		currentTimer := heartbeatMap[heartbeat.Source]
+		if currentTimer != nil {
+			currentTimer.Stop()
+		}
+		timer := time.AfterFunc(heartbeatTimeout, func() {
+			logger.Println(fmt.Sprintf("Heartbeat timeout occurred for %s", heartbeat.Source))
+		})
+		heartbeatMap[heartbeat.Source] = timer
+	})
+
 	var err error
 	_redisClient, err = newRedisClient(serverConfig.redisurl)
 	if err != nil {
@@ -155,7 +168,11 @@ func main() {
 
 func alertIfOpen(lastMessage Message, currentMessage Message, messenger Messenger) {
 	if lastMessage.Status == "CLOSED" && currentMessage.Status == "OPEN" {
-		messenger.SendMessage(fmt.Sprintf("%s was just opened", currentMessage.Source))
+		if mockMode {
+			logger.Println(fmt.Sprintf("%s was just opened", currentMessage.Source))
+		} else {
+			messenger.SendMessage(fmt.Sprintf("%s was just opened", currentMessage.Source))
+		}
 	} else if lastMessage.Status == "OPEN" && currentMessage.Status == "CLOSED" {
 		// intentionally do nothing
 	} else {

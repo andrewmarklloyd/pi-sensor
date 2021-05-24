@@ -19,7 +19,6 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 
 type mqttClient struct {
 	client   mqtt.Client
-	topic    string
 	mockMode bool
 }
 
@@ -43,7 +42,6 @@ func newMQTTClient(serverConfig ServerConfig) mqttClient {
 	}
 	return mqttClient{
 		client,
-		serverConfig.topic,
 		serverConfig.mockMode,
 	}
 }
@@ -52,11 +50,11 @@ func (c mqttClient) Cleanup() {
 	c.client.Disconnect(250)
 }
 
-func (c mqttClient) Subscribe(subscribeHandler fn) {
+func (c mqttClient) Subscribe(topic string, subscribeHandler fn) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	if token := c.client.Subscribe(c.topic, 0, func(client mqtt.Client, msg mqtt.Message) {
+	if token := c.client.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
 		subscribeHandler(string(msg.Payload()))
 	}); token.Wait() && token.Error() != nil {
 		logger.Fatal(token.Error())

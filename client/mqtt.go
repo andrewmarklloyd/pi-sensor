@@ -8,6 +8,10 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+const (
+	sensorHeartbeatChannel = "sensor/heartbeat"
+)
+
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
 	logger.Println("Connected")
 }
@@ -53,5 +57,12 @@ func (c mqttClient) publish(sensorSource string, currentStatus string, timestamp
 	ts := strconv.FormatInt(timestamp, 10)
 	text := fmt.Sprintf("%s|%s|%s", sensorSource, currentStatus, ts)
 	token := c.client.Publish(c.topic, 0, false, text)
+	token.Wait()
+}
+
+func (c mqttClient) publishHeartbeat(sensorSource string, timestamp int64) {
+	ts := strconv.FormatInt(timestamp, 10)
+	text := fmt.Sprintf("%s|%s", sensorSource, ts)
+	token := c.client.Publish(sensorHeartbeatChannel, 0, false, text)
 	token.Wait()
 }

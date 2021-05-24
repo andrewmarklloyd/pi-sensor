@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/robfig/cron"
 )
 
 var (
@@ -19,7 +21,8 @@ var (
 )
 
 const (
-	topic = "sensor/status"
+	topic                    = "sensor/status"
+	heartbeatIntervalSeconds = 5
 )
 
 func main() {
@@ -53,6 +56,8 @@ func main() {
 		os.Exit(0)
 	}()
 
+	configureHeartbeat(mqttClient, *sensorSource)
+
 	lastStatus := "CLOSED"
 	currentStatus := pinClient.CurrentStatus()
 	for true {
@@ -64,4 +69,12 @@ func main() {
 		}
 		time.Sleep(5 * time.Second)
 	}
+}
+
+func configureHeartbeat(mqttClient mqttClient, sensorSource string) {
+	cronLib := cron.New()
+	cronLib.AddFunc(fmt.Sprintf("@every %ds", heartbeatIntervalSeconds), func() {
+		mqttClient.publishHeartbeat(sensorSource, time.Now().UTC().Unix())
+	})
+	cronLib.Start()
 }
