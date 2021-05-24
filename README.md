@@ -16,6 +16,5 @@ bash <(curl -s -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/an
 
 - Status checks on sensors. Need to know if they are offline
 - Fill in full readme
-- Create staging and prod envs
 - Convert frontend to dark mode
 - Detailed info for each Sensor
