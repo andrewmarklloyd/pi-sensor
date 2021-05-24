@@ -147,7 +147,6 @@ func main() {
 	var heartbeatMap map[string]*time.Timer = make(map[string]*time.Timer)
 	mqttClient.Subscribe(sensorHeartbeatChannel, func(messageString string) {
 		heartbeat := toHeartbeat(messageString)
-		logger.Println("Heartbeat from:", heartbeatMap)
 		currentTimer := heartbeatMap[heartbeat.Source]
 		if currentTimer != nil {
 			currentTimer.Stop()
