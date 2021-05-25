@@ -8,17 +8,22 @@ import {
 import SiteWrapper from "./SiteWrapper";
 
 class SensorPage extends Component {
+  constructor(props) {
+    super(props)
+    this.state = this.props.location.state
+  }
+
   render() {
     return (
       <SiteWrapper>
         <Page.Content>
         <Card>
           <Card.Header>
-              <Card.Title>Sensor: {this.props.location.state.source}</Card.Title>
+              <Card.Title>Sensor: {this.state.source}</Card.Title>
           </Card.Header>
           <Card.Body>
-              <p>Last activity: 2 min ago</p>
-              <p>Last health check: 10 sec ago</p>
+              <p>Last activity: {this.state.timesince}</p>
+              <p>Last health check: Unknown</p>
           </Card.Body>
           <Card.Footer>Card footer</Card.Footer>
         </Card>

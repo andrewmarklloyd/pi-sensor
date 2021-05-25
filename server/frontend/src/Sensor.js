@@ -56,7 +56,8 @@ class Sensor extends Component {
           to={{
             pathname: "/sensor",
             state: {
-              source: this.props.source
+              source: this.props.source,
+              timesince: this.props.timesince
             }
           }}>
             {this.props.source}
