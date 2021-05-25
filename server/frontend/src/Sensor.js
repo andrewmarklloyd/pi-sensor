@@ -51,7 +51,7 @@ class Sensor extends Component {
         color={this.state.color !== "" ? this.state.color : this.props.color}
         icon={this.state.icon !== "zap-off" ? this.state.icon : this.props.icon}
         header={
-          <a href="/">
+          <a href="/sensor">
             {this.props.source}
           </a>
         }
