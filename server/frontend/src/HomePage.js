@@ -33,6 +33,9 @@ class Home extends Component {
     socket.on("sensor/list", function(data) {
       var d = JSON.parse(data)
       var sensors = []
+      d.data.sort(function(a, b) {
+        return a.source > b.source ? 1 : -1
+      });
       d.data.forEach(element => {
         sensors.push({
           source: element.source,
