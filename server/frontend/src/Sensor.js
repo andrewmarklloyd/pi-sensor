@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+import { React, Component } from 'react';
+import { Link } from "react-router-dom";
 import { translateStatus, timeSince } from "./DataModel";
 
 import {
@@ -51,9 +52,15 @@ class Sensor extends Component {
         color={this.state.color !== "" ? this.state.color : this.props.color}
         icon={this.state.icon !== "zap-off" ? this.state.icon : this.props.icon}
         header={
-          <a href="/sensor">
+          <Link
+          to={{
+            pathname: "/sensor",
+            state: {
+              source: this.props.source
+            }
+          }}>
             {this.props.source}
-          </a>
+          </Link>
         }
         footer={this.state.timesince !== "" ? this.state.timesince : this.props.timesince}
       />
