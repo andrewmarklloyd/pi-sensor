@@ -10,11 +10,11 @@ import (
 type fn func(string)
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	logger.Println("Connected")
+	logger.Println("Connected to MQTT server")
 }
 
 var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	logger.Printf("Connect lost: %v", err)
+	logger.Printf("Connection to MQTT server lost: %v", err)
 }
 
 type mqttClient struct {
