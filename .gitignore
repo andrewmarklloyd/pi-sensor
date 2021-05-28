@@ -3,3 +3,4 @@ env.sh
 pi-sensor-*
 state.yml
 .env
+test.sh
