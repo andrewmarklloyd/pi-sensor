@@ -41,12 +41,14 @@ class Home extends Component {
         return a.source > b.source ? 1 : -1
       });
       d.data.forEach(element => {
+        var updated = translateStatus(element.status)
         sensors.push({
           source: element.source,
           status: element.status,
           timestamp: element.timestamp,
           timesince: timeSince(element.timestamp),
-          icon: "zap-off"
+          icon: updated.icon,
+          color: updated.color
         })
       })
       component.setState({data: sensors})
@@ -54,7 +56,6 @@ class Home extends Component {
   }
 
   render() {
-    var state
     return (
       <SiteWrapper>
         <Page.Content>
@@ -62,8 +63,7 @@ class Home extends Component {
           <Grid.Row cards={true}>
           <Grid.Col sm={6} lg={3}>
             {this.state.data.map(item => (
-              state = translateStatus(item.status), // eslint-disable-line no-sequences
-              <Sensor key={item.source} source={item.source} socket={socket} status={item.status} icon={state.icon} color={state.color} timestamp={item.timestamp} timesince={item.timesince}/>
+              <Sensor key={item.source} source={item.source} socket={socket} status={item.status} icon={item.icon} color={item.color} timestamp={item.timestamp} timesince={item.timesince}/>
             ))
             }
           </Grid.Col>
