@@ -39,14 +39,14 @@ func (m Messenger) SendMessage(body string) (string, error) {
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	resp, _ := client.Do(req)
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		var data map[string]string
+		var data map[string]interface{}
 		decoder := json.NewDecoder(resp.Body)
 		err := decoder.Decode(&data)
 		if err != nil {
 			return "", err
 		}
-		return data["sid"], nil
+		return data["sid"].(string), nil
 	} else {
-		return "", fmt.Errorf("Error sending message, response code: %s", resp.Status)
+		return "", fmt.Errorf("Response code: %s", resp.Status)
 	}
 }

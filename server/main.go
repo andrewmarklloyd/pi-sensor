@@ -127,6 +127,7 @@ func main() {
 		lastMessage := toStruct(lastMessageString)
 		alertIfOpen(lastMessage, message, messenger)
 		if message.Status == "OPEN" {
+			// TODO: use a returned parameterized function similar to heartbeat
 			timer := time.AfterFunc(openTimeout, func() {
 				message := fmt.Sprintf("%s opened longer than %s", message.Source, openTimeout)
 				if mockMode {
@@ -197,7 +198,7 @@ func alertIfOpen(lastMessage Message, currentMessage Message, messenger Messenge
 		} else {
 			_, err := messenger.SendMessage(fmt.Sprintf("%s was just opened", currentMessage.Source))
 			if err != nil {
-				logger.Println(err)
+				logger.Println("Error sending open message", err)
 			}
 		}
 	} else if lastMessage.Status == "OPEN" && currentMessage.Status == "CLOSED" {
