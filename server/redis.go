@@ -2,8 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-redis/redis/v8"
+)
+
+const (
+	sensorPrefix    = "sensor/"
+	heartbeatPrefix = "heartbeat/"
 )
 
 var ctx = context.Background()
@@ -25,7 +31,7 @@ func newRedisClient(redisURL string) (redisClient, error) {
 
 func (r *redisClient) ReadAllState() (map[string]string, error) {
 	state := make(map[string]string)
-	keys := r.client.Keys(ctx, "*").Val()
+	keys := r.client.Keys(ctx, fmt.Sprintf("%s*", sensorPrefix)).Val()
 	for _, k := range keys {
 		val, err := r.client.Get(ctx, k).Result()
 		if err != nil {
@@ -37,7 +43,7 @@ func (r *redisClient) ReadAllState() (map[string]string, error) {
 }
 
 func (r *redisClient) ReadState(key string) (string, error) {
-	val, err := r.client.Get(ctx, key).Result()
+	val, err := r.client.Get(ctx, fmt.Sprintf("%s%s", sensorPrefix, key)).Result()
 	if err != nil {
 		return "", err
 	}
@@ -46,7 +52,16 @@ func (r *redisClient) ReadState(key string) (string, error) {
 }
 
 func (r *redisClient) WriteState(key string, value string) error {
-	d := r.client.Set(ctx, key, value, 0)
+	d := r.client.Set(ctx, fmt.Sprintf("%s%s", sensorPrefix, key), value, 0)
+	err := d.Err()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *redisClient) WriteHeartbeat(key string, value string) error {
+	d := r.client.Set(ctx, fmt.Sprintf("%s%s", heartbeatPrefix, key), value, 0)
 	err := d.Err()
 	if err != nil {
 		return err

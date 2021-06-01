@@ -6,6 +6,7 @@ import socketIOClient from "socket.io-client";
 import {
   Page,
   Grid,
+  Card,
 } from "tabler-react";
 
 import SiteWrapper from "./SiteWrapper";
@@ -33,6 +34,9 @@ class Home extends Component {
     socket.on("sensor/list", function(data) {
       var d = JSON.parse(data)
       var sensors = []
+      if (d.data == null) {
+        d.data = []
+      }
       d.data.sort(function(a, b) {
         return a.source > b.source ? 1 : -1
       });
@@ -54,7 +58,8 @@ class Home extends Component {
     return (
       <SiteWrapper>
         <Page.Content>
-        <Grid.Row cards={true}>
+        {this.state.data.length > 0 ? (
+          <Grid.Row cards={true}>
           <Grid.Col sm={6} lg={3}>
             {this.state.data.map(item => (
               state = translateStatus(item.status), // eslint-disable-line no-sequences
@@ -63,6 +68,13 @@ class Home extends Component {
             }
           </Grid.Col>
         </Grid.Row>
+        ) : (
+          <Card>
+          <Card.Header>
+              <Card.Title>No sensors currently connected</Card.Title>
+          </Card.Header>
+        </Card>
+        )}
         </Page.Content>
       </SiteWrapper>
     );

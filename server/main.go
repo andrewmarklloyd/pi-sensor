@@ -134,7 +134,6 @@ func main() {
 			logger.Println(fmt.Sprintf("Message status '%s' not recognized", message.Status))
 		}
 
-		_redisClient.WriteState(message.Source, messageString)
 		_webServer.sendMessage(sensorStatusChannel, message)
 		err := _redisClient.WriteState(message.Source, messageString)
 		if err == nil {
