@@ -1,8 +1,10 @@
 import React, { Component } from "react";
+import { Link } from "react-router-dom";
 
 import {
   Page,
   Card,
+  Button,
 } from "tabler-react";
 
 import SiteWrapper from "./SiteWrapper";
@@ -25,8 +27,8 @@ class SensorPage extends Component {
               <p>Last activity: {this.state.timesince}</p>
               <p>Last health check: Unknown</p>
           </Card.Body>
-          <Card.Footer>Card footer</Card.Footer>
         </Card>
+        <Link to={{pathname: "/"}}><Button color="secondary">Back</Button></Link>
         </Page.Content>
       </SiteWrapper>
     );
@@ -34,3 +36,5 @@ class SensorPage extends Component {
 }
 
 export default SensorPage;
+
+
