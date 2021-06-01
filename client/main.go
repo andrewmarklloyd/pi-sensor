@@ -58,7 +58,7 @@ func main() {
 
 	configureHeartbeat(mqttClient, *sensorSource)
 
-	lastStatus := "CLOSED"
+	lastStatus := UNKNOWN
 	var currentStatus string
 	for true {
 		currentStatus = pinClient.CurrentStatus()

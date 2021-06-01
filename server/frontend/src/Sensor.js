@@ -14,6 +14,9 @@ class Sensor extends Component {
     this.props.socket.on("sensor/status", function(data) {
       if (data.source === source) {
         var updated = translateStatus(data.status)
+        if (data.source === "front-door") {
+          console.log(updated)
+        }
         component.setState({
           color: updated.color,
           source: data.source,
@@ -50,7 +53,7 @@ class Sensor extends Component {
     return (
       <StampCard
         color={this.state.color !== "" ? this.state.color : this.props.color}
-        icon={this.state.icon !== "zap-off" ? this.state.icon : this.props.icon}
+        icon={this.state.icon !== "" ? this.state.icon : this.props.icon}
         header={
           <Link
           to={{

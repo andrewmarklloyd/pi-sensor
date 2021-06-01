@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	sensorPrefix    = "sensor/"
+	statePrefix     = "state/"
 	heartbeatPrefix = "heartbeat/"
 )
 
@@ -31,7 +31,7 @@ func newRedisClient(redisURL string) (redisClient, error) {
 
 func (r *redisClient) ReadAllState() (map[string]string, error) {
 	state := make(map[string]string)
-	keys := r.client.Keys(ctx, fmt.Sprintf("%s*", sensorPrefix)).Val()
+	keys := r.client.Keys(ctx, fmt.Sprintf("%s*", statePrefix)).Val()
 	for _, k := range keys {
 		val, err := r.client.Get(ctx, k).Result()
 		if err != nil {
@@ -43,7 +43,7 @@ func (r *redisClient) ReadAllState() (map[string]string, error) {
 }
 
 func (r *redisClient) ReadState(key string) (string, error) {
-	val, err := r.client.Get(ctx, fmt.Sprintf("%s%s", sensorPrefix, key)).Result()
+	val, err := r.client.Get(ctx, fmt.Sprintf("%s%s", statePrefix, key)).Result()
 	if err != nil {
 		return "", err
 	}
@@ -52,7 +52,7 @@ func (r *redisClient) ReadState(key string) (string, error) {
 }
 
 func (r *redisClient) WriteState(key string, value string) error {
-	d := r.client.Set(ctx, fmt.Sprintf("%s%s", sensorPrefix, key), value, 0)
+	d := r.client.Set(ctx, fmt.Sprintf("%s%s", statePrefix, key), value, 0)
 	err := d.Err()
 	if err != nil {
 		return err

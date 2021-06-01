@@ -7,6 +7,9 @@ import (
 
 const (
 	delimiter = "|"
+	OPEN      = "OPEN"
+	CLOSED    = "CLOSED"
+	UNKNOWN   = "UNKNOWN"
 )
 
 type Message struct {

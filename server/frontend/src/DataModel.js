@@ -1,8 +1,19 @@
 function translateStatus(status) {
-    return {
-        color: status === "OPEN" ? "red" : "green",
-        icon: status === "OPEN" ? "unlock" : "lock"
-    }
+  var icon, color
+  if (status === "OPEN") {
+    icon = "unlock"
+    color = "red"
+  } else if (status === "CLOSED") {
+    icon = "lock"
+    color = "green"
+  } else {
+    icon = "zap-off"
+    color = "grey"
+  }
+  return {
+      color,
+      icon
+  }
 }
 
 function timeSince(unixTimestamp) {

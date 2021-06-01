@@ -128,7 +128,12 @@ func main() {
 		alertIfOpen(lastMessage, message, messenger)
 		if message.Status == "OPEN" {
 			timer := time.AfterFunc(openTimeout, func() {
-				messenger.SendMessage(fmt.Sprintf("%s opened longer than %s", message.Source, openTimeout))
+				message := fmt.Sprintf("%s opened longer than %s", message.Source, openTimeout)
+				if mockMode {
+					logger.Println(message)
+				} else {
+					messenger.SendMessage(message)
+				}
 			})
 			delayTimerMap[message.Source] = timer
 		} else if message.Status == "CLOSED" {
@@ -140,7 +145,6 @@ func main() {
 			logger.Println(fmt.Sprintf("Message status '%s' not recognized", message.Status))
 		}
 
-		_webServer.sendMessage(sensorStatusChannel, message)
 		err := _redisClient.WriteState(message.Source, messageString)
 		if err == nil {
 			_webServer.sendMessage(sensorStatusChannel, message)
@@ -149,24 +153,45 @@ func main() {
 		}
 	})
 
-	var heartbeatMap map[string]*time.Timer = make(map[string]*time.Timer)
+	var heartbeatTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
 	mqttClient.Subscribe(sensorHeartbeatChannel, func(messageString string) {
 		heartbeat := toHeartbeat(messageString)
-		currentTimer := heartbeatMap[heartbeat.Source]
+		currentTimer := heartbeatTimerMap[heartbeat.Source]
 		if currentTimer != nil {
 			currentTimer.Stop()
 		}
-		timer := time.AfterFunc(heartbeatTimeout, func() {
-			logger.Println(fmt.Sprintf("Heartbeat timeout occurred for %s", heartbeat.Source))
-		})
-		heartbeatMap[heartbeat.Source] = timer
+		timer := time.AfterFunc(heartbeatTimeout, newHeartbeatTimeoutFunc(heartbeat))
+		heartbeatTimerMap[heartbeat.Source] = timer
 	})
 
 	_webServer.startServer()
 }
 
+func newHeartbeatTimeoutFunc(h Heartbeat) func() {
+	return func() {
+		handleHeartbeatTimeout(h)
+	}
+}
+
+func handleHeartbeatTimeout(h Heartbeat) {
+	logger.Println(fmt.Sprintf("Heartbeat timeout occurred for %s", h.Source))
+	messageString, err := _redisClient.ReadState(h.Source)
+	if err == nil {
+		message := toStruct(messageString)
+		message.Status = UNKNOWN
+		err := _redisClient.WriteState(message.Source, toString(message))
+		if err != nil {
+			logger.Println(fmt.Sprintf("Error writing message state after heartbeat timeout. Message: %s", messageString))
+		} else {
+			_webServer.sendMessage(sensorStatusChannel, message)
+		}
+	} else {
+		logger.Println(err)
+	}
+}
+
 func alertIfOpen(lastMessage Message, currentMessage Message, messenger Messenger) {
-	if lastMessage.Status == "CLOSED" && currentMessage.Status == "OPEN" {
+	if (lastMessage.Status == CLOSED && currentMessage.Status == OPEN) || (lastMessage.Status == UNKNOWN && currentMessage.Status == OPEN) {
 		if mockMode {
 			logger.Println(fmt.Sprintf("%s was just opened", currentMessage.Source))
 		} else {
@@ -178,6 +203,6 @@ func alertIfOpen(lastMessage Message, currentMessage Message, messenger Messenge
 	} else if lastMessage.Status == "OPEN" && currentMessage.Status == "CLOSED" {
 		// intentionally do nothing
 	} else {
-		logger.Println(fmt.Sprintf("Door status was not changed from open to closed OR from closed to open. Last status: %s, current status: %s", lastMessage.Status, currentMessage.Status))
+		logger.Println(fmt.Sprintf("Door status change was not recognized. Last status: %s, current status: %s", lastMessage.Status, currentMessage.Status))
 	}
 }
