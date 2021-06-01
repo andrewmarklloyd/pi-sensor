@@ -170,7 +170,10 @@ func alertIfOpen(lastMessage Message, currentMessage Message, messenger Messenge
 		if mockMode {
 			logger.Println(fmt.Sprintf("%s was just opened", currentMessage.Source))
 		} else {
-			messenger.SendMessage(fmt.Sprintf("%s was just opened", currentMessage.Source))
+			_, err := messenger.SendMessage(fmt.Sprintf("%s was just opened", currentMessage.Source))
+			if err != nil {
+				logger.Println(err)
+			}
 		}
 	} else if lastMessage.Status == "OPEN" && currentMessage.Status == "CLOSED" {
 		// intentionally do nothing
