@@ -127,15 +127,7 @@ func main() {
 		lastMessage := toStruct(lastMessageString)
 		alertIfOpen(lastMessage, message, messenger)
 		if message.Status == "OPEN" {
-			// TODO: use a returned parameterized function similar to heartbeat
-			timer := time.AfterFunc(openTimeout, func() {
-				message := fmt.Sprintf("%s opened longer than %s", message.Source, openTimeout)
-				if mockMode {
-					logger.Println(message)
-				} else {
-					messenger.SendMessage(message)
-				}
-			})
+			timer := time.AfterFunc(openTimeout, newOpenTimeoutFunc(message, messenger))
 			delayTimerMap[message.Source] = timer
 		} else if message.Status == "CLOSED" {
 			currentTimer := delayTimerMap[message.Source]
@@ -188,6 +180,21 @@ func handleHeartbeatTimeout(h Heartbeat) {
 		}
 	} else {
 		logger.Println(err)
+	}
+}
+
+func newOpenTimeoutFunc(m Message, msgr Messenger) func() {
+	return func() {
+		handleOpenTimeout(m, msgr)
+	}
+}
+
+func handleOpenTimeout(m Message, msgr Messenger) {
+	message := fmt.Sprintf("%s opened longer than %s", m.Source, openTimeout)
+	if mockMode {
+		logger.Println(message)
+	} else {
+		msgr.SendMessage(message)
 	}
 }
 
