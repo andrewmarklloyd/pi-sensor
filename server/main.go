@@ -111,6 +111,12 @@ func main() {
 		},
 	}
 
+	var err error
+	_redisClient, err = newRedisClient(serverConfig.redisurl)
+	if err != nil {
+		logger.Fatalln("Error creating redis client:", err)
+	}
+
 	messenger := newMessenger(serverConfig.twilioConfig)
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
 	_webServer = newWebServer(serverConfig, newClientHandler)
@@ -156,11 +162,6 @@ func main() {
 		heartbeatMap[heartbeat.Source] = timer
 	})
 
-	var err error
-	_redisClient, err = newRedisClient(serverConfig.redisurl)
-	if err != nil {
-		logger.Fatalln("Error creating redis client:", err)
-	}
 	_webServer.startServer()
 }
 
