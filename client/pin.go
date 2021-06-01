@@ -25,6 +25,9 @@ func newPinClient(pinNumber int, mockMode bool) pinClient {
 	err := rpio.Open()
 	if err != nil {
 		log.Println(fmt.Sprintf("Unable to open gpio: %s, continuing but running in test mode.", err.Error()))
+	} else {
+		pin.Input()
+		pin.PullUp()
 	}
 	return pinClient{pin, mockMode}
 }
