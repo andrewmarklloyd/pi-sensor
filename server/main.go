@@ -191,9 +191,8 @@ func newOpenTimeoutFunc(m Message, msgr Messenger) func() {
 
 func handleOpenTimeout(m Message, msgr Messenger) {
 	message := fmt.Sprintf("%s opened longer than %s", m.Source, openTimeout)
-	if mockMode {
-		logger.Println(message)
-	} else {
+	logger.Println(message)
+	if !mockMode {
 		msgr.SendMessage(message)
 	}
 }
