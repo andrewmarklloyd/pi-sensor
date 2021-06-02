@@ -25,7 +25,6 @@ class SensorPage extends Component {
           </Card.Header>
           <Card.Body>
               <p>Last activity: {this.state.timesince}</p>
-              <p>Last health check: Unknown</p>
           </Card.Body>
         </Card>
         <Link to={{pathname: "/"}}><Button color="secondary">Back</Button></Link>
