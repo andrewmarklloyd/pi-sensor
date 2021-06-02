@@ -153,21 +153,20 @@ func main() {
 		if currentTimer != nil {
 			currentTimer.Stop()
 		}
-		timer := time.AfterFunc(heartbeatTimeout, newHeartbeatTimeoutFunc(heartbeat))
+		timer := time.AfterFunc(heartbeatTimeout, newHeartbeatTimeoutFunc(heartbeat, messenger))
 		heartbeatTimerMap[heartbeat.Source] = timer
 	})
 
 	_webServer.startServer()
 }
 
-func newHeartbeatTimeoutFunc(h Heartbeat) func() {
+func newHeartbeatTimeoutFunc(h Heartbeat, msgr Messenger) func() {
 	return func() {
-		handleHeartbeatTimeout(h)
+		handleHeartbeatTimeout(h, msgr)
 	}
 }
 
-func handleHeartbeatTimeout(h Heartbeat) {
-	logger.Println(fmt.Sprintf("Heartbeat timeout occurred for %s", h.Source))
+func handleHeartbeatTimeout(h Heartbeat, msgr Messenger) {
 	messageString, err := _redisClient.ReadState(h.Source)
 	if err == nil {
 		message := toStruct(messageString)
@@ -176,6 +175,8 @@ func handleHeartbeatTimeout(h Heartbeat) {
 		if err != nil {
 			logger.Println(fmt.Sprintf("Error writing message state after heartbeat timeout. Message: %s", messageString))
 		} else {
+			logger.Println(fmt.Sprintf("Heartbeat timeout occurred for %s", h.Source))
+			msgr.SendMessage(fmt.Sprintf("%s sensor has lost connection", h.Source))
 			_webServer.sendMessage(sensorStatusChannel, message)
 		}
 	} else {
