@@ -8,6 +8,8 @@ if [[ -z ${currentRelease} ]]; then
     echo ${latestRelease} > /home/pi/.currentRelease
 fi
 
+echo "Current release: ${currentRelease}, latest release: ${latestRelease}"
+
 if [[ ${latestRelease} != ${currentRelease} || ${forceUpdate} == "-force" ]]; then
     echo "New version available: ${latestRelease}, downloading now"
     archive_path="/tmp/archive"
