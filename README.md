@@ -18,3 +18,4 @@ bash <(curl -s -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/an
 - Convert frontend to dark mode
 - Detailed info for each Sensor
 - Add testing
+- Logout button
