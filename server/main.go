@@ -33,7 +33,7 @@ const (
 	sensorStatusChannel    = "sensor/status"
 	sensorHeartbeatChannel = "sensor/heartbeat"
 	openTimeout            = 5 * time.Minute
-	heartbeatTimeout       = 15 * time.Second
+	heartbeatTimeout       = 5 * time.Minute
 )
 
 var _webServer webServer
