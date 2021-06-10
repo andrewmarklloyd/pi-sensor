@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -38,6 +40,7 @@ const (
 
 var _webServer webServer
 var _redisClient redisClient
+var _mqttClient mqttClient
 
 func newClientHandler() {
 	state, err := _redisClient.ReadAllState()
@@ -46,6 +49,21 @@ func newClientHandler() {
 	} else {
 		_webServer.sendSensorList(state)
 	}
+}
+
+type Sensor struct {
+	Source string
+}
+
+func sensorRestartHandler(w http.ResponseWriter, req *http.Request) {
+	var sensor Sensor
+	err := json.NewDecoder(req.Body).Decode(&sensor)
+	if err != nil {
+		http.Error(w, "Error parsing request", http.StatusBadRequest)
+		return
+	}
+	_mqttClient.publishSensorRestart(sensor.Source)
+	fmt.Fprintf(w, "{\"status\":\"success\"}")
 }
 
 func main() {
@@ -119,9 +137,9 @@ func main() {
 
 	messenger := newMessenger(serverConfig.twilioConfig)
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	_webServer = newWebServer(serverConfig, newClientHandler)
-	mqttClient := newMQTTClient(serverConfig)
-	mqttClient.Subscribe(sensorStatusChannel, func(messageString string) {
+	_webServer = newWebServer(serverConfig, newClientHandler, sensorRestartHandler)
+	_mqttClient = newMQTTClient(serverConfig)
+	_mqttClient.Subscribe(sensorStatusChannel, func(messageString string) {
 		message := toStruct(messageString)
 		lastMessageString, _ := _redisClient.ReadState(message.Source)
 		lastMessage := toStruct(lastMessageString)
@@ -147,7 +165,7 @@ func main() {
 	})
 
 	var heartbeatTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	mqttClient.Subscribe(sensorHeartbeatChannel, func(messageString string) {
+	_mqttClient.Subscribe(sensorHeartbeatChannel, func(messageString string) {
 		heartbeat := toHeartbeat(messageString)
 		currentTimer := heartbeatTimerMap[heartbeat.Source]
 		if currentTimer != nil {

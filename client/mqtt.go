@@ -3,13 +3,17 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"sync"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gofrs/uuid"
 )
 
+type fn func(string)
+
 const (
 	sensorHeartbeatChannel = "sensor/heartbeat"
+	restartTopic           = "sensor/restart"
 )
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
@@ -65,4 +69,15 @@ func (c mqttClient) publishHeartbeat(sensorSource string, timestamp int64) {
 	text := fmt.Sprintf("%s|%s", sensorSource, ts)
 	token := c.client.Publish(sensorHeartbeatChannel, 0, false, text)
 	token.Wait()
+}
+
+func (c mqttClient) subscribeRestart(subscribeHandler fn) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	if token := c.client.Subscribe(restartTopic, 0, func(client mqtt.Client, msg mqtt.Message) {
+		subscribeHandler(string(msg.Payload()))
+	}); token.Wait() && token.Error() != nil {
+		logger.Fatal(token.Error())
+	}
 }

@@ -60,3 +60,8 @@ func (c mqttClient) Subscribe(topic string, subscribeHandler fn) {
 		logger.Fatal(token.Error())
 	}
 }
+
+func (c mqttClient) publishSensorRestart(sensorSource string) {
+	token := c.client.Publish(sensorRestartChannel, 0, false, sensorSource)
+	token.Wait()
+}

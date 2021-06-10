@@ -58,6 +58,13 @@ func main() {
 
 	configureHeartbeat(mqttClient, *sensorSource)
 
+	mqttClient.subscribeRestart(func(messageString string) {
+		if *sensorSource == messageString {
+			logger.Println("Received restart message, restarting app now")
+			os.Exit(0)
+		}
+	})
+
 	lastStatus := UNKNOWN
 	var currentStatus string
 	for true {

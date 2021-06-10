@@ -15,6 +15,19 @@ class SensorPage extends Component {
     this.state = this.props.location.state
   }
 
+  restartSensor(source) {
+    fetch("/api/sensor/restart", {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      referrerPolicy: 'no-referrer',
+      body: JSON.stringify({source: source})
+    })
+    .then(r => r.json())
+  }
+
   render() {
     return (
       <SiteWrapper>
@@ -25,6 +38,9 @@ class SensorPage extends Component {
           </Card.Header>
           <Card.Body>
               <p>Last activity: {this.state.timesince}</p>
+              <button onClick={() => this.restartSensor(this.state.source)}>
+                Restart
+              </button>
           </Card.Body>
         </Card>
         <Link to={{pathname: "/"}}><Button color="secondary">Back</Button></Link>

@@ -25,33 +25,32 @@ const (
 	// Time allowed to read the next pong message from the peer.
 	pongWait = 60 * time.Second
 
-	publicDir         = "/frontend/build/"
-	channelName       = "sensor"
-	sessionName       = "pi-sensor" // TODO need to make this dynamic?
-	sessionUserKey    = "9024685F-97A4-441E-90D3-F0F11AA7A602"
-	post              = "post"
-	sensorListChannel = "sensor/list"
+	publicDir            = "/frontend/build/"
+	channelName          = "sensor"
+	sessionName          = "pi-sensor" // TODO need to make this dynamic?
+	sessionUserKey       = "9024685F-97A4-441E-90D3-F0F11AA7A602"
+	post                 = "post"
+	get                  = "get"
+	sensorListChannel    = "sensor/list"
+	sensorRestartChannel = "sensor/restart"
 )
 
 var sessionStore *sessions.CookieStore
 
 type newClientHandlerFunc func()
 
-var channel *gosocketio.Channel
-
 type webServer struct {
 	httpServer   *http.Server
 	socketServer *gosocketio.Server
 }
 
-func newWebServer(serverConfig ServerConfig, newClientHandler newClientHandlerFunc) webServer {
+func newWebServer(serverConfig ServerConfig, newClientHandler newClientHandlerFunc, sensorRestartHandler http.HandlerFunc) webServer {
 	router := gmux.NewRouter().StrictSlash(true)
 	socketServer := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
 	socketServer.On(gosocketio.OnConnection, func(c *gosocketio.Channel) {
-		channel = c
-		// c.BroadcastTo("chat", "message", msg)
 		newClientHandler()
 	})
+
 	router.Handle("/socket.io/", socketServer)
 	oauth2Config := &oauth2.Config{
 		ClientID:     serverConfig.googleConfig.clientId,
@@ -62,6 +61,7 @@ func newWebServer(serverConfig ServerConfig, newClientHandler newClientHandlerFu
 	}
 	sessionStore = sessions.NewCookieStore([]byte(serverConfig.googleConfig.sessionSecret), nil)
 	stateConfig := gologin.DebugOnlyCookieConfig
+	router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(sensorRestartHandler))).Methods(post)
 	router.Handle("/google/login", google.StateHandler(stateConfig, google.LoginHandler(oauth2Config, nil)))
 	router.Handle("/google/callback", google.StateHandler(stateConfig, google.CallbackHandler(oauth2Config, issueSession(serverConfig), nil)))
 	router.HandleFunc("/logout", logoutHandler)
