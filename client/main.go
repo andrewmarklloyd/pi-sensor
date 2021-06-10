@@ -22,7 +22,7 @@ var (
 
 const (
 	topic                    = "sensor/status"
-	heartbeatIntervalSeconds = 5
+	heartbeatIntervalSeconds = 60
 )
 
 func main() {
