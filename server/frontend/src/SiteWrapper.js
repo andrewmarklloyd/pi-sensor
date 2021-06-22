@@ -10,7 +10,12 @@ const navBarItems = [
     value: "Home",
     to: "/",
     icon: "home",
-    // LinkComponent: withRouter(NavLink),
+    useExact: true,
+  },
+  {
+    value: "Logout",
+    to: "/logout",
+    icon: "log-out",
     useExact: true,
   }
 ];

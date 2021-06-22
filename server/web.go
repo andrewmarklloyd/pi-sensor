@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -25,7 +24,6 @@ const (
 	// Time allowed to read the next pong message from the peer.
 	pongWait = 60 * time.Second
 
-	publicDir            = "/frontend/build/"
 	channelName          = "sensor"
 	sessionName          = "pi-sensor" // TODO need to make this dynamic?
 	sessionUserKey       = "9024685F-97A4-441E-90D3-F0F11AA7A602"
@@ -33,6 +31,7 @@ const (
 	get                  = "get"
 	sensorListChannel    = "sensor/list"
 	sensorRestartChannel = "sensor/restart"
+	unauthPath           = "/unauth"
 )
 
 var sessionStore *sessions.CookieStore
@@ -65,6 +64,7 @@ func newWebServer(serverConfig ServerConfig, newClientHandler newClientHandlerFu
 	router.Handle("/google/login", google.StateHandler(stateConfig, google.LoginHandler(oauth2Config, nil)))
 	router.Handle("/google/callback", google.StateHandler(stateConfig, google.CallbackHandler(oauth2Config, issueSession(serverConfig), nil)))
 	router.HandleFunc("/logout", logoutHandler)
+	router.HandleFunc(unauthPath, unauthHandler).Methods(get)
 	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
 	router.PathPrefix("/").Handler(requireLogin(spa))
 
@@ -148,10 +148,9 @@ func issueSession(serverConfig ServerConfig) http.Handler {
 			return
 		}
 		if !strings.Contains(serverConfig.googleConfig.authorizedUsers, googleUser.Email) {
-			http.Redirect(w, req, fmt.Sprintf("%serror.html", publicDir), http.StatusFound)
+			http.Redirect(w, req, unauthPath, http.StatusFound)
 			return
 		}
-		// 2. Implement a success handler to issue some form of session
 		session := sessionStore.New(sessionName)
 		session.Values[sessionUserKey] = googleUser.Id
 		session.Save(w)
@@ -160,13 +159,13 @@ func issueSession(serverConfig ServerConfig) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// logoutHandler destroys the session on posts and redirects to home.
 func logoutHandler(w http.ResponseWriter, req *http.Request) {
-	logger.Println("Logging out user")
-	if req.Method == post {
-		sessionStore.Destroy(w, sessionName)
-	}
-	http.Redirect(w, req, "/", http.StatusFound)
+	sessionStore.Destroy(w, sessionName)
+	http.Redirect(w, req, unauthPath, http.StatusFound)
+}
+
+func unauthHandler(w http.ResponseWriter, req *http.Request) {
+	http.ServeFile(w, req, filepath.Join("frontend/build", "unauth.html"))
 }
 
 // requireLogin redirects unauthenticated users to the login route.
