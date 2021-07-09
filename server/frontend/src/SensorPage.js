@@ -16,16 +16,18 @@ class SensorPage extends Component {
   }
 
   restartSensor(source) {
-    fetch("/api/sensor/restart", {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      referrerPolicy: 'no-referrer',
-      body: JSON.stringify({source: source})
-    })
-    .then(r => r.json())
+    if (window.confirm('Are you sure you wish to restart the sensor?')) {
+      fetch("/api/sensor/restart", {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        referrerPolicy: 'no-referrer',
+        body: JSON.stringify({source: source})
+      })
+      .then(r => r.json())
+    }
   }
 
   render() {
