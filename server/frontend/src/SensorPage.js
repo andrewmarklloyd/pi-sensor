@@ -30,6 +30,27 @@ class SensorPage extends Component {
     }
   }
 
+  toggleArm(source) {
+    var component = this
+    if (window.confirm('Are you sure you wish to toggle arm/disarm?')) {
+      fetch("/api/sensor/arming", {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        referrerPolicy: 'no-referrer',
+        body: JSON.stringify({source: source})
+      })
+      .then(r => r.json())
+      .then(res => {
+        console.log(component.state.armed)
+        component.state.armed = res.armed
+        component.setState(component.state)
+      })
+    }
+  }
+
   render() {
     return (
       <SiteWrapper>
@@ -40,8 +61,12 @@ class SensorPage extends Component {
           </Card.Header>
           <Card.Body>
               <p>Last activity: {this.state.timesince}</p>
+              <p>{this.state.armed == "true" ? "Armed" : "Disarmed"}</p>
               <button onClick={() => this.restartSensor(this.state.source)}>
                 Restart
+              </button>
+              <button onClick={() => this.toggleArm(this.state.source)}>
+                Arm/Disarm
               </button>
           </Card.Body>
         </Card>

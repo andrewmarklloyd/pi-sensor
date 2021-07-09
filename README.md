@@ -16,6 +16,6 @@ bash <(curl -s -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/an
 
 - Fill in full readme
 - Convert frontend to dark mode
-- Detailed info for each Sensor
 - Add testing
-- Logout button
+- Arm/Disarm
+    - Need to read from redis on first load, pass to state

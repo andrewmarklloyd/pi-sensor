@@ -10,6 +10,7 @@ import (
 const (
 	statePrefix     = "state/"
 	heartbeatPrefix = "heartbeat/"
+	armingPrefix    = "arming/"
 )
 
 var ctx = context.Background()
@@ -67,4 +68,22 @@ func (r *redisClient) WriteHeartbeat(key string, value string) error {
 		return err
 	}
 	return nil
+}
+
+func (r *redisClient) WriteArming(key string, value string) error {
+	d := r.client.Set(ctx, fmt.Sprintf("%s%s", armingPrefix, key), value, 0)
+	err := d.Err()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *redisClient) ReadArming(key string) (string, error) {
+	val, err := r.client.Get(ctx, fmt.Sprintf("%s%s", armingPrefix, key)).Result()
+	if err != nil {
+		return "", err
+	}
+
+	return val, nil
 }

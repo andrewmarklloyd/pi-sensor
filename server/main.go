@@ -66,6 +66,22 @@ func sensorRestartHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "{\"status\":\"success\"}")
 }
 
+func sensorArmingHandler(w http.ResponseWriter, req *http.Request) {
+	var sensor Sensor
+	err := json.NewDecoder(req.Body).Decode(&sensor)
+	if err != nil {
+		http.Error(w, "Error parsing request", http.StatusBadRequest)
+		return
+	}
+	armedString, _ := _redisClient.ReadArming(sensor.Source)
+	armed := "false"
+	if armedString == "" || armedString == "false" {
+		armed = "true"
+	}
+	_redisClient.WriteArming(sensor.Source, armed)
+	fmt.Fprintf(w, fmt.Sprintf(`{"status":"success", "armed":"%s"}`, armed))
+}
+
 func main() {
 	logger.Println("Initializing server")
 	flag.Parse()
@@ -137,15 +153,20 @@ func main() {
 
 	messenger := newMessenger(serverConfig.twilioConfig)
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	_webServer = newWebServer(serverConfig, newClientHandler, sensorRestartHandler)
+	_webServer = newWebServer(serverConfig, newClientHandler, sensorRestartHandler, sensorArmingHandler)
 	_mqttClient = newMQTTClient(serverConfig)
 	_mqttClient.Subscribe(sensorStatusChannel, func(messageString string) {
 		message := toStruct(messageString)
 		lastMessageString, _ := _redisClient.ReadState(message.Source)
 		lastMessage := toStruct(lastMessageString)
-		alertIfOpen(lastMessage, message, messenger)
+		armedString, _ := _redisClient.ReadArming(message.Source)
+		armed := true
+		if armedString == "" || armedString == "false" {
+			armed = false
+		}
+		alertIfOpen(lastMessage, message, messenger, armed)
 		if message.Status == "OPEN" {
-			timer := time.AfterFunc(openTimeout, newOpenTimeoutFunc(message, messenger))
+			timer := time.AfterFunc(openTimeout, newOpenTimeoutFunc(message, messenger, armed))
 			delayTimerMap[message.Source] = timer
 		} else if message.Status == "CLOSED" {
 			currentTimer := delayTimerMap[message.Source]
@@ -202,29 +223,29 @@ func handleHeartbeatTimeout(h Heartbeat, msgr Messenger) {
 	}
 }
 
-func newOpenTimeoutFunc(m Message, msgr Messenger) func() {
+func newOpenTimeoutFunc(m Message, msgr Messenger, armed bool) func() {
 	return func() {
-		handleOpenTimeout(m, msgr)
+		handleOpenTimeout(m, msgr, armed)
 	}
 }
 
-func handleOpenTimeout(m Message, msgr Messenger) {
+func handleOpenTimeout(m Message, msgr Messenger, armed bool) {
 	message := fmt.Sprintf("%s opened longer than %s", m.Source, openTimeout)
 	logger.Println(message)
-	if !mockMode {
+	if !mockMode && armed {
 		msgr.SendMessage(message)
 	}
 }
 
-func alertIfOpen(lastMessage Message, currentMessage Message, messenger Messenger) {
+func alertIfOpen(lastMessage Message, currentMessage Message, messenger Messenger, armed bool) {
 	if (lastMessage.Status == CLOSED && currentMessage.Status == OPEN) || (lastMessage.Status == UNKNOWN && currentMessage.Status == OPEN) {
-		if mockMode {
-			logger.Println(fmt.Sprintf("%s was just opened", currentMessage.Source))
-		} else {
+		if !mockMode && armed {
 			_, err := messenger.SendMessage(fmt.Sprintf("%s was just opened", currentMessage.Source))
 			if err != nil {
 				logger.Println("Error sending open message", err)
 			}
+		} else {
+			logger.Println(fmt.Sprintf("%s was just opened", currentMessage.Source))
 		}
 	} else if lastMessage.Status == "OPEN" && currentMessage.Status == "CLOSED" {
 		// intentionally do nothing
