@@ -23,8 +23,9 @@ type Heartbeat struct {
 	Timestamp string `json:"timestamp"`
 }
 
-type Sensors struct {
-	Array []Message `json:"data"`
+type SensorState struct {
+	Sensors []Message         `json:"sensors"`
+	Arming  map[string]string `json:"arming"`
 }
 
 func toString(m Message) string {

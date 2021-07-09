@@ -43,11 +43,12 @@ var _redisClient redisClient
 var _mqttClient mqttClient
 
 func newClientHandler() {
-	state, err := _redisClient.ReadAllState()
-	if err != nil {
-		logger.Println("Error getting state from redis:", err)
+	state, stateErr := _redisClient.ReadAllState()
+	armingState, armingStateErr := _redisClient.ReadAllArming()
+	if stateErr != nil && armingStateErr != nil {
+		logger.Println(fmt.Sprintf("Error getting state or arming state from redis: %s, %s", stateErr, armingStateErr))
 	} else {
-		_webServer.sendSensorList(state)
+		_webServer.sendSensorState(state, armingState)
 	}
 }
 

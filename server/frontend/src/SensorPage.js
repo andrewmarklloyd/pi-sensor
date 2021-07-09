@@ -44,7 +44,6 @@ class SensorPage extends Component {
       })
       .then(r => r.json())
       .then(res => {
-        console.log(component.state.armed)
         component.state.armed = res.armed
         component.setState(component.state)
       })

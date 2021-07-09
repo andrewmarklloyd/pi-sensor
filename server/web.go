@@ -90,12 +90,18 @@ func (s webServer) sendMessage(channel string, message Message) {
 	s.socketServer.BroadcastToAll(channel, message)
 }
 
-func (s webServer) sendSensorList(sensors map[string]string) {
-	sensorList := Sensors{}
+func (s webServer) sendSensorState(sensors map[string]string, arming map[string]string) {
+	sensorList := SensorState{}
 	for _, v := range sensors {
 		m := toStruct(v)
-		sensorList.Array = append(sensorList.Array, m)
+		sensorList.Sensors = append(sensorList.Sensors, m)
 	}
+	armingMap := make(map[string]string)
+	for k, v := range arming {
+		t := strings.Replace(k, armingPrefix, "", -1)
+		armingMap[t] = v
+	}
+	sensorList.Arming = armingMap
 	json, _ := json.Marshal(sensorList)
 	s.socketServer.BroadcastToAll(sensorListChannel, string(json))
 }

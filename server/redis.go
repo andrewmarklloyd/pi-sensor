@@ -43,6 +43,19 @@ func (r *redisClient) ReadAllState() (map[string]string, error) {
 	return state, nil
 }
 
+func (r *redisClient) ReadAllArming() (map[string]string, error) {
+	armingState := make(map[string]string)
+	keys := r.client.Keys(ctx, fmt.Sprintf("%s*", armingPrefix)).Val()
+	for _, k := range keys {
+		val, err := r.client.Get(ctx, k).Result()
+		if err != nil {
+			return armingState, err
+		}
+		armingState[k] = val
+	}
+	return armingState, nil
+}
+
 func (r *redisClient) ReadState(key string) (string, error) {
 	val, err := r.client.Get(ctx, fmt.Sprintf("%s%s", statePrefix, key)).Result()
 	if err != nil {

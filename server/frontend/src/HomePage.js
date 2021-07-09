@@ -34,13 +34,13 @@ class Home extends Component {
     socket.on("sensor/list", function(data) {
       var d = JSON.parse(data)
       var sensors = []
-      if (d.data == null) {
-        d.data = []
+      if (d.sensors == null) {
+        d.sensors = []
       }
-      d.data.sort(function(a, b) {
+      d.sensors.sort(function(a, b) {
         return a.source > b.source ? 1 : -1
       });
-      d.data.forEach(element => {
+      d.sensors.forEach(element => {
         var updated = translateStatus(element.status)
         sensors.push({
           source: element.source,
@@ -48,7 +48,8 @@ class Home extends Component {
           timestamp: element.timestamp,
           timesince: timeSince(element.timestamp),
           icon: updated.icon,
-          color: updated.color
+          color: updated.color,
+          armed: d.arming[element.source]
         })
       })
       component.setState({data: sensors})
@@ -63,7 +64,7 @@ class Home extends Component {
           <Grid.Row cards={true}>
           <Grid.Col sm={6} lg={3}>
             {this.state.data.map(item => (
-              <Sensor key={item.source} source={item.source} socket={socket} status={item.status} icon={item.icon} color={item.color} timestamp={item.timestamp} timesince={item.timesince}/>
+              <Sensor key={item.source} source={item.source} socket={socket} status={item.status} icon={item.icon} color={item.color} timestamp={item.timestamp} timesince={item.timesince} armed={item.armed}/>
             ))
             }
           </Grid.Col>
