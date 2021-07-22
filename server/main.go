@@ -64,6 +64,7 @@ func sensorRestartHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	_mqttClient.publishSensorRestart(sensor.Source)
+	logger.Println(fmt.Sprintf("Publishing sensor restart message for %s", sensor.Source))
 	fmt.Fprintf(w, "{\"status\":\"success\"}")
 }
 
@@ -191,6 +192,7 @@ func main() {
 		heartbeat := toHeartbeat(messageString)
 		currentTimer := heartbeatTimerMap[heartbeat.Source]
 		if currentTimer != nil {
+			// TODO: investigate Reset instead of creating new timers
 			currentTimer.Stop()
 		}
 		timer := time.AfterFunc(heartbeatTimeout, newHeartbeatTimeoutFunc(heartbeat, messenger))
@@ -216,7 +218,9 @@ func handleHeartbeatTimeout(h Heartbeat, msgr Messenger) {
 			logger.Println(fmt.Sprintf("Error writing message state after heartbeat timeout. Message: %s", messageString))
 		} else {
 			logger.Println(fmt.Sprintf("Heartbeat timeout occurred for %s", h.Source))
-			msgr.SendMessage(fmt.Sprintf("%s sensor has lost connection", h.Source))
+			if !mockMode {
+				msgr.SendMessage(fmt.Sprintf("%s sensor has lost connection", h.Source))
+			}
 			_webServer.sendMessage(sensorStatusChannel, message)
 		}
 	} else {
