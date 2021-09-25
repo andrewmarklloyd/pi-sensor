@@ -4,6 +4,7 @@ type ServerConfig struct {
 	brokerurl    string
 	topic        string
 	redisurl     string
+	postgresurl  string
 	port         string
 	mockMode     bool
 	googleConfig GoogleConfig

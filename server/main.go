@@ -14,6 +14,7 @@ import (
 var (
 	brokerurl        = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
 	redisurl         = flag.String("redisurl", os.Getenv("REDIS_URL"), "The redis cluster to connect to")
+	postgresurl      = flag.String("postgresurl", os.Getenv("DATABASE_URL"), "The postresql cluster to connect to")
 	mockFlag         = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
 	port             = flag.String("port", os.Getenv("PORT"), "Port for the web server")
 	authorizedusers  = flag.String("authorizedusers", os.Getenv("AUTHORIZED_USERS"), "")
@@ -41,6 +42,7 @@ const (
 var _webServer webServer
 var _redisClient redisClient
 var _mqttClient mqttClient
+var _postgresClient postgresClient
 
 func newClientHandler() {
 	state, stateErr := _redisClient.ReadAllState()
@@ -94,6 +96,9 @@ func main() {
 	if *redisurl == "" {
 		logger.Fatalln("redisurl is required")
 	}
+	if *postgresurl == "" {
+		logger.Fatalln("postgresurl is required")
+	}
 	if *port == "" {
 		logger.Fatalln("PORT must be set")
 	}
@@ -128,10 +133,11 @@ func main() {
 	mockMode, _ = strconv.ParseBool(*mockFlag)
 
 	serverConfig := ServerConfig{
-		brokerurl: *brokerurl,
-		redisurl:  *redisurl,
-		port:      *port,
-		mockMode:  mockMode,
+		brokerurl:   *brokerurl,
+		redisurl:    *redisurl,
+		postgresurl: *postgresurl,
+		port:        *port,
+		mockMode:    mockMode,
 		googleConfig: GoogleConfig{
 			authorizedUsers: *authorizedusers,
 			clientId:        *clientid,
@@ -151,6 +157,11 @@ func main() {
 	_redisClient, err = newRedisClient(serverConfig.redisurl)
 	if err != nil {
 		logger.Fatalln("Error creating redis client:", err)
+	}
+
+	_postgresClient, err = newPostgresClient(serverConfig.postgresurl)
+	if err != nil {
+		logger.Fatalln("Error creating postgres client:", err)
 	}
 
 	messenger := newMessenger(serverConfig.twilioConfig)
@@ -182,6 +193,10 @@ func main() {
 		err := _redisClient.WriteState(message.Source, messageString)
 		if err == nil {
 			_webServer.sendMessage(sensorStatusChannel, message)
+			writeErr := _postgresClient.writeSensorStatus(message)
+			if writeErr != nil {
+				fmt.Println(writeErr)
+			}
 		} else {
 			logger.Println(fmt.Errorf("Error writing state to Redis: %s", err))
 		}
