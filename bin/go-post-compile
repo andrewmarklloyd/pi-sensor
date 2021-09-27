@@ -12,6 +12,5 @@ cd ../../
 mkdir -p frontend/
 mv server/frontend/build frontend/
 
-curl -sL -o jq  https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
+curl -sL -o jq https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64
 chmod +x ./jq
-mv ./jq /usr/local/bin
