@@ -5,11 +5,18 @@ import {
   Nav,
 } from "tabler-react";
 
+// https://github.com/tabler/tabler-react/blob/6981fe1f1710011a57201b9547d280d86daa3f41/example/src/data/icons/fe.json
 const navBarItems = [
   {
     value: "Home",
     to: "/",
     icon: "home",
+    useExact: true,
+  },
+  {
+    value: "Report",
+    to: "/report",
+    icon: "bar-chart",
     useExact: true,
   },
   {
