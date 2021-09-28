@@ -36,3 +36,25 @@ func (c *postgresClient) writeSensorStatus(m Message) error {
 	}
 	return nil
 }
+
+func (c *postgresClient) getAllSensorStatus() ([]Message, error) {
+	stmt := "SELECT * from status"
+	rows, err := c.client.Query(stmt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var messages []Message
+	for rows.Next() {
+		var m Message
+		err := rows.Scan(&m.Source, &m.Status, &m.Timestamp)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, m)
+	}
+	err = rows.Err()
+	return messages, nil
+}

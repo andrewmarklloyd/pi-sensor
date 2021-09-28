@@ -86,6 +86,15 @@ func sensorArmingHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, fmt.Sprintf(`{"status":"success", "armed":"%s"}`, armed))
 }
 
+func reportHandler(w http.ResponseWriter, req *http.Request) {
+	messages, err := _postgresClient.getAllSensorStatus()
+	if err != nil {
+		logger.Fatalln("Error getting all messages")
+	}
+	json, _ := json.Marshal(messages)
+	fmt.Fprintf(w, fmt.Sprintf(`{"status":"success", "messages":%s}`, string(json)))
+}
+
 func main() {
 	logger.Println("Initializing server")
 	flag.Parse()
@@ -166,7 +175,7 @@ func main() {
 
 	messenger := newMessenger(serverConfig.twilioConfig)
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	_webServer = newWebServer(serverConfig, newClientHandler, sensorRestartHandler, sensorArmingHandler)
+	_webServer = newWebServer(serverConfig, newClientHandler, sensorRestartHandler, sensorArmingHandler, reportHandler)
 	_mqttClient = newMQTTClient(serverConfig)
 	_mqttClient.Subscribe(sensorStatusChannel, func(messageString string) {
 		message := toStruct(messageString)
