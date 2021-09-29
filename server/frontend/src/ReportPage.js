@@ -47,9 +47,9 @@ class ReportPage extends Component {
           <Card.Body>
             <Table>
               <Table.Header>
-                <Table.ColHeader>Source</Table.ColHeader>
+                <Table.ColHeader>Time</Table.ColHeader>
+                <Table.ColHeader>Door</Table.ColHeader>
                 <Table.ColHeader>Status</Table.ColHeader>
-                <Table.ColHeader>Timestamp</Table.ColHeader>
               </Table.Header>
               <Table.Body>
               {this.state.messages.map(item => (
