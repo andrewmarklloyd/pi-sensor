@@ -54,9 +54,9 @@ class ReportPage extends Component {
               <Table.Body>
               {this.state.messages.map(item => (
                 <Table.Row>
+                  <Table.Col>{unixToDate(item.timestamp)}</Table.Col>
                   <Table.Col>{item.source}</Table.Col>
                   <Table.Col>{item.status}</Table.Col>
-                  <Table.Col>{unixToDate(item.timestamp)}</Table.Col>
                 </Table.Row>
               ))
               }
