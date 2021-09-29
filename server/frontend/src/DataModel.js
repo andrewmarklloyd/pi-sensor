@@ -16,30 +16,42 @@ function translateStatus(status) {
   }
 }
 
+function unixToDate(unixTimestamp) {
+  var date = new Date(unixTimestamp * 1000)
+  var year = date.getFullYear()
+  var month = date.getMonth()
+  var day = date.getDate()
+  var hours = date.getHours()
+  var minutes = "0" + date.getMinutes()
+  var seconds = "0" + date.getSeconds()
+
+  return `${year}-${month}-${day} ${hours}:${minutes.substr(-2)}:${seconds.substr(-2)}`
+}
+
 function timeSince(unixTimestamp) {
-    var date = new Date(unixTimestamp * 1000);
-    var seconds = Math.floor((new Date() - date) / 1000);
-    var interval = seconds / 31536000;
+    var date = new Date(unixTimestamp * 1000)
+    var seconds = Math.floor((new Date() - date) / 1000)
+    var interval = seconds / 31536000
     if (interval > 1) {
-      return Math.floor(interval) + " years ago";
+      return Math.floor(interval) + " years ago"
     }
-    interval = seconds / 2592000;
+    interval = seconds / 2592000
     if (interval > 1) {
-      return Math.floor(interval) + " months ago";
+      return Math.floor(interval) + " months ago"
     }
-    interval = seconds / 86400;
+    interval = seconds / 86400
     if (interval > 1) {
-      return Math.floor(interval) + " days ago";
+      return Math.floor(interval) + " days ago"
     }
-    interval = seconds / 3600;
+    interval = seconds / 3600
     if (interval > 1) {
-      return Math.floor(interval) + " hours ago";
+      return Math.floor(interval) + " hours ago"
     }
-    interval = seconds / 60;
+    interval = seconds / 60
     if (interval > 1) {
-      return Math.floor(interval) + " minutes ago";
+      return Math.floor(interval) + " minutes ago"
     }
-    return Math.floor(seconds) + " seconds ago";
+    return Math.floor(seconds) + " seconds ago"
   }
 
-export {translateStatus, timeSince};
+export {translateStatus, unixToDate, timeSince}

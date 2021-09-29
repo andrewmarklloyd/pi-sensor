@@ -38,7 +38,7 @@ func (c *postgresClient) writeSensorStatus(m Message) error {
 }
 
 func (c *postgresClient) getAllSensorStatus() ([]Message, error) {
-	stmt := "SELECT * from status"
+	stmt := "SELECT * FROM status ORDER by timestamp DESC"
 	rows, err := c.client.Query(stmt)
 	if err != nil {
 		return nil, err

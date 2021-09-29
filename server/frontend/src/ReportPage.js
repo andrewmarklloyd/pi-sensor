@@ -6,6 +6,8 @@ import {
   Table
 } from "tabler-react";
 
+import { unixToDate } from "./DataModel";
+
 import SiteWrapper from "./SiteWrapper";
 
 class ReportPage extends Component {
@@ -26,7 +28,6 @@ class ReportPage extends Component {
     })
     .then(r => r.json())
     .then(res => {
-      console.log(res)
       component.state.messages = res.messages
       component.setState(component.state)
     })
@@ -55,7 +56,7 @@ class ReportPage extends Component {
                 <Table.Row>
                   <Table.Col>{item.source}</Table.Col>
                   <Table.Col>{item.status}</Table.Col>
-                  <Table.Col>{item.timestamp}</Table.Col>
+                  <Table.Col>{unixToDate(item.timestamp)}</Table.Col>
                 </Table.Row>
               ))
               }

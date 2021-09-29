@@ -89,10 +89,12 @@ func sensorArmingHandler(w http.ResponseWriter, req *http.Request) {
 func reportHandler(w http.ResponseWriter, req *http.Request) {
 	messages, err := _postgresClient.getAllSensorStatus()
 	if err != nil {
-		logger.Fatalln("Error getting all messages")
+		logger.Fatalln("Error getting all messages", err)
+		http.Error(w, "Error getting report", http.StatusBadRequest)
+		return
 	}
 	json, _ := json.Marshal(messages)
-	fmt.Fprintf(w, fmt.Sprintf(`{"status":"success", "messages":%s}`, string(json)))
+	fmt.Fprintf(w, fmt.Sprintf(`{"messages":%s}`, string(json)))
 }
 
 func main() {
