@@ -20,7 +20,7 @@ function unixToDate(unixTimestamp) {
   var date = new Date(unixTimestamp * 1000)
   var year = date.getFullYear()
   var month = date.getMonth()
-  var day = date.getDate()
+  var day = date.getDate() + 1
   var hours = date.getHours()
   var minutes = "0" + date.getMinutes()
   var seconds = "0" + date.getSeconds()
