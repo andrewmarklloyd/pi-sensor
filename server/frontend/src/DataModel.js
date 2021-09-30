@@ -19,7 +19,7 @@ function translateStatus(status) {
 function unixToDate(unixTimestamp) {
   var date = new Date(unixTimestamp * 1000)
   var year = date.getFullYear()
-  var month = date.getMonth()
+  var month = date.getMonth() + 1
   var day = date.getDate()
   var hours = date.getHours()
   var minutes = "0" + date.getMinutes()
