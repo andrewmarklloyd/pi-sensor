@@ -110,7 +110,7 @@ func allSensorsHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	json, _ := json.Marshal(sensors)
-	fmt.Fprintf(w, fmt.Sprintf(`{"sensors":%s}`, json))
+	fmt.Fprintf(w, fmt.Sprintf(`{"sensors":%s}`, string(json)))
 }
 
 func main() {

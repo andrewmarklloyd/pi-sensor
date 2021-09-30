@@ -35,7 +35,7 @@ func (r *redisClient) GetAllSensors() ([]string, error) {
 	keys := r.client.Keys(ctx, fmt.Sprintf("%s*", statePrefix)).Val()
 	var sensors []string
 	for _, v := range keys {
-		sensors = append(sensors, strings.Trim(v, statePrefix))
+		sensors = append(sensors, strings.ReplaceAll(v, statePrefix, ""))
 	}
 	return sensors, nil
 }
