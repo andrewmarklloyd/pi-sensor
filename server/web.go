@@ -48,6 +48,7 @@ func newWebServer(serverConfig ServerConfig,
 	sensorRestartHandler http.HandlerFunc,
 	sensorArmingHandler http.HandlerFunc,
 	reportHandler http.HandlerFunc,
+	allSensorsHandler http.HandlerFunc,
 ) webServer {
 	router := gmux.NewRouter().StrictSlash(true)
 	socketServer := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
@@ -67,6 +68,7 @@ func newWebServer(serverConfig ServerConfig,
 	stateConfig := gologin.DebugOnlyCookieConfig
 	router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(sensorRestartHandler))).Methods(post)
 	router.Handle("/api/sensor/arming", requireLogin(http.HandlerFunc(sensorArmingHandler))).Methods(post)
+	router.Handle("/api/sensor/all", requireLogin(http.HandlerFunc(allSensorsHandler))).Methods(get)
 	router.Handle("/api/report", requireLogin(http.HandlerFunc(reportHandler))).Methods(get)
 	router.Handle("/google/login", google.StateHandler(stateConfig, google.LoginHandler(oauth2Config, nil)))
 	router.Handle("/google/callback", google.StateHandler(stateConfig, google.CallbackHandler(oauth2Config, issueSession(serverConfig), nil)))

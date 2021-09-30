@@ -3,6 +3,7 @@ import React, { Component } from "react";
 import {
   Page,
   Card,
+  Form,
   Table
 } from "tabler-react";
 
@@ -13,12 +14,13 @@ import SiteWrapper from "./SiteWrapper";
 class ReportPage extends Component {
   constructor(props) {
     super(props)
-    this.state = {messages: []}
+    this.state = {messages: [], sensors: ['', 'All']}
+    this.handleChange = this.handleChange.bind(this);
   }
 
-  getReport() {
+  componentDidMount() {
     var component = this
-    fetch("/api/report", {
+    fetch("/api/sensor/all", {
       method: 'GET',
       credentials: 'same-origin',
       headers: {
@@ -28,11 +30,31 @@ class ReportPage extends Component {
     })
     .then(r => r.json())
     .then(res => {
-      component.state.messages = res.messages
+      component.state.sensors.push(res.sensors)
       component.setState(component.state)
     })
   }
 
+  handleChange(e) {
+    var value = e.target.value
+    if (value === '') {
+      this.setState({messages: []})
+      return
+    }
+    var component = this
+    fetch(`/api/report?sensor=${value}`, {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      referrerPolicy: 'no-referrer',
+    })
+    .then(r => r.json())
+    .then(res => {
+      component.setState({messages: res.messages})
+    })
+  }
   
   render() {
     return (
@@ -40,9 +62,15 @@ class ReportPage extends Component {
         <Page.Content>
         <Card>
           <Card.Header>
-            <button onClick={() => this.getReport()}>
-              Submit
-            </button>
+            <Form.Group label="">
+              <Form.Select onChange={this.handleChange}>
+                {this.state.sensors.map((item, index) => (
+                  <option key={index} value={item}>
+                    {item}
+                  </option>
+                  ))}
+              </Form.Select>
+            </Form.Group>
           </Card.Header>
           <Card.Body>
             <Table>

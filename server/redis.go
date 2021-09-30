@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -28,6 +29,15 @@ func newRedisClient(redisURL string) (redisClient, error) {
 	redisClient.client = *redis.NewClient(options)
 
 	return redisClient, nil
+}
+
+func (r *redisClient) GetAllSensors() ([]string, error) {
+	keys := r.client.Keys(ctx, fmt.Sprintf("%s*", statePrefix)).Val()
+	var sensors []string
+	for _, v := range keys {
+		sensors = append(sensors, strings.Trim(v, statePrefix))
+	}
+	return sensors, nil
 }
 
 func (r *redisClient) ReadAllState() (map[string]string, error) {

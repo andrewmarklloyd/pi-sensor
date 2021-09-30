@@ -87,14 +87,30 @@ func sensorArmingHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func reportHandler(w http.ResponseWriter, req *http.Request) {
-	messages, err := _postgresClient.getAllSensorStatus()
+	sensor := req.URL.Query().Get("sensor")
+	if sensor == "" {
+		http.Error(w, "Pass sensor in request", http.StatusBadRequest)
+		return
+	}
+	messages, err := _postgresClient.getSensorStatus(sensor)
 	if err != nil {
-		logger.Fatalln("Error getting all messages", err)
+		logger.Fatalln("Error getting messages", err)
 		http.Error(w, "Error getting report", http.StatusBadRequest)
 		return
 	}
 	json, _ := json.Marshal(messages)
 	fmt.Fprintf(w, fmt.Sprintf(`{"messages":%s}`, string(json)))
+}
+
+func allSensorsHandler(w http.ResponseWriter, req *http.Request) {
+	sensors, err := _redisClient.GetAllSensors()
+	if err != nil {
+		logger.Fatalln("Error getting all keys", err)
+		http.Error(w, "Error getting sensors", http.StatusBadRequest)
+		return
+	}
+	json, _ := json.Marshal(sensors)
+	fmt.Fprintf(w, fmt.Sprintf(`{"sensors":%s}`, json))
 }
 
 func main() {
@@ -177,7 +193,7 @@ func main() {
 
 	messenger := newMessenger(serverConfig.twilioConfig)
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	_webServer = newWebServer(serverConfig, newClientHandler, sensorRestartHandler, sensorArmingHandler, reportHandler)
+	_webServer = newWebServer(serverConfig, newClientHandler, sensorRestartHandler, sensorArmingHandler, reportHandler, allSensorsHandler)
 	_mqttClient = newMQTTClient(serverConfig)
 	_mqttClient.Subscribe(sensorStatusChannel, func(messageString string) {
 		message := toStruct(messageString)

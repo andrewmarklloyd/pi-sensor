@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"strings"
 
 	_ "github.com/lib/pq"
 )
@@ -37,9 +38,18 @@ func (c *postgresClient) writeSensorStatus(m Message) error {
 	return nil
 }
 
-func (c *postgresClient) getAllSensorStatus() ([]Message, error) {
-	stmt := "SELECT * FROM status ORDER by timestamp DESC"
-	rows, err := c.client.Query(stmt)
+func (c *postgresClient) getSensorStatus(source string) ([]Message, error) {
+	var stmt string
+	var rows *sql.Rows
+	var err error
+	if strings.ToLower(source) == "all" {
+		stmt = "SELECT * FROM status ORDER by timestamp DESC"
+		rows, err = c.client.Query(stmt)
+	} else {
+		stmt = `SELECT * FROM status WHERE source = $1 ORDER by timestamp DESC`
+		rows, err = c.client.Query(stmt, source)
+	}
+
 	if err != nil {
 		return nil, err
 	}
