@@ -65,6 +65,7 @@ class ReportPage extends Component {
         <Card>
           <Card.Header>
             <Form.Group label="">
+              <h4>Sensor</h4>
               <Form.Select onChange={this.handleChange}>
                 {this.state.sensors.map((item, index) => (
                   <option key={index} value={item}>
