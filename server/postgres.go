@@ -43,10 +43,10 @@ func (c *postgresClient) getSensorStatus(source string) ([]Message, error) {
 	var rows *sql.Rows
 	var err error
 	if strings.ToLower(source) == "all" {
-		stmt = "SELECT * FROM status ORDER by timestamp DESC"
+		stmt = "SELECT * FROM status ORDER by timestamp DESC LIMIT 100"
 		rows, err = c.client.Query(stmt)
 	} else {
-		stmt = `SELECT * FROM status WHERE source = $1 ORDER by timestamp DESC`
+		stmt = `SELECT * FROM status WHERE source = $1 ORDER by timestamp DESC LIMIT 100`
 		rows, err = c.client.Query(stmt, source)
 	}
 
