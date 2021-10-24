@@ -12,8 +12,9 @@ require (
 	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1 // indirect
+	github.com/jaedle/golang-tplink-hs100 v0.4.1
 	github.com/kr/text v0.2.0 // indirect
-	github.com/lib/pq v1.10.3 // indirect
+	github.com/lib/pq v1.10.3
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/robfig/cron v1.2.0
 	github.com/stianeikeland/go-rpio v4.2.0+incompatible

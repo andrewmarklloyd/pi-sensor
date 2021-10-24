@@ -1,0 +1,17 @@
+[Unit]
+Description=Door-Light-Alert
+After=network.target
+
+[Service]
+ExecStart=/home/pi/door-light
+WorkingDirectory=/home/pi/
+StandardOutput=inherit
+StandardError=inherit
+User=pi
+
+Environment=CLOUDMQTT_URL=<url>
+Environment=OUTLET_ADDRESS=<ip>
+Environment=DOOR=<door>
+
+[Install]
+WantedBy=multi-user.target

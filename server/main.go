@@ -87,19 +87,26 @@ func sensorArmingHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func reportHandler(w http.ResponseWriter, req *http.Request) {
-	sensor := req.URL.Query().Get("sensor")
+	query := req.URL.Query()
+	sensor := query.Get("sensor")
+	pageString := query.Get("page")
+	page, err := strconv.Atoi(pageString)
+	if err != nil {
+		http.Error(w, "Page not found", http.StatusBadRequest)
+		return
+	}
 	if sensor == "" {
 		http.Error(w, "Pass sensor in request", http.StatusBadRequest)
 		return
 	}
-	messages, err := _postgresClient.getSensorStatus(sensor)
+	messages, numPages, err := _postgresClient.getSensorStatus(sensor, page)
 	if err != nil {
 		logger.Fatalln("Error getting messages", err)
 		http.Error(w, "Error getting report", http.StatusBadRequest)
 		return
 	}
 	json, _ := json.Marshal(messages)
-	fmt.Fprintf(w, fmt.Sprintf(`{"messages":%s}`, string(json)))
+	fmt.Fprintf(w, fmt.Sprintf(`{"messages":%s,"numPages":%d}`, string(json), numPages))
 }
 
 func allSensorsHandler(w http.ResponseWriter, req *http.Request) {
