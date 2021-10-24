@@ -30,9 +30,9 @@ class ReportPage extends Component {
     })
     .then(r => r.json())
     .then(res => {
-      res.sensors.map((item, index) => {
+      res.sensors.map((item, index) => (
         component.state.sensors.push(item)
-      })
+      ))
       component.setState(component.state)
     })
   }
