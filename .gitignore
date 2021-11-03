@@ -4,3 +4,4 @@ pi-sensor-*
 state.yml
 .env
 test.sh
+.DS_Store
