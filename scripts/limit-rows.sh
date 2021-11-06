@@ -26,10 +26,10 @@ limit_data_size() {
         dir=$(echo "${list}" | grep pi-sensor)
         export DRIVE_DIR=$(echo $dir | awk '{print $1}')
         gdrive sync upload ${syncDir} ${DRIVE_DIR}
-        echo "Backup object storage id: ${DRIVE_DIR}"
+        echo "Backup object storage id first 5 characters: $(echo $DRIVE_DIR| cut -c1-5)..."
     else
         export DRIVE_DIR=$(echo $dir | awk '{print $1}')
-        echo "Backup object storage already exists ${DRIVE_DIR}"
+        echo "Backup object storage already exists, first 5 characters $(echo $DRIVE_DIR| cut -c1-5)..."
         gdrive sync download ${DRIVE_DIR} ${syncDir}
     fi
     export DATABASE_URL=$(heroku config:get DATABASE_URL -a pi-sensor-staging)
@@ -46,7 +46,6 @@ limit_data_size() {
     rowsAboveMax=$((${rowCount}-${max}))
     echo "Number of rows above max: ${rowsAboveMax}"
     latest=$(tail -n 1 ${syncDir}/backup-full.csv || echo '')
-    echo "Last backup row: ${latest}"
     query="\copy (SELECT * FROM status ORDER by timestamp ASC LIMIT ${rowsAboveMax}) to '/tmp/out.csv' with delimiter as ','"
     docker run -v "${tmpWorkDir}:/tmp" -e PGPASSWORD=${pw} -it --rm postgres psql -h ${host} -U ${user} ${db} -t -c "${query}"
     if [[ -z ${latest} ]]; then
