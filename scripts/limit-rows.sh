@@ -53,7 +53,7 @@ limit_data_size() {
     fi
     # ensure list is sorted and unique before uploading
     sort -u -k 3 -t ',' -o ${syncDir}/cold-storage.csv ${syncDir}/cold-storage.csv
-    gdrive sync upload ${syncDir} ${DRIVE_DIR} || exit 1
+    gdrive sync upload ${syncDir} ${bucket} || exit 1
     # Delete rows limiting to rowsAboveMax; but ONLY if successfully uploaded to storage!!
     delete_extra_rows
 }
