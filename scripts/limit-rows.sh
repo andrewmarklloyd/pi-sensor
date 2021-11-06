@@ -21,7 +21,6 @@ limit_data_size() {
     dir=$(echo "${list}" | grep pi-sensor)
     if [[ -z ${dir} ]]; then
         echo "Backup object storage does not exist, creating it now"
-        # echo keep > ${syncDir}/.keep
         gdrive upload -r ${syncDir}
         list=$(gdrive list -q "name contains 'pi-sensor'")
         dir=$(echo "${list}" | grep pi-sensor)
@@ -47,14 +46,17 @@ limit_data_size() {
     rowsAboveMax=$((${rowCount}-${max}))
     echo "Number of rows above max: ${rowsAboveMax}"
     latest=$(tail -n 1 ${syncDir}/backup-full.csv || echo '')
+    echo "Last backup row: ${latest}"
     query="\copy (SELECT * FROM status ORDER by timestamp ASC LIMIT ${rowsAboveMax}) to '/tmp/out.csv' with delimiter as ','"
     docker run -v "${tmpWorkDir}:/tmp" -e PGPASSWORD=${pw} -it --rm postgres psql -h ${host} -U ${user} ${db} -t -c "${query}"
     if [[ -z ${latest} ]]; then
-        echo "Backup file not found, dumping contents of query to backup file"
+        echo "Backup file not found, dumping full contents of query to backup file"
         cp ${tmpWorkDir}/out.csv ${syncDir}/backup-full.csv
     else
+        # Get all rows from query that are not currently in backup-full and append to backup-full
         awk "/${latest}/{y=1;next}y" ${tmpWorkDir}/out.csv >> ${syncDir}/backup-full.csv
     fi
+    # ensure list is sorted and unique before uploading
     sort -u -k 3 -t ',' -o ${syncDir}/backup-full.csv ${syncDir}/backup-full.csv
     gdrive sync upload ${syncDir} ${DRIVE_DIR}
     # Delete rows limiting to rowsAboveMax; but ONLY if successfully uploaded to storage!!
