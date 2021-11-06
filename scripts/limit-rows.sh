@@ -22,24 +22,14 @@ DROP TABLE tmp_status;"
 # Find out how many rows the database is above the defined limit. Take that number of rows, append it to the backup file, and delete from the database. Essentially treats the active db as a very large queue, when queue size is too large we pop the old and move into cold storage
 limit_data_size() {
     max=${1}
+    bucket=${2}
     if [[ -z ${max} ]]; then
         echo "Max argument not set"
         exit 1
     fi
-    list=$(gdrive list -q "name contains 'pi-sensor'")
-    dir=$(echo "${list}" | grep pi-sensor)
-    if [[ -z ${dir} ]]; then
-        echo "Cold storage bucket does not exist, creating it now"
-        gdrive upload -r ${syncDir}
-        list=$(gdrive list -q "name contains 'pi-sensor'")
-        dir=$(echo "${list}" | grep pi-sensor)
-        export DRIVE_DIR=$(echo $dir | awk '{print $1}')
-        gdrive sync upload ${syncDir} ${DRIVE_DIR}
-        echo "Cold storage bucket id first 5 characters: $(echo $DRIVE_DIR| cut -c1-5)..."
-    else
-        export DRIVE_DIR=$(echo $dir | awk '{print $1}')
-        echo "Cold storage bucket already exists, first 5 characters $(echo $DRIVE_DIR| cut -c1-5)..."
-        gdrive sync download ${DRIVE_DIR} ${syncDir}
+    if [[ -z ${bucket} ]]; then
+        echo "Bucket argument not set"
+        exit 1
     fi
     query="SELECT COUNT(*) FROM status;"
     rowCount=$(docker run -v "${PWD}/tmp:/tmp" -e PGPASSWORD=${pw} -it --rm postgres psql -h ${host} -U ${user} ${db} -t -c "${query}")
@@ -68,14 +58,48 @@ limit_data_size() {
     delete_extra_rows
 }
 
-export DATABASE_URL=$(heroku config:get DATABASE_URL -a pi-sensor-staging)
+setup_bucket() {
+    bucketName=${1}
+    syncDir=${2}
+    if [[ -z ${bucketName} ]]; then
+        echo "Bucket name argument not set"
+        exit 1
+    fi
+    if [[ -z ${syncDir} ]]; then
+        echo "Sync directory argument not set"
+        exit 1
+    fi
+    bucketList=$(gdrive list -q "name = '${bucketName}'")
+    bucket=$(echo "${bucketList}" | grep ${bucketName} | awk '{print $1}')
+    if [[ -z ${bucket} ]]; then
+        echo "Cold storage bucket does not exist, creating it now"
+        gdrive upload -r ${syncDir}
+        bucketList=$(gdrive list -q "name = '${bucketName}'")
+        bucket=$(echo "${bucketList}" | grep ${bucketName} | awk '{print $1}')
+        gdrive sync upload ${syncDir} ${bucket}
+        export DRIVE_DIR=${bucket}
+        echo "Cold storage bucket id first 5 characters: $(echo $DRIVE_DIR| cut -c1-5)..."
+    else
+        echo "Cold storage bucket already exists, first 5 characters $(echo $bucket| cut -c1-5)..."
+        gdrive sync download ${bucket} ${syncDir}
+    fi
+    echo ${bucket} > /tmp/.bucket
+}
+
+app=pi-sensor-staging
+bucketName="backup-${app}"
+MAX_ROWS=10
+
+export DATABASE_URL=$(heroku config:get DATABASE_URL -a ${app})
 eval `~/parse-posgres-url.js`
-syncDir='/tmp/pi-sensor'
+syncDir="/tmp/${bucketName}"
 rm -rf ${syncDir}
 mkdir -p ${syncDir}
 tmpWorkDir='/tmp/data'
 rm -rf ${tmpWorkDir}
 mkdir -p ${tmpWorkDir}
-MAX_ROWS=10
 
-limit_data_size ${MAX_ROWS}
+setup_bucket ${bucketName} ${syncDir}
+bucket=$(cat /tmp/.bucket)
+
+limit_data_size ${MAX_ROWS} ${bucket}
