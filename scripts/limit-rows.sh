@@ -43,18 +43,12 @@ limit_data_size() {
     echo "Number of rows above max: ${rowsAboveMax}"
     query="\copy (SELECT * FROM status ORDER by timestamp ASC LIMIT ${rowsAboveMax}) to '/tmp/out.csv' with delimiter as ','"
     docker run -v "${tmpWorkDir}:/tmp" -e PGPASSWORD=${pw} -it --rm postgres psql -h ${host} -U ${user} ${db} -t -c "${query}"
-
-    query="\copy (SELECT * FROM status) to '/tmp/full-before.csv' with delimiter as ','"
-    docker run -v "${tmpWorkDir}:/tmp" -e PGPASSWORD=${pw} -it --rm postgres psql -h ${host} -U ${user} ${db} -t -c "${query}"
-
     cat ${tmpWorkDir}/out.csv >> ${syncDir}/cold-storage.csv
     # ensure list is sorted and unique before uploading
     sort -u -k 3 -t ',' -o ${syncDir}/cold-storage.csv ${syncDir}/cold-storage.csv
     gdrive sync upload ${syncDir} ${bucket} || exit 1
     # Delete rows limiting to rowsAboveMax; but ONLY if successfully uploaded to storage!!
     delete_extra_rows
-    query="\copy (SELECT * FROM status) to '/tmp/full-after.csv' with delimiter as ','"
-    docker run -v "${tmpWorkDir}:/tmp" -e PGPASSWORD=${pw} -it --rm postgres psql -h ${host} -U ${user} ${db} -t -c "${query}"
 }
 
 setup_bucket() {
