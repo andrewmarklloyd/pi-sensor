@@ -271,7 +271,13 @@ func handleHeartbeatTimeout(h Heartbeat, msgr Messenger) {
 				msgr.SendMessage(fmt.Sprintf("%s sensor has lost connection", h.Source))
 			}
 			_webServer.sendMessage(sensorStatusChannel, message)
-			writeErr := _postgresClient.writeSensorStatus(message)
+
+			m := Message{
+				Source:    message.Source,
+				Timestamp: strconv.FormatInt(time.Now().UTC().Unix(), 10),
+				Status:    UNKNOWN,
+			}
+			writeErr := _postgresClient.writeSensorStatus(m)
 			if writeErr != nil {
 				logger.Println(writeErr)
 			}
