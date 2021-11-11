@@ -229,7 +229,7 @@ func main() {
 			_webServer.sendMessage(sensorStatusChannel, message)
 			writeErr := _postgresClient.writeSensorStatus(message)
 			if writeErr != nil {
-				fmt.Println(writeErr)
+				logger.Println(writeErr)
 			}
 		} else {
 			logger.Println(fmt.Errorf("Error writing state to Redis: %s", err))
@@ -271,6 +271,10 @@ func handleHeartbeatTimeout(h Heartbeat, msgr Messenger) {
 				msgr.SendMessage(fmt.Sprintf("%s sensor has lost connection", h.Source))
 			}
 			_webServer.sendMessage(sensorStatusChannel, message)
+			writeErr := _postgresClient.writeSensorStatus(message)
+			if writeErr != nil {
+				logger.Println(writeErr)
+			}
 		}
 	} else {
 		logger.Println(err)
