@@ -9,16 +9,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/prasmussen/gdrive/auth"
-	gdrive "github.com/prasmussen/gdrive/drive"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 )
-
-const ClientId = ""
-const ClientSecret = ""
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(config *oauth2.Config) *http.Client {
@@ -75,95 +70,62 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func GetClientWithBucket(bucketName, syncDir string) (*drive.Service, drive.File, *gdrive.Drive) {
-	ctx := context.Background()
-	b, err := ioutil.ReadFile("credentials.json")
-	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
-	}
-
-	config, err := google.ConfigFromJSON(b, drive.DriveScope)
-	if err != nil {
-		log.Fatalf("Unable to parse client secret file to config: %v", err)
-	}
-	client := getClient(config)
-
-	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
-	if err != nil {
-		log.Fatalf("Unable to retrieve Drive client: %v", err)
-	}
-
+func getOrCreateBucket(srv *drive.Service, bucketName, backupFileName string) error {
+	localBackupFilePath := fmt.Sprintf("/tmp/%s/%s", bucketName, backupFileName)
 	r, err := srv.Files.List().Q(fmt.Sprintf("name = '%s'", bucketName)).Do()
+	// '1234567' in parents
 	if err != nil {
-		log.Fatalf("Unable to retrieve files: %v", err)
+		return err
 	}
 
-	tokenPath := "token.json"
-	oauth, err := auth.NewFileSourceClient(ClientId, ClientSecret, tokenPath, authCodePrompt)
-
-	if err != nil {
-		fmt.Println("Failed getting oauth client:", err.Error())
-		os.Exit(1)
-	}
-	dr, err := gdrive.New(oauth)
-	if err != nil {
-		fmt.Println("Failed getting drive:", err.Error())
-		os.Exit(1)
-	}
-
-	var bucket drive.File
+	// var bucket drive.File
 	if len(r.Files) == 0 {
 		fmt.Println("Cold storage bucket does not exist, creating it now")
+		// r, err := srv.Files.List().Q(fmt.Sprintf("'%s' in parents", backupFileName)).Do()
 
-		dr.Upload(gdrive.UploadArgs{
-			Out:       os.Stdout,
-			Recursive: true,
-			Path:      syncDir,
-		})
+		bucket, err := srv.Files.Create(&drive.File{
+			Name:     bucketName,
+			MimeType: "application/vnd.google-apps.folder",
+		}).Do()
 
 		if err != nil {
-			log.Fatal("Could not create dir: " + err.Error())
+			return err
 		}
 
-		r, err = srv.Files.List().Q(fmt.Sprintf("name = '%s'", bucketName)).Do()
+		_, err = srv.Files.Create(&drive.File{
+			Name:     backupFileName,
+			Parents:  []string{bucket.Id},
+			MimeType: "text/csv",
+		}).Do()
+
 		if err != nil {
-			log.Fatalf("Unable to retrieve files: %v", err)
+			return err
 		}
 
-		dr.UploadSync(gdrive.UploadSyncArgs{
-			Out:    os.Stdout,
-			Path:   syncDir,
-			RootId: r.Files[0].Id,
-		})
 	} else if len(r.Files) == 1 {
-		fmt.Println("Cold storage bucket already exists, syncing now")
-		bucket = *r.Files[0]
-		dr.DownloadSync(gdrive.DownloadSyncArgs{
-			Out:    os.Stdout,
-			Path:   syncDir,
-			RootId: bucket.Id,
-		})
-	} else {
-		log.Fatal("Only one bucket expected but found more than one")
-	}
-	return srv, bucket, dr
-}
-
-func authCodePrompt(url string) func() string {
-	return func() string {
-		fmt.Println("Authentication needed")
-		fmt.Println("Go to the following url in your browser:")
-		fmt.Printf("%s\n\n", url)
-		fmt.Print("Enter verification code: ")
-
-		var code string
-		if _, err := fmt.Scan(&code); err != nil {
-			fmt.Printf("Failed reading code: %s", err.Error())
+		bucket := *r.Files[0]
+		backupFileRes, _ := srv.Files.List().Q(fmt.Sprintf("'%s' in parents", bucket.Id)).Do()
+		backupfile := *&backupFileRes.Files[0]
+		if len(backupFileRes.Files) != 1 || *&backupFileRes.Files[0].Name != backupFileName {
+			return fmt.Errorf("Expected cold storage bucket %s to contain file %s", bucket.Name, backupFileName)
 		}
-		return code
-	}
-}
 
+		fmt.Println(fmt.Sprintf("Cold storage bucket %s already exists with backup file %s, syncing now", bucket.Name, backupFileName))
+
+		resp, err := srv.Files.Get(backupfile.Id).Download()
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		err = ioutil.WriteFile(localBackupFilePath, body, 0644)
+
+	} else {
+		return fmt.Errorf("Only one bucket expected but found more than one")
+	}
+
+	return nil
+}
 func setupDir(syncDir string) {
 	err := os.RemoveAll(syncDir)
 	if err != nil {
@@ -175,21 +137,41 @@ func setupDir(syncDir string) {
 	}
 }
 
+func configClient() *drive.Service {
+	ctx := context.Background()
+	b, err := ioutil.ReadFile("credentials.json")
+	if err != nil {
+		log.Fatalf("Unable to read client secret file: %v", err)
+	}
+
+	// If modifying these scopes, delete your previously saved token.json.
+	config, err := google.ConfigFromJSON(b, drive.DriveScope)
+	if err != nil {
+		log.Fatalf("Unable to parse client secret file to config: %v", err)
+	}
+	client := getClient(config)
+
+	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		log.Fatalf("Unable to retrieve Drive client: %v", err)
+	}
+	return srv
+}
+
 func main() {
 	app := "pi-sensor-staging"
 	bucketName := fmt.Sprintf("backup-%s", app)
+	backupFileName := "cold-storage.csv"
 	syncDir := fmt.Sprintf("/tmp/%s", bucketName)
 	setupDir(syncDir)
 	tmpWorkDir := "/tmp/data"
 	setupDir(tmpWorkDir)
-	_, bucket, dr := GetClientWithBucket(bucketName, syncDir)
-	// GetClientWithBucket(bucketName, syncDir)
-	keepFile := []byte("testing-abc")
-	filename := fmt.Sprintf("%s/testing-abc", syncDir)
-	os.WriteFile(filename, keepFile, 0644)
-	dr.UploadSync(gdrive.UploadSyncArgs{
-		Out:    os.Stdout,
-		Path:   syncDir,
-		RootId: bucket.Id,
-	})
+
+	srv := configClient()
+	err := getOrCreateBucket(srv, bucketName, backupFileName)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 }
