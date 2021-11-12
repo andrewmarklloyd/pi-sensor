@@ -70,18 +70,16 @@ func saveToken(path string, token *oauth2.Token) {
 	json.NewEncoder(f).Encode(token)
 }
 
-func getOrCreateBucket(srv *drive.Service, bucketName, backupFileName string) error {
+func getOrCreateBackupFile(srv *drive.Service, bucketName, backupFileName string) (string, error) {
 	localBackupFilePath := fmt.Sprintf("/tmp/%s/%s", bucketName, backupFileName)
 	r, err := srv.Files.List().Q(fmt.Sprintf("name = '%s'", bucketName)).Do()
-	// '1234567' in parents
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// var bucket drive.File
 	if len(r.Files) == 0 {
 		fmt.Println("Cold storage bucket does not exist, creating it now")
-		// r, err := srv.Files.List().Q(fmt.Sprintf("'%s' in parents", backupFileName)).Do()
 
 		bucket, err := srv.Files.Create(&drive.File{
 			Name:     bucketName,
@@ -89,42 +87,41 @@ func getOrCreateBucket(srv *drive.Service, bucketName, backupFileName string) er
 		}).Do()
 
 		if err != nil {
-			return err
+			return "", err
 		}
 
-		_, err = srv.Files.Create(&drive.File{
+		backupFile, err := srv.Files.Create(&drive.File{
 			Name:     backupFileName,
 			Parents:  []string{bucket.Id},
 			MimeType: "text/csv",
 		}).Do()
 
 		if err != nil {
-			return err
+			return "", err
 		}
+		return backupFile.Id, nil
 
 	} else if len(r.Files) == 1 {
 		bucket := *r.Files[0]
 		backupFileRes, _ := srv.Files.List().Q(fmt.Sprintf("'%s' in parents", bucket.Id)).Do()
-		backupfile := *&backupFileRes.Files[0]
+		backupFile := *&backupFileRes.Files[0]
 		if len(backupFileRes.Files) != 1 || *&backupFileRes.Files[0].Name != backupFileName {
-			return fmt.Errorf("Expected cold storage bucket %s to contain file %s", bucket.Name, backupFileName)
+			return "", fmt.Errorf("Expected cold storage bucket %s to contain file %s", bucket.Name, backupFileName)
 		}
 
 		fmt.Println(fmt.Sprintf("Cold storage bucket %s already exists with backup file %s, syncing now", bucket.Name, backupFileName))
 
-		resp, err := srv.Files.Get(backupfile.Id).Download()
+		resp, err := srv.Files.Get(backupFile.Id).Download()
 		if err != nil {
-			return err
+			return "", err
 		}
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		err = ioutil.WriteFile(localBackupFilePath, body, 0644)
-
+		return backupFile.Id, nil
 	} else {
-		return fmt.Errorf("Only one bucket expected but found more than one")
+		return "", fmt.Errorf("Only one bucket expected but found more than one")
 	}
-
-	return nil
 }
 func setupDir(syncDir string) {
 	err := os.RemoveAll(syncDir)
@@ -168,10 +165,23 @@ func main() {
 	setupDir(tmpWorkDir)
 
 	srv := configClient()
-	err := getOrCreateBucket(srv, bucketName, backupFileName)
+	_, err := getOrCreateBackupFile(srv, bucketName, backupFileName)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
+	// time.Sleep(time.Second * 10)
+	// dstFile := &drive.File{}
+	// f, err := os.Open(fmt.Sprintf("/tmp/%s/%s", bucketName, backupFileName))
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	os.Exit(1)
+	// }
+	// _, err = srv.Files.Update(backupFileId, dstFile).Media(f).Do()
+	// // 	f, err := self.service.Files.Update(args.Id, dstFile).Fields("id", "name", "size").Context(ctx).Media(reader, chunkSize).Do()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	os.Exit(1)
+	// }
 }
