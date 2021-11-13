@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -99,6 +100,13 @@ func getOrCreateBackupFile(srv *drive.Service, bucketName, backupFileName string
 		if err != nil {
 			return "", err
 		}
+		resp, err := srv.Files.Get(backupFile.Id).Download()
+		if err != nil {
+			return "", err
+		}
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		err = ioutil.WriteFile(localBackupFilePath, body, 0644)
 		return backupFile.Id, nil
 
 	} else if len(r.Files) == 1 {
@@ -165,23 +173,23 @@ func main() {
 	setupDir(tmpWorkDir)
 
 	srv := configClient()
-	_, err := getOrCreateBackupFile(srv, bucketName, backupFileName)
+	backupFileId, err := getOrCreateBackupFile(srv, bucketName, backupFileName)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	fmt.Println(backupFileId)
 
-	// time.Sleep(time.Second * 10)
-	// dstFile := &drive.File{}
-	// f, err := os.Open(fmt.Sprintf("/tmp/%s/%s", bucketName, backupFileName))
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	os.Exit(1)
-	// }
-	// _, err = srv.Files.Update(backupFileId, dstFile).Media(f).Do()
-	// // 	f, err := self.service.Files.Update(args.Id, dstFile).Fields("id", "name", "size").Context(ctx).Media(reader, chunkSize).Do()
-	// if err != nil {
-	// 	fmt.Println(err)
-	// 	os.Exit(1)
-	// }
+	time.Sleep(time.Second * 5)
+	dstFile := &drive.File{}
+	f, err := os.Open(fmt.Sprintf("/tmp/%s/%s", bucketName, backupFileName))
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	_, err = srv.Files.Update(backupFileId, dstFile).Media(f).Do()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
