@@ -126,7 +126,7 @@ func getOrCreateBackupFile(srv *drive.Service, bucketName, backupFileName string
 			return "", fmt.Errorf("Expected cold storage bucket %s to contain file %s", bucket.Name, backupFileName)
 		}
 
-		fmt.Println(fmt.Sprintf("Cold storage bucket %s already exists with backup file %s, syncing now", bucket.Name, backupFileName))
+		fmt.Println(fmt.Sprintf("Cold storage bucket %s already exists with backup filename %s, syncing now", bucket.Name, backupFileName))
 
 		resp, err := srv.Files.Get(backupFile.Id).Download()
 		if err != nil {
@@ -174,7 +174,7 @@ func configClient() *drive.Service {
 }
 
 func writeBackupFile(messages []Message, filepath string) error {
-	file, _ := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, _ := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	datawriter := bufio.NewWriter(file)
 	for _, data := range messages {
 		_, err := datawriter.WriteString(fmt.Sprintf("%s,%s,%s\n", data.Source, data.Status, data.Timestamp))
