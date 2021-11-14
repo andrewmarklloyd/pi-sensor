@@ -273,7 +273,8 @@ func main() {
 	c, err := newPostgresClient(config.DatabaseURL)
 	checkErr(err)
 	rowsAboveMax, _ := c.getRowsAboveMax(config.MaxRows)
-	if len(rowsAboveMax) == 0 {
+	numberRowsAboveMax := len(rowsAboveMax)
+	if numberRowsAboveMax == 0 {
 		os.Exit(0)
 	}
 
@@ -284,12 +285,18 @@ func main() {
 	localBackupFilePath := fmt.Sprintf("/%s/%s", syncDir, backupFileName)
 	backupMessages, err := readMessagesFromBackupFile(localBackupFilePath)
 	checkErr(err)
-	fmt.Println(fmt.Sprintf("Number of messages in backup file before updating: %d", len(backupMessages)))
+	preUpdateRowCount := len(backupMessages)
 
 	fullBackupMessages := append(backupMessages, rowsAboveMax...)
 	ensureBackupMessagesSorted(fullBackupMessages)
 	err = writeBackupFile(fullBackupMessages, localBackupFilePath)
 	checkErr(err)
+	postUpdateRowCount := len(fullBackupMessages)
+
+	numBackupUpdated := postUpdateRowCount - preUpdateRowCount
+	if numBackupUpdated != numberRowsAboveMax {
+		fmt.Println(fmt.Sprintf("WARN: number of messages updated in backup file '%d' did not match expected number of rows above max '%d'", numBackupUpdated, numberRowsAboveMax))
+	}
 	err = uploadBackupFile(srv, fmt.Sprintf("/tmp/%s/%s", bucketName, backupFileName), backupFileId)
 	checkErr(err)
 	err = c.deleteRows(rowsAboveMax)

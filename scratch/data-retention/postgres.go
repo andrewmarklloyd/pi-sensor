@@ -44,9 +44,10 @@ func (c *postgresClient) getRowCount() (int, error) {
 }
 
 func (c *postgresClient) deleteRows(rowsAboveMax []Message) error {
-	query := "DELETE FROM status WHERE timestamp <= $1"
-
-	res, err := c.client.Exec(query, rowsAboveMax[len(rowsAboveMax)-1].Timestamp)
+	query := "DELETE FROM status WHERE timestamp BETWEEN $1 AND $2"
+	firstRow := rowsAboveMax[0].Timestamp
+	lastRow := rowsAboveMax[len(rowsAboveMax)-1].Timestamp
+	res, err := c.client.Exec(query, firstRow, lastRow)
 	if err != nil {
 		return err
 	}
@@ -54,7 +55,12 @@ func (c *postgresClient) deleteRows(rowsAboveMax []Message) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(fmt.Sprintf("Successfully deleted '%d' rows", rowsAffected))
+
+	if len(rowsAboveMax) == int(rowsAffected) {
+		fmt.Println(fmt.Sprintf("Successfully deleted '%d' rows", rowsAffected))
+	} else {
+		fmt.Println(fmt.Sprintf("WARN: number of rows deleted '%d' did not match expected number '%d'. This could indicate a data loss situation", rowsAffected, len(rowsAboveMax)))
+	}
 
 	return nil
 }
