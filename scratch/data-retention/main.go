@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -8,13 +9,21 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
+	"sort"
+	"strconv"
+	"strings"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 )
+
+type Config struct {
+	AppName     string
+	MaxRows     int
+	DatabaseURL string
+}
 
 // Retrieve a token, saves the token, then returns the generated client.
 func getClient(config *oauth2.Config) *http.Client {
@@ -131,6 +140,7 @@ func getOrCreateBackupFile(srv *drive.Service, bucketName, backupFileName string
 		return "", fmt.Errorf("Only one bucket expected but found more than one")
 	}
 }
+
 func setupDir(syncDir string) {
 	err := os.RemoveAll(syncDir)
 	if err != nil {
@@ -163,33 +173,125 @@ func configClient() *drive.Service {
 	return srv
 }
 
-func main() {
-	app := "pi-sensor-staging"
-	bucketName := fmt.Sprintf("backup-%s", app)
-	backupFileName := "cold-storage.csv"
-	syncDir := fmt.Sprintf("/tmp/%s", bucketName)
-	setupDir(syncDir)
-	tmpWorkDir := "/tmp/data"
-	setupDir(tmpWorkDir)
-
-	srv := configClient()
-	backupFileId, err := getOrCreateBackupFile(srv, bucketName, backupFileName)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+func writeBackupFile(messages []Message, filepath string) error {
+	file, _ := os.OpenFile(filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	datawriter := bufio.NewWriter(file)
+	for _, data := range messages {
+		_, err := datawriter.WriteString(fmt.Sprintf("%s,%s,%s\n", data.Source, data.Status, data.Timestamp))
+		if err != nil {
+			return err
+		}
 	}
-	fmt.Println(backupFileId)
+	datawriter.Flush()
+	defer file.Close()
+	return nil
+}
 
-	time.Sleep(time.Second * 5)
-	dstFile := &drive.File{}
-	f, err := os.Open(fmt.Sprintf("/tmp/%s/%s", bucketName, backupFileName))
+func readMessagesFromBackupFile(filepath string) ([]Message, error) {
+	file, err := os.Open(filepath)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return nil, err
+	}
+	defer file.Close()
+
+	messages := make([]Message, 0)
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		s := strings.Split(scanner.Text(), ",")
+		m := Message{
+			Source:    s[0],
+			Status:    s[1],
+			Timestamp: s[2],
+		}
+		messages = append(messages, m)
+	}
+
+	return messages, nil
+}
+
+func ensureBackupMessagesSorted(fullBackupMessages []Message) {
+	sort.SliceStable(fullBackupMessages, func(i, j int) bool {
+		return fullBackupMessages[i].Timestamp < fullBackupMessages[j].Timestamp
+	})
+}
+
+func uploadBackupFile(srv *drive.Service, backupFilePath string, backupFileId string) error {
+	dstFile := &drive.File{}
+	f, err := os.Open(backupFilePath)
+	if err != nil {
+		return err
 	}
 	_, err = srv.Files.Update(backupFileId, dstFile).Media(f).Do()
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func checkErr(err error) {
+	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func initConfig() Config {
+	appName := os.Getenv("APP_NAME")
+	if appName == "" {
+		fmt.Println("APP_NAME env var not set")
+		os.Exit(1)
+	}
+
+	maxRowsString := os.Getenv("MAX_ROWS")
+	if maxRowsString == "" {
+		fmt.Println("MAX_ROWS env var not set")
+		os.Exit(1)
+	}
+
+	dbUrl := os.Getenv("DATABASE_URL")
+	if dbUrl == "" {
+		fmt.Println("DATABASE_URL env var not set")
+		os.Exit(1)
+	}
+
+	maxRows, _ := strconv.Atoi(maxRowsString)
+	return Config{
+		AppName:     appName,
+		MaxRows:     maxRows,
+		DatabaseURL: dbUrl,
+	}
+}
+
+func main() {
+	config := initConfig()
+	bucketName := fmt.Sprintf("backup-%s", config.AppName)
+	backupFileName := "cold-storage.csv"
+	syncDir := fmt.Sprintf("/tmp/%s", bucketName)
+	setupDir(syncDir)
+
+	c, err := newPostgresClient(config.DatabaseURL)
+	checkErr(err)
+	rowsAboveMax, _ := c.getRowsAboveMax(config.MaxRows)
+	if len(rowsAboveMax) == 0 {
+		os.Exit(0)
+	}
+
+	srv := configClient()
+	backupFileId, err := getOrCreateBackupFile(srv, bucketName, backupFileName)
+	checkErr(err)
+
+	localBackupFilePath := fmt.Sprintf("/%s/%s", syncDir, backupFileName)
+	backupMessages, err := readMessagesFromBackupFile(localBackupFilePath)
+	checkErr(err)
+	fmt.Println(fmt.Sprintf("Number of messages in backup file before updating: %d", len(backupMessages)))
+
+	fullBackupMessages := append(backupMessages, rowsAboveMax...)
+	ensureBackupMessagesSorted(fullBackupMessages)
+	err = writeBackupFile(fullBackupMessages, localBackupFilePath)
+	checkErr(err)
+	err = uploadBackupFile(srv, fmt.Sprintf("/tmp/%s/%s", bucketName, backupFileName), backupFileId)
+	checkErr(err)
+	err = c.deleteRows(rowsAboveMax)
+	checkErr(err)
 }
