@@ -23,6 +23,7 @@ type Config struct {
 	AppName     string
 	MaxRows     int
 	DatabaseURL string
+	Service     *drive.Service
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -154,12 +155,20 @@ func setupDir(syncDir string) {
 
 func configClient() *drive.Service {
 	ctx := context.Background()
-	b, err := ioutil.ReadFile("credentials.json")
-	if err != nil {
-		log.Fatalf("Unable to read client secret file: %v", err)
+
+	// try env var, then file on disk
+	var b []byte
+	credsString := os.Getenv("CREDENTIALS_JSON")
+	if credsString != "" {
+		b = []byte(credsString)
+	} else {
+		var err error
+		b, err = ioutil.ReadFile("credentials.json")
+		if err != nil {
+			log.Fatalf("Unable to read client secret file: %v", err)
+		}
 	}
 
-	// If modifying these scopes, delete your previously saved token.json.
 	config, err := google.ConfigFromJSON(b, drive.DriveScope)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
@@ -248,6 +257,7 @@ func initConfig() Config {
 		fmt.Println("MAX_ROWS env var not set")
 		os.Exit(1)
 	}
+	maxRows, _ := strconv.Atoi(maxRowsString)
 
 	dbUrl := os.Getenv("DATABASE_URL")
 	if dbUrl == "" {
@@ -255,11 +265,11 @@ func initConfig() Config {
 		os.Exit(1)
 	}
 
-	maxRows, _ := strconv.Atoi(maxRowsString)
 	return Config{
 		AppName:     appName,
 		MaxRows:     maxRows,
 		DatabaseURL: dbUrl,
+		Service:     configClient(),
 	}
 }
 
@@ -278,8 +288,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	srv := configClient()
-	backupFileId, err := getOrCreateBackupFile(srv, bucketName, backupFileName)
+	backupFileId, err := getOrCreateBackupFile(config.Service, bucketName, backupFileName)
 	checkErr(err)
 
 	localBackupFilePath := fmt.Sprintf("/%s/%s", syncDir, backupFileName)
@@ -297,7 +306,7 @@ func main() {
 	if numBackupUpdated != numberRowsAboveMax {
 		fmt.Println(fmt.Sprintf("WARN: number of messages updated in backup file '%d' did not match expected number of rows above max '%d'", numBackupUpdated, numberRowsAboveMax))
 	}
-	err = uploadBackupFile(srv, fmt.Sprintf("/tmp/%s/%s", bucketName, backupFileName), backupFileId)
+	err = uploadBackupFile(config.Service, fmt.Sprintf("/tmp/%s/%s", bucketName, backupFileName), backupFileId)
 	checkErr(err)
 	err = c.deleteRows(rowsAboveMax)
 	checkErr(err)
