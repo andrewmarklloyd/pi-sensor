@@ -27,17 +27,29 @@ type Config struct {
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
-func getClient(config *oauth2.Config) *http.Client {
+func getClient(config *oauth2.Config) (*http.Client, error) {
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
 	// time.
-	tokFile := "token.json"
-	tok, err := tokenFromFile(tokFile)
-	if err != nil {
-		tok = getTokenFromWeb(config)
-		saveToken(tokFile, tok)
+	tokenJson := os.Getenv("TOKEN_JSON")
+	if tokenJson != "" {
+		r := strings.NewReader(tokenJson)
+		tok := &oauth2.Token{}
+		err := json.NewDecoder(r).Decode(tok)
+		if err != nil {
+			return nil, err
+		}
+		return config.Client(context.Background(), tok), nil
+	} else {
+		fmt.Println("TOKEN_JSON not set, looking for token.json")
+		tokFile := "token.json"
+		tok, err := tokenFromFile(tokFile)
+		if err != nil {
+			tok = getTokenFromWeb(config)
+			saveToken(tokFile, tok)
+		}
+		return config.Client(context.Background(), tok), nil
 	}
-	return config.Client(context.Background(), tok)
 }
 
 // Request a token from the web, then returns the retrieved token.
@@ -162,6 +174,7 @@ func configClient() *drive.Service {
 	if credsString != "" {
 		b = []byte(credsString)
 	} else {
+		fmt.Println("CREDENTIALS_JSON not set, looking for credentials.json")
 		var err error
 		b, err = ioutil.ReadFile("credentials.json")
 		if err != nil {
@@ -173,11 +186,14 @@ func configClient() *drive.Service {
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
-	client := getClient(config)
+	client, err := getClient(config)
+	if err != nil {
+		log.Fatalf("Unable to retrieve Drive client: %v", err)
+	}
 
 	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		log.Fatalf("Unable to retrieve Drive client: %v", err)
+		log.Fatalf("Unable to create new Drive service: %v", err)
 	}
 	return srv
 }
