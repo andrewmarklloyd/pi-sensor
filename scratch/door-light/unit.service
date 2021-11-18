@@ -10,8 +10,9 @@ StandardError=inherit
 User=pi
 
 Environment=CLOUDMQTT_URL=<url>
-Environment=OUTLET_ADDRESS=<ip>
+Environment=DEVICE_NAME=<device-name>
 Environment=DOOR=<door>
+
 
 [Install]
 WantedBy=multi-user.target

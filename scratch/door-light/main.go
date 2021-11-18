@@ -28,25 +28,44 @@ const (
 // POC for turning on smart outlet when door is open
 func main() {
 	brokerurl := flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
-	outletaddress := flag.String("outletaddress", os.Getenv("OUTLET_ADDRESS"), "The outlet to control")
+	deviceName := flag.String("devicename", os.Getenv("DEVICE_NAME"), "The outlet to control")
 	door := flag.String("door", os.Getenv("DOOR"), "The door to monitor")
 	if *brokerurl == "" {
 		logger.Fatalln("at least one broker is required")
 	}
-	if *outletaddress == "" {
+	if *deviceName == "" {
 		logger.Fatalln("outlet address is required")
 	}
 	if *door == "" {
 		logger.Fatalln("door required")
 	}
 
-	_mqttClient := newMQTTClient(*brokerurl)
-	outlet := hs100.NewHs100(*outletaddress, configuration.Default())
+	devices, err := hs100.Discover("192.168.1.1/24", configuration.Default().WithTimeout(time.Second))
+	if err != nil {
+		logger.Fatalln("Error getting devices:", err)
+	}
 
+	var outlet *hs100.Hs100
+	for _, d := range devices {
+		name, err := d.GetName()
+		if err != nil {
+			logger.Fatalln("Error getting device name:", err)
+		}
+		if name == *deviceName {
+			outlet = d
+			break
+		}
+	}
+
+	if outlet == nil {
+		logger.Fatalln(fmt.Sprintf("None of discovered devices matches expected device name %s: ", *deviceName), err)
+	}
+
+	_mqttClient := newMQTTClient(*brokerurl)
 	_mqttClient.Subscribe(sensorStatusChannel, func(messageString string) {
 		err := triggerOutlet(outlet, messageString, *door)
 		if err != nil {
-			logger.Println("Error triggering outlet:", err)
+			logger.Fatalln("Error triggering outlet:", err)
 		}
 	})
 
