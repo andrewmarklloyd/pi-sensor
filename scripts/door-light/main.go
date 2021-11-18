@@ -132,8 +132,10 @@ func triggerOutlet(outlet *hs100.Hs100, messageString string, door string) error
 		return nil
 	}
 	if strings.Contains(messageString, OPEN) {
+		fmt.Println("Turning outlet ON")
 		return outlet.TurnOn()
 	} else if strings.Contains(messageString, CLOSED) {
+		fmt.Println("Turning outlet OFF")
 		return outlet.TurnOff()
 	}
 	return fmt.Errorf(fmt.Sprintf("Message did not contain %s or %s", OPEN, CLOSED))
