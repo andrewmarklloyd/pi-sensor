@@ -42,14 +42,14 @@ func main() {
 
 	devices, err := hs100.Discover("192.168.1.1/24", configuration.Default().WithTimeout(time.Second))
 	if err != nil {
-		logger.Fatalln("Error getting devices:", err)
+		logger.Println(fmt.Errorf("Error getting devices: %s", err))
 	}
 
 	var outlet *hs100.Hs100
 	for _, d := range devices {
 		name, err := d.GetName()
 		if err != nil {
-			logger.Fatalln("Error getting device name:", err)
+			logger.Println(fmt.Errorf("Error getting device name: %s", err))
 		}
 		if name == *deviceName {
 			outlet = d
@@ -58,14 +58,14 @@ func main() {
 	}
 
 	if outlet == nil {
-		logger.Fatalln(fmt.Sprintf("None of discovered devices matches expected device name %s: ", *deviceName), err)
+		logger.Println(fmt.Sprintf("None of discovered devices matches expected device name %s: ", *deviceName), err)
 	}
 
 	_mqttClient := newMQTTClient(*brokerurl)
 	_mqttClient.Subscribe(sensorStatusChannel, func(messageString string) {
 		err := triggerOutlet(outlet, messageString, *door)
 		if err != nil {
-			logger.Fatalln("Error triggering outlet:", err)
+			logger.Println(fmt.Errorf("Error triggering outlet: %s", err))
 		}
 	})
 
