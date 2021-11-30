@@ -19,7 +19,7 @@ jobs:
         goarch: ${{ matrix.goarch }}
         project_path: "./client"
         binary_name: "pi-sensor"
-        extra_files: install/pi-sensor.service.tmpl install/run.sh
+        extra_files: .pi-app-updater.yaml
     - uses: wangyoucao577/go-release-action@v1.18
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -27,4 +27,4 @@ jobs:
         goarch: ${{ matrix.goarch }}
         project_path: "./scripts/door-light"
         binary_name: "door-light"
-        extra_files: scripts/door-light/unit.service
+        extra_files: .pi-app-updater.yaml
