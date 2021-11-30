@@ -20,7 +20,7 @@ jobs:
         project_path: "./client"
         binary_name: "pi-sensor"
         extra_files: install/pi-sensor.service.tmpl install/run.sh
-    - uses: wangyoucao577/go-release-action@v1.17
+    - uses: wangyoucao577/go-release-action@v1.18
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}

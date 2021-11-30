@@ -28,8 +28,8 @@ const (
 // POC for turning on smart outlet when door is open
 func main() {
 	brokerurl := flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
-	deviceName := flag.String("devicename", os.Getenv("DEVICE_NAME"), "The outlet to control")
-	door := flag.String("door", os.Getenv("DOOR"), "The door to monitor")
+	deviceName := flag.String("devicename", os.Getenv("DOOR_LIGHT_DEVICE_NAME"), "The outlet to control")
+	door := flag.String("door", os.Getenv("DOOR_LIGHT_DOOR"), "The door to monitor")
 	if *brokerurl == "" {
 		logger.Fatalln("at least one broker is required")
 	}
