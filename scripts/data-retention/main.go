@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -289,6 +290,9 @@ func initConfig() Config {
 }
 
 func main() {
+	readOnly := flag.Bool("read-only", false, "Only show number of rows above max, do not update backup file or delete rows")
+	flag.Parse()
+
 	config := initConfig()
 	bucketName := fmt.Sprintf("backup-%s", config.AppName)
 	backupFileName := "cold-storage.csv"
@@ -300,6 +304,10 @@ func main() {
 	rowsAboveMax, _ := c.getRowsAboveMax(config.MaxRows)
 	numberRowsAboveMax := len(rowsAboveMax)
 	if numberRowsAboveMax == 0 {
+		os.Exit(0)
+	}
+	if *readOnly {
+		fmt.Println("Read only mode")
 		os.Exit(0)
 	}
 
