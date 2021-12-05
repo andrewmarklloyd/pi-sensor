@@ -97,10 +97,9 @@ func getOrCreateBackupFile(srv *drive.Service, bucketName, backupFileName string
 	localBackupFilePath := fmt.Sprintf("/tmp/%s/%s", bucketName, backupFileName)
 	r, err := srv.Files.List().Q(fmt.Sprintf("name = '%s'", bucketName)).Do()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("searching for bucket: %s", err)
 	}
 
-	// var bucket drive.File
 	if len(r.Files) == 0 {
 		fmt.Println("Cold storage bucket does not exist, creating it now")
 
