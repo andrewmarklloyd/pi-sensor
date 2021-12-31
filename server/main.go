@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -244,11 +245,34 @@ func main() {
 			// TODO: investigate Reset instead of creating new timers
 			currentTimer.Stop()
 		}
-		timer := time.AfterFunc(heartbeatTimeout, newHeartbeatTimeoutFunc(heartbeat, messenger))
+
+		var timer *time.Timer
+		if isAppHeartbeat(heartbeat) {
+			timer = time.AfterFunc(heartbeatTimeout, newAppHeartbeatTimeoutFunc(heartbeat, messenger))
+		} else {
+			timer = time.AfterFunc(heartbeatTimeout, newHeartbeatTimeoutFunc(heartbeat, messenger))
+		}
+
 		heartbeatTimerMap[heartbeat.Source] = timer
 	})
 
 	_webServer.startServer()
+}
+
+func newAppHeartbeatTimeoutFunc(h Heartbeat, msgr Messenger) func() {
+	return func() {
+		handleAppHeartbeatTimeout(h, msgr)
+	}
+}
+
+func handleAppHeartbeatTimeout(h Heartbeat, msgr Messenger) {
+	logger.Println(fmt.Sprintf("Heartbeat timeout occurred for %s", h.Source))
+	if !mockMode {
+		_, err := msgr.SendMessage(fmt.Sprintf("%s has lost connection", h.Source))
+		if err != nil {
+			fmt.Println("Error sending app heartbeat timeout message:", err)
+		}
+	}
 }
 
 func newHeartbeatTimeoutFunc(h Heartbeat, msgr Messenger) func() {
@@ -285,6 +309,10 @@ func handleHeartbeatTimeout(h Heartbeat, msgr Messenger) {
 	} else {
 		logger.Println(err)
 	}
+}
+
+func isAppHeartbeat(h Heartbeat) bool {
+	return strings.Contains(h.Source, "app_")
 }
 
 func newOpenTimeoutFunc(m Message, msgr Messenger, armed bool) func() {

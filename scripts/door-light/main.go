@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/jaedle/golang-tplink-hs100/pkg/configuration"
 	"github.com/jaedle/golang-tplink-hs100/pkg/hs100"
+	"github.com/robfig/cron"
 )
 
 var (
@@ -20,9 +22,12 @@ var (
 )
 
 const (
-	sensorStatusChannel = "sensor/status"
-	OPEN                = "OPEN"
-	CLOSED              = "CLOSED"
+	sensorStatusChannel      = "sensor/status"
+	sensorHeartbeatChannel   = "sensor/heartbeat"
+	heartbeatIntervalSeconds = 60
+	appSource                = "app_door-light"
+	OPEN                     = "OPEN"
+	CLOSED                   = "CLOSED"
 )
 
 // POC for turning on smart outlet when door is open
@@ -34,7 +39,7 @@ func main() {
 		logger.Fatalln("at least one broker is required")
 	}
 	if *deviceName == "" {
-		logger.Fatalln("outlet address is required")
+		logger.Fatalln("device name is required")
 	}
 	if *door == "" {
 		logger.Fatalln("door required")
@@ -42,14 +47,14 @@ func main() {
 
 	devices, err := hs100.Discover("192.168.1.1/24", configuration.Default().WithTimeout(time.Second))
 	if err != nil {
-		logger.Println(fmt.Errorf("Error getting devices: %s", err))
+		logger.Fatalln(fmt.Errorf("Error getting devices: %s", err))
 	}
 
 	var outlet *hs100.Hs100
 	for _, d := range devices {
 		name, err := d.GetName()
 		if err != nil {
-			logger.Println(fmt.Errorf("Error getting device name: %s", err))
+			logger.Fatalln(fmt.Errorf("Error getting device name: %s", err))
 		}
 		if name == *deviceName {
 			outlet = d
@@ -58,10 +63,16 @@ func main() {
 	}
 
 	if outlet == nil {
-		logger.Println(fmt.Sprintf("None of discovered devices matches expected device name %s: ", *deviceName), err)
+		logger.Fatalln(fmt.Sprintf("None of discovered devices matches expected device name %s: ", *deviceName), err)
 	}
 
 	_mqttClient := newMQTTClient(*brokerurl)
+	cronLib := cron.New()
+	cronLib.AddFunc(fmt.Sprintf("@every %ds", heartbeatIntervalSeconds), func() {
+		_mqttClient.publishHeartbeat(appSource, time.Now().UTC().Unix())
+	})
+	cronLib.Start()
+
 	_mqttClient.Subscribe(sensorStatusChannel, func(messageString string) {
 		err := triggerOutlet(outlet, messageString, *door)
 		if err != nil {
@@ -139,4 +150,11 @@ func triggerOutlet(outlet *hs100.Hs100, messageString string, door string) error
 		return outlet.TurnOff()
 	}
 	return fmt.Errorf(fmt.Sprintf("Message did not contain %s or %s", OPEN, CLOSED))
+}
+
+func (c mqttClient) publishHeartbeat(sensorSource string, timestamp int64) {
+	ts := strconv.FormatInt(timestamp, 10)
+	text := fmt.Sprintf("%s|%s", sensorSource, ts)
+	token := c.client.Publish(sensorHeartbeatChannel, 0, false, text)
+	token.Wait()
 }
