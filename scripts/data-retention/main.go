@@ -310,9 +310,12 @@ func main() {
 	config := initConfig()
 
 	if *command == "refresh-token" {
-		res, _ := json.Marshal(config.Token)
-		fmt.Println(string(res))
-		// todo: write to heroku here
+		c := NewHerokuClient(config.AppName, os.Getenv("HEROKU_API_KEY"))
+		err := c.UpdateToken(config.Token)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 		os.Exit(0)
 	}
 
