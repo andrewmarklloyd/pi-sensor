@@ -25,6 +25,7 @@ type Config struct {
 	MaxRows     int
 	DatabaseURL string
 	Service     *drive.Service
+	Token       oauth2.Token
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -165,7 +166,7 @@ func setupDir(syncDir string) {
 	}
 }
 
-func configClient() *drive.Service {
+func configClient() (*drive.Service, oauth2.Token) {
 	ctx := context.Background()
 
 	// try env var, then file on disk
@@ -191,11 +192,16 @@ func configClient() *drive.Service {
 		log.Fatalf("Unable to retrieve Drive client: %v", err)
 	}
 
+	newToken, err := client.Transport.(*oauth2.Transport).Source.Token()
+	if err != nil {
+		log.Fatalf("Unalbe to get token from client: %v", err)
+	}
+
 	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		log.Fatalf("Unable to create new Drive service: %v", err)
 	}
-	return srv
+	return srv, *newToken
 }
 
 func writeBackupFile(messages []Message, filepath string) error {
@@ -281,19 +287,35 @@ func initConfig() Config {
 		os.Exit(1)
 	}
 
+	srv, token := configClient()
 	return Config{
 		AppName:     appName,
 		MaxRows:     maxRows,
 		DatabaseURL: dbUrl,
-		Service:     configClient(),
+		Service:     srv,
+		Token:       token,
 	}
 }
 
 func main() {
-	readOnly := flag.Bool("read-only", false, "Only show number of rows above max, do not update backup file or delete rows")
+	defaultCommands := []string{"refresh-token", "read-only", "trim"}
+	command := flag.String("command", "", fmt.Sprintf("The command to run. Available commands: %s", defaultCommands))
 	flag.Parse()
 
+	if *command != "refresh-token" && *command != "read-only" && *command != "trim" {
+		fmt.Println(fmt.Sprintf("Command not recognized: %s. Available commands: %s", *command, defaultCommands))
+		os.Exit(1)
+	}
+
 	config := initConfig()
+
+	if *command == "refresh-token" {
+		res, _ := json.Marshal(config.Token)
+		fmt.Println(string(res))
+		// todo: write to heroku here
+		os.Exit(0)
+	}
+
 	bucketName := fmt.Sprintf("backup-%s", config.AppName)
 	backupFileName := "cold-storage.csv"
 	syncDir := fmt.Sprintf("/tmp/%s", bucketName)
@@ -306,7 +328,7 @@ func main() {
 	if numberRowsAboveMax == 0 {
 		os.Exit(0)
 	}
-	if *readOnly {
+	if *command == "read-only" {
 		fmt.Println("Read only mode")
 		os.Exit(0)
 	}
