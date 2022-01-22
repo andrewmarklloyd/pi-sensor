@@ -33,14 +33,17 @@ const (
 // POC for turning on smart outlet when door is open
 func main() {
 	brokerurl := flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
-	deviceName := flag.String("devicename", os.Getenv("DOOR_LIGHT_DEVICE_NAME"), "The outlet to control")
+	deviceNamesArg := flag.String("devicenames", os.Getenv("DOOR_LIGHT_DEVICE_NAMES"), "The outlets to control as a comma separated list")
 	door := flag.String("door", os.Getenv("DOOR_LIGHT_DOOR"), "The door to monitor")
 	if *brokerurl == "" {
 		logger.Fatalln("at least one broker is required")
 	}
-	if *deviceName == "" {
-		logger.Fatalln("device name is required")
+
+	deviceNames := strings.Split(*deviceNamesArg, ",")
+	if len(deviceNames) == 0 {
+		logger.Fatalln("devicenames required")
 	}
+
 	if *door == "" {
 		logger.Fatalln("door required")
 	}
@@ -50,20 +53,21 @@ func main() {
 		logger.Fatalln(fmt.Errorf("Error getting devices: %s", err))
 	}
 
-	var outlet *hs100.Hs100
+	var outlets []hs100.Hs100
 	for _, d := range devices {
 		name, err := d.GetName()
 		if err != nil {
 			logger.Fatalln(fmt.Errorf("Error getting device name: %s", err))
 		}
-		if name == *deviceName {
-			outlet = d
-			break
+		for _, n := range deviceNames {
+			if name == n {
+				outlets = append(outlets, *d)
+			}
 		}
 	}
 
-	if outlet == nil {
-		logger.Fatalln(fmt.Sprintf("None of discovered devices matches expected device name %s: ", *deviceName), err)
+	if len(outlets) == 0 {
+		logger.Fatalln(fmt.Sprintf("None of discovered devices matches expected device names: %s", deviceNames))
 	}
 
 	_mqttClient := newMQTTClient(*brokerurl)
@@ -74,9 +78,11 @@ func main() {
 	cronLib.Start()
 
 	_mqttClient.Subscribe(sensorStatusChannel, func(messageString string) {
-		err := triggerOutlet(outlet, messageString, *door)
-		if err != nil {
-			logger.Println(fmt.Errorf("Error triggering outlet: %s", err))
+		for _, d := range devices {
+			err := triggerOutlet(d, messageString, *door)
+			if err != nil {
+				logger.Println(fmt.Errorf("Error triggering outlet: %s", err))
+			}
 		}
 	})
 
