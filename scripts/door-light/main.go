@@ -30,10 +30,9 @@ const (
 	CLOSED                   = "CLOSED"
 )
 
-// POC for turning on smart outlet when door is open
 func main() {
 	brokerurl := flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
-	deviceNamesArg := flag.String("devicenames", os.Getenv("DOOR_LIGHT_DEVICE_NAMES"), "The outlets to control as a comma separated list")
+	deviceNamesArg := flag.String("devicenames", os.Getenv("DOOR_LIGHT_DEVICE_NAMES"), "The devices to control as a comma separated list")
 	door := flag.String("door", os.Getenv("DOOR_LIGHT_DOOR"), "The door to monitor")
 	if *brokerurl == "" {
 		logger.Fatalln("at least one broker is required")
@@ -48,25 +47,25 @@ func main() {
 		logger.Fatalln("door required")
 	}
 
-	devices, err := hs100.Discover("192.168.1.1/24", configuration.Default().WithTimeout(time.Second))
+	allDevices, err := hs100.Discover("192.168.1.1/24", configuration.Default().WithTimeout(time.Second))
 	if err != nil {
 		logger.Fatalln(fmt.Errorf("Error getting devices: %s", err))
 	}
 
-	var outlets []hs100.Hs100
-	for _, d := range devices {
+	var targetDevices []hs100.Hs100
+	for _, d := range allDevices {
 		name, err := d.GetName()
 		if err != nil {
 			logger.Fatalln(fmt.Errorf("Error getting device name: %s", err))
 		}
 		for _, n := range deviceNames {
 			if name == n {
-				outlets = append(outlets, *d)
+				targetDevices = append(targetDevices, *d)
 			}
 		}
 	}
 
-	if len(outlets) == 0 {
+	if len(targetDevices) == 0 {
 		logger.Fatalln(fmt.Sprintf("None of discovered devices matches expected device names: %s", deviceNames))
 	}
 
@@ -78,7 +77,7 @@ func main() {
 	cronLib.Start()
 
 	_mqttClient.Subscribe(sensorStatusChannel, func(messageString string) {
-		for _, d := range devices {
+		for _, d := range targetDevices {
 			err := triggerOutlet(d, messageString, *door)
 			if err != nil {
 				logger.Println(fmt.Errorf("Error triggering outlet: %s", err))
@@ -144,15 +143,19 @@ func forever() {
 	}
 }
 
-func triggerOutlet(outlet *hs100.Hs100, messageString string, door string) error {
+func triggerOutlet(outlet hs100.Hs100, messageString string, door string) error {
 	if !strings.Contains(messageString, door) {
 		return nil
 	}
+	name, err := outlet.GetName()
+	if err != nil {
+		return fmt.Errorf("getting outlet name: %s", err)
+	}
 	if strings.Contains(messageString, OPEN) {
-		fmt.Println("Turning outlet ON")
+		fmt.Println(fmt.Sprintf("Turning %s outlet ON", name))
 		return outlet.TurnOn()
 	} else if strings.Contains(messageString, CLOSED) {
-		fmt.Println("Turning outlet OFF")
+		fmt.Println(fmt.Sprintf("Turning %s outlet OFF", name))
 		return outlet.TurnOff()
 	}
 	return fmt.Errorf(fmt.Sprintf("Message did not contain %s or %s", OPEN, CLOSED))
