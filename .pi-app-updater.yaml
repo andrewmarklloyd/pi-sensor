@@ -4,4 +4,4 @@ heroku:
   env:
     - CLOUDMQTT_URL
     - DOOR_LIGHT_DOOR
-    - DOOR_LIGHT_DEVICE_NAME
+    - DOOR_LIGHT_DEVICE_NAMES
