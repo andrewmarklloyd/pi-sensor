@@ -2,6 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -34,7 +37,10 @@ const (
 	unauthPath           = "/unauth"
 )
 
-var sessionStore *sessions.CookieStore
+var (
+	sessionStore    *sessions.CookieStore
+	forwarderLogger = log.New(os.Stdout, "[Log Forwarder] ", log.LstdFlags)
+)
 
 type newClientHandlerFunc func()
 
@@ -66,6 +72,7 @@ func newWebServer(serverConfig ServerConfig,
 	}
 	sessionStore = sessions.NewCookieStore([]byte(serverConfig.googleConfig.sessionSecret), nil)
 	stateConfig := gologin.DebugOnlyCookieConfig
+	router.Handle("/api/logs/submit", requireToken(http.HandlerFunc(logServerHandler))).Methods(post)
 	router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(sensorRestartHandler))).Methods(post)
 	router.Handle("/api/sensor/arming", requireLogin(http.HandlerFunc(sensorArmingHandler))).Methods(post)
 	router.Handle("/api/sensor/all", requireLogin(http.HandlerFunc(allSensorsHandler))).Methods(get)
@@ -193,6 +200,25 @@ func requireLogin(next http.Handler) http.Handler {
 		next.ServeHTTP(w, req)
 	}
 	return http.HandlerFunc(fn)
+}
+
+func requireToken(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, req *http.Request) {
+		// TODO: set api token in config
+		if os.Getenv("LOG_SERVER_API_TOKEN") != req.Header.Get("log-server-api-token") {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, req)
+	}
+	return http.HandlerFunc(fn)
+}
+
+func logServerHandler(w http.ResponseWriter, req *http.Request) {
+	body, _ := ioutil.ReadAll(req.Body)
+	// TODO: get metadata from headers or body?
+	forwarderLogger.Println(string(body))
+	fmt.Fprintf(w, `{"status":"success"}`)
 }
 
 // isAuthenticated returns true if the user has a signed session cookie.

@@ -1,0 +1,16 @@
+[Unit]
+Description=Log Forwarder
+After=systemd-journald.service
+Requires=systemd-journald.service
+
+[Service]
+ExecStart=/home/pi/log-forwarder.sh
+TimeoutStartSec=0
+Restart=on-failure
+RestartSec=5s
+Environment=LOG_SERVER_API_KEY=<< .LogServerApiKey >>
+Environment=LOG_SERVER_URL=<< .LogServerURL >>
+
+
+[Install]
+WantedBy=multi-user.target
