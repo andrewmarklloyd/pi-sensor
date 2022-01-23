@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -35,10 +34,7 @@ const (
 	unauthPath           = "/unauth"
 )
 
-var (
-	sessionStore    *sessions.CookieStore
-	forwarderLogger = log.New(os.Stdout, "[Log Forwarder] ", log.LstdFlags)
-)
+var sessionStore *sessions.CookieStore
 
 type newClientHandlerFunc func()
 

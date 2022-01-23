@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	logger = log.New(os.Stdout, "[Pi-Sensor Outlet] ", log.LstdFlags)
+	logger = log.New(os.Stdout, "[Pi-Sensor Log Forwarder] ", log.LstdFlags)
 )
 
 const (
@@ -34,6 +34,7 @@ func main() {
 	_mqttClient := newMQTTClient(*brokerurl)
 
 	ch := make(chan string)
+	// TODO: get from config
 	go tailSystemdLogs("door-light", ch)
 
 	for logs := range ch {
@@ -89,14 +90,14 @@ func (c mqttClient) publishHeartbeat(sensorSource string, timestamp int64) {
 }
 
 func (c mqttClient) sendLogs(logs string) {
-	text := fmt.Sprintf("{\"log\":\"%s\"}", strings.Replace(logs, "\n", `\n`, -1))
+	text := fmt.Sprintf("{\"message\":\"%s\"}", strings.Replace(logs, "\n", `\n`, -1))
 	token := c.client.Publish(logForwarderChannel, 0, false, text)
 	token.Wait()
 }
 
 func tailSystemdLogs(systemdUnit string, ch chan string) {
-	// cmd := exec.Command("tail", "-f", "-n0", "test.txt")
-	cmd := exec.Command("journalctl", "-u", systemdUnit, "-f", "-n 0")
+	cmd := exec.Command("tail", "-f", "-n0", "test.txt")
+	// cmd := exec.Command("journalctl", "-u", systemdUnit, "-f", "-n 0")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
