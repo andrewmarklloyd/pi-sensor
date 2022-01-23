@@ -36,6 +36,7 @@ var (
 const (
 	sensorStatusChannel    = "sensor/status"
 	sensorHeartbeatChannel = "sensor/heartbeat"
+	logForwarderChannel    = "logs/submit"
 	openTimeout            = 5 * time.Minute
 	heartbeatTimeout       = 5 * time.Minute
 )
@@ -235,6 +236,10 @@ func main() {
 		} else {
 			logger.Println(fmt.Errorf("Error writing state to Redis: %s", err))
 		}
+	})
+
+	_mqttClient.Subscribe(logForwarderChannel, func(messageString string) {
+		fmt.Println(messageString)
 	})
 
 	var heartbeatTimerMap map[string]*time.Timer = make(map[string]*time.Timer)

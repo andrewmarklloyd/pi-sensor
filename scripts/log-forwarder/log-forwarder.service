@@ -4,13 +4,11 @@ After=systemd-journald.service
 Requires=systemd-journald.service
 
 [Service]
-ExecStart=/home/pi/log-forwarder.sh
+ExecStart=/home/pi/log-forwarder
 TimeoutStartSec=0
 Restart=on-failure
 RestartSec=5s
-Environment=LOG_SERVER_API_KEY=<< .LogServerApiKey >>
-Environment=LOG_SERVER_URL=<< .LogServerURL >>
-
+Environment=CLOUDMQTT_URL=<< .CLOUDMQTT_URL >>
 
 [Install]
 WantedBy=multi-user.target
