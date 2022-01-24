@@ -28,7 +28,8 @@ var (
 	twilioto         = flag.String("twilioto", os.Getenv("TWILIO_TO"), "")
 	twiliofrom       = flag.String("twiliofrom", os.Getenv("TWILIO_FROM"), "")
 
-	logger = log.New(os.Stdout, "[Pi-Sensor Server] ", log.LstdFlags)
+	logger          = log.New(os.Stdout, "[Pi-Sensor Server] ", log.LstdFlags)
+	forwarderLogger = log.New(os.Stdout, "[Log Forwarder] ", log.LstdFlags)
 
 	mockMode bool
 )
@@ -36,9 +37,14 @@ var (
 const (
 	sensorStatusChannel    = "sensor/status"
 	sensorHeartbeatChannel = "sensor/heartbeat"
+	logForwarderChannel    = "logs/submit"
 	openTimeout            = 5 * time.Minute
 	heartbeatTimeout       = 5 * time.Minute
 )
+
+type LogMessage struct {
+	Message string `json:"message"`
+}
 
 var _webServer webServer
 var _redisClient redisClient
@@ -234,6 +240,16 @@ func main() {
 			}
 		} else {
 			logger.Println(fmt.Errorf("Error writing state to Redis: %s", err))
+		}
+	})
+
+	_mqttClient.Subscribe(logForwarderChannel, func(messageString string) {
+		var logMessage LogMessage
+		err := json.Unmarshal([]byte(messageString), &logMessage)
+		if err != nil {
+			logger.Println(err)
+		} else {
+			forwarderLogger.Println(logMessage.Message)
 		}
 	})
 
