@@ -338,7 +338,7 @@ func newOpenTimeoutFunc(m Message, msgr Messenger, armed bool) func() {
 }
 
 func handleOpenTimeout(m Message, msgr Messenger, armed bool) {
-	message := fmt.Sprintf("%s opened longer than %s", m.Source, openTimeout)
+	message := fmt.Sprintf("🚨 %s opened longer than %s", m.Source, openTimeout)
 	logger.Println(message)
 	if !mockMode && armed {
 		msgr.SendMessage(message)
@@ -348,7 +348,7 @@ func handleOpenTimeout(m Message, msgr Messenger, armed bool) {
 func alertIfOpen(lastMessage Message, currentMessage Message, messenger Messenger, armed bool) {
 	if (lastMessage.Status == CLOSED && currentMessage.Status == OPEN) || (lastMessage.Status == UNKNOWN && currentMessage.Status == OPEN) {
 		if !mockMode && armed {
-			_, err := messenger.SendMessage(fmt.Sprintf("%s was just opened", currentMessage.Source))
+			_, err := messenger.SendMessage(fmt.Sprintf("🚪 %s was just opened", currentMessage.Source))
 			if err != nil {
 				logger.Println("Error sending open message", err)
 			}
