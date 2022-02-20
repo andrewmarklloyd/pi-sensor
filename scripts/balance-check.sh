@@ -12,7 +12,7 @@ fi
 
 balance=$(echo ${json} | ${jq} -r .balance)
 echo "Current balance: ${balance}"
-limit=0.5
+limit=0.50
 if (( $(echo "${balance} ${limit}" | awk '{print ($1 < $2)}') )); then
   echo "Twilio balance almost depleted"
 fi
