@@ -17,7 +17,7 @@ var (
 	brokerurl    = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The MQTT broker to connect")
 	sensorSource = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")
 	mockFlag     = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
-	logger       = log.New(os.Stdout, "[Pi-Senser Client] ", log.LstdFlags)
+	logger       *log.Logger
 )
 
 const (
@@ -26,7 +26,6 @@ const (
 )
 
 func main() {
-	logger.Print("Initializing app")
 	flag.Parse()
 	if *brokerurl == "" {
 		log.Fatalln("one broker is required")
@@ -34,6 +33,10 @@ func main() {
 	if *sensorSource == "" {
 		log.Fatalln("sensorSource is required")
 	}
+
+	logger = log.New(os.Stdout, fmt.Sprintf("[Pi-Senser Client-%s] ", *sensorSource), log.LstdFlags)
+	logger.Print("Initializing app")
+
 	mockMode, _ := strconv.ParseBool(*mockFlag)
 
 	defaultPin := 18
