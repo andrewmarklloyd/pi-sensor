@@ -15,7 +15,7 @@ while [[ ${condition} != 'SUCCESS' ]]; do
         exit 1
     fi
     echo "Attempt number ${count}"
-    status=$(curl -s -X GET -H "api-key: ${PI_APP_DEPLOYER_API_KEY}" -d '{"repository":"andrewmarklloyd/pi-sensor","manifest_name":"pi-sensor-agent"}' https://pi-app-deployer.herokuapp.com/deploy/status)
+    status=$(curl -s -X GET -H "api-key: ${PI_APP_DEPLOYER_API_KEY}" -d '{"repository":"andrewmarklloyd/pi-sensor","manifest_name":"door-light"}' https://pi-app-deployer.herokuapp.com/deploy/status)
 
     if [[ $(echo ${status} | jq -r '.status') != 'success' ]]; then
         echo ${status}
