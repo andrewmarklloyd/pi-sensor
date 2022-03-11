@@ -1,0 +1,19 @@
+name: Main Deploy
+
+on:
+  workflow_run:
+    workflows: ["Main Build"]
+    branches: [main]
+    types: 
+      - completed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Trigger Deploy
+        env:
+          PI_APP_DEPLOYER_API_KEY: ${{ secrets.PI_APP_DEPLOYER_API_KEY }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: ./scripts/deploy.sh
