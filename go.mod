@@ -16,6 +16,7 @@ require (
 	github.com/lib/pq v1.10.3
 	github.com/robfig/cron v1.2.0
 	github.com/stianeikeland/go-rpio v4.2.0+incompatible
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	google.golang.org/api v0.30.0
 	gopkg.in/yaml.v2 v2.4.0 // indirect
