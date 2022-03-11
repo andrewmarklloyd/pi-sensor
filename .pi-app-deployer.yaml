@@ -1,0 +1,20 @@
+apiVersion: pi-app-deployer/v1
+kind: Manifest
+name: pi-sensor-agent
+executable: pi-sensor-agent
+heroku:
+  app: pi-sensor
+  env:
+    - CLOUDMQTT_URL
+    - SENSOR_SOURCE
+---
+apiVersion: pi-app-deployer/v1
+kind: Manifest
+name: door-light
+executable: door-light
+heroku:
+  app: pi-app-deployer-test
+  env:
+    - CLOUDMQTT_URL
+    - DOOR_LIGHT_DOOR
+    - DOOR_LIGHT_DEVICE_NAMES

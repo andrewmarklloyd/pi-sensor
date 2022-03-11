@@ -7,3 +7,4 @@ test.sh
 .DS_Store
 credentials.json
 token.json
+door-light
