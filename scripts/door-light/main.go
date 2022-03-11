@@ -31,6 +31,11 @@ const (
 )
 
 func main() {
+	appVersion := os.Getenv("APP_VERSION")
+	if appVersion == "" {
+		appVersion = "Unknown"
+	}
+	logger.Println(fmt.Sprintf("Running app version: %s", appVersion))
 	brokerurl := flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
 	deviceNamesArg := flag.String("devicenames", os.Getenv("DOOR_LIGHT_DEVICE_NAMES"), "The devices to control as a comma separated list")
 	door := flag.String("door", os.Getenv("DOOR_LIGHT_DOOR"), "The door to monitor")
