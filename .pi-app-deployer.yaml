@@ -13,7 +13,7 @@ kind: Manifest
 name: door-light
 executable: door-light
 heroku:
-  app: pi-app-deployer-test
+  app: pi-sensor
   env:
     - CLOUDMQTT_URL
     - DOOR_LIGHT_DOOR
