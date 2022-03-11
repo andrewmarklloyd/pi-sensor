@@ -6,14 +6,14 @@ Distributed magnetic sensor status dashboard and alerting system. Allows an arbi
 
 Golang server using MQTT messaging and Redis for data storage.
 
-### Client
+### Agent
 
 Raspberry Pi Zero using a magnetic sensor to detect open and closed doors, windows
 
-Install client on Raspberry Pi Zero.
+Install agent on Raspberry Pi Zero.
 
 ```
-bash <(curl -s -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/andrewmarklloyd/pi-sensor/master/install/install-client.sh)
+bash <(curl -s -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/andrewmarklloyd/pi-sensor/master/install/install-agent.sh)
 ```
 
 ### TODO
