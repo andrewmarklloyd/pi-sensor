@@ -1,0 +1,14 @@
+name: Pi-App-Deployer
+on: 
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Service action to perform on the pi app: START, STOP, or RESTART'
+        required: true
+        default: 'RESTART'
+jobs:
+  runAction:
+    runs-on: ubuntu-latest
+    steps:
+    - run: |
+        echo "action: ${{ github.event.inputs.action }}"
