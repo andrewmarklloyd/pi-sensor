@@ -13,4 +13,4 @@ jobs:
     - name: Service Action
       env:
         ACTION: ${{ github.event.inputs.action }}
-      run: ./.github/scripts/service-action.sh
+      run: ./scripts/service-action.sh
