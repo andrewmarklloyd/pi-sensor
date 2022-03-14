@@ -10,7 +10,8 @@ jobs:
   runAction:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2
     - name: Service Action
       env:
         ACTION: ${{ github.event.inputs.action }}
-      run: ./scripts/service-action.sh
+      run: ./.github/scripts/service-action.sh
