@@ -10,5 +10,8 @@ jobs:
   runAction:
     runs-on: ubuntu-latest
     steps:
-    - run: |
-        echo "action: ${{ github.event.inputs.action }}"
+    - name: Service Action
+      env:
+        ACTION: ${{ github.event.inputs.action }}
+      run: |
+        echo "action: ${ACTION}"

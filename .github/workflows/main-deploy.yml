@@ -16,4 +16,4 @@ jobs:
         env:
           PI_APP_DEPLOYER_API_KEY: ${{ secrets.PI_APP_DEPLOYER_API_KEY }}
           GITHUB_SHA: ${{ github.sha }}
-        run: ./scripts/deploy.sh
+        run: ./scripts/deploy-door-light.sh
