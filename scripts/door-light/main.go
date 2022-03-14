@@ -77,7 +77,10 @@ func main() {
 	_mqttClient := newMQTTClient(*brokerurl)
 	cronLib := cron.New()
 	cronLib.AddFunc(fmt.Sprintf("@every %ds", heartbeatIntervalSeconds), func() {
-		_mqttClient.publishHeartbeat(appSource, time.Now().UTC().Unix())
+		err := _mqttClient.publishHeartbeat(appSource, time.Now().UTC().Unix())
+		if err != nil {
+			logger.Println(err)
+		}
 	})
 	cronLib.Start()
 
@@ -166,9 +169,10 @@ func triggerOutlet(outlet hs100.Hs100, messageString string, door string) error 
 	return fmt.Errorf(fmt.Sprintf("Message did not contain %s or %s", OPEN, CLOSED))
 }
 
-func (c mqttClient) publishHeartbeat(sensorSource string, timestamp int64) {
+func (c mqttClient) publishHeartbeat(sensorSource string, timestamp int64) error {
 	ts := strconv.FormatInt(timestamp, 10)
 	text := fmt.Sprintf("%s|%s", sensorSource, ts)
 	token := c.client.Publish(sensorHeartbeatChannel, 0, false, text)
 	token.Wait()
+	return token.Error()
 }
