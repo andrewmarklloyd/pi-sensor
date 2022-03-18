@@ -160,10 +160,10 @@ func triggerOutlet(outlet hs100.Hs100, messageString string, door string) error 
 		return fmt.Errorf("getting outlet name: %s", err)
 	}
 	if strings.Contains(messageString, OPEN) {
-		fmt.Println(fmt.Sprintf("Turning %s outlet ON", name))
+		logger.Println(fmt.Sprintf("Turning %s outlet ON", name))
 		return outlet.TurnOn()
 	} else if strings.Contains(messageString, CLOSED) {
-		fmt.Println(fmt.Sprintf("Turning %s outlet OFF", name))
+		logger.Println(fmt.Sprintf("Turning %s outlet OFF", name))
 		return outlet.TurnOff()
 	}
 	return fmt.Errorf(fmt.Sprintf("Message did not contain %s or %s", OPEN, CLOSED))
