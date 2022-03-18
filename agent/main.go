@@ -34,7 +34,7 @@ func main() {
 		log.Fatalln("sensorSource is required")
 	}
 
-	logger = log.New(os.Stdout, fmt.Sprintf("[Pi-Senser Client-%s] ", *sensorSource), log.LstdFlags)
+	logger = log.New(os.Stdout, fmt.Sprintf("[Pi-Senser Agent-%s] ", *sensorSource), log.LstdFlags)
 	logger.Print("Initializing app")
 
 	mockMode, _ := strconv.ParseBool(*mockFlag)

@@ -6,7 +6,7 @@ heroku:
   app: pi-sensor
   env:
     - CLOUDMQTT_URL
-    - SENSOR_SOURCE
+    - SENSOR_SOURCE # this varies by sensor, not one size fits all
 ---
 apiVersion: pi-app-deployer/v1
 kind: Manifest
