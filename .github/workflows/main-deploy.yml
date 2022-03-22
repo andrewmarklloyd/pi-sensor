@@ -8,12 +8,14 @@ on:
       - completed
 
 jobs:
-  build:
+  pi_app_deployer:
     runs-on: ubuntu-latest
+    name: Pi App Deployer
     steps:
-      - uses: actions/checkout@v2
-      - name: Trigger Deploy
+      - name: Deploy Application
+        uses: andrewmarklloyd/pi-app-deployer-action@v0.1
         env:
           PI_APP_DEPLOYER_API_KEY: ${{ secrets.PI_APP_DEPLOYER_API_KEY }}
-          GITHUB_SHA: ${{ github.sha }}
-        run: ./.github/scripts/deploy-door-light.sh
+        with:
+          repoName: andrewmarklloyd/pi-sensor
+          manifestName: door-light
