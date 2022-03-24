@@ -17,10 +17,10 @@ jobs:
       - name: Install dependencies
         run: |
           go get -u golang.org/x/lint/golint
-      - name: Run vet & lint
+      - name: Check
         run: |
-          go vet ./...
-          # golint ./...
+          make vet
+          make test
       - name: Run build
         run: make build
       - uses: actions/upload-artifact@v2

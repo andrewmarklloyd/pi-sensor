@@ -1,4 +1,4 @@
-.PHONY: build
+.PHONY: build test
 
 build:
 	GOARCH=arm64 GOARM=5 go build -o pi-sensor-server server/*.go
@@ -7,3 +7,9 @@ build:
 
 deploy-dev: build
 	scp pi-sensor-agent pi@${IP}:dev-pi-sensor-agent
+
+vet:
+	go vet ./...
+
+test:
+	go test ./...
