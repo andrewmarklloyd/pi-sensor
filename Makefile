@@ -1,4 +1,4 @@
-.PHONY: build
+.PHONY: build test
 
 build:
 	GOARCH=arm64 GOARM=5 go build -o pi-sensor-server server/*.go
