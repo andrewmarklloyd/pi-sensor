@@ -19,3 +19,14 @@ heroku:
     - CLOUDMQTT_URL
     - DOOR_LIGHT_DOOR
     - DOOR_LIGHT_DEVICE_NAMES
+---
+apiVersion: pi-app-deployer/v1
+kind: Manifest
+name: pi-sensor-agent-staging
+executable: pi-sensor-agent
+heroku:
+  app: pi-sensor-staging
+  env:
+    - CLOUDMQTT_URL
+env: # non-secret env vars, required to be passed in agent install
+  - SENSOR_SOURCE # varies by deployment
