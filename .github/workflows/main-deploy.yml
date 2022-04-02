@@ -12,7 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     name: Pi App Deployer
     steps:
-      - name: Deploy Application
+      - name: Deploy Pi Sensor Agent
+        uses: andrewmarklloyd/pi-app-deployer-action@main
+        env:
+          PI_APP_DEPLOYER_API_KEY: ${{ secrets.PI_APP_DEPLOYER_API_KEY }}
+        with:
+          repoName: andrewmarklloyd/pi-sensor
+          manifestName: pi-sensor-agent
+          host: https://pi-app-deployer.herokuapp.com
+      - name: Deploy Door Light
         uses: andrewmarklloyd/pi-app-deployer-action@main
         env:
           PI_APP_DEPLOYER_API_KEY: ${{ secrets.PI_APP_DEPLOYER_API_KEY }}
