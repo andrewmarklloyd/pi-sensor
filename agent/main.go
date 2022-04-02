@@ -35,7 +35,8 @@ func main() {
 	}
 
 	logger = log.New(os.Stdout, fmt.Sprintf("[Pi-Senser Agent-%s] ", *sensorSource), log.LstdFlags)
-	logger.Print("Initializing app")
+	version := os.Getenv("APP_VERSION")
+	logger.Print("Initializing app, version:", version)
 
 	mockMode, _ := strconv.ParseBool(*mockFlag)
 
