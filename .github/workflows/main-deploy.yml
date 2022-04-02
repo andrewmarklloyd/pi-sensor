@@ -13,9 +13,10 @@ jobs:
     name: Pi App Deployer
     steps:
       - name: Deploy Application
-        uses: andrewmarklloyd/pi-app-deployer-action@v0.1
+        uses: andrewmarklloyd/pi-app-deployer-action@main
         env:
           PI_APP_DEPLOYER_API_KEY: ${{ secrets.PI_APP_DEPLOYER_API_KEY }}
         with:
           repoName: andrewmarklloyd/pi-sensor
           manifestName: door-light
+          host: https://pi-app-deployer.herokuapp.com
