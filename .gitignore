@@ -8,3 +8,4 @@ test.sh
 credentials.json
 token.json
 door-light
+build/

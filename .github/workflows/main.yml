@@ -27,8 +27,8 @@ jobs:
         with:
           name: app_${{ github.sha }}
           path: |
-            door-light
-            pi-sensor-agent
+            build/door-light
+            build/pi-sensor-agent
             .pi-app-deployer.yaml
       - name: Build front end
         run: |
