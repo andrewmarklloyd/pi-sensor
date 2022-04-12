@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -23,6 +24,7 @@ var (
 const (
 	topic                    = "sensor/status"
 	heartbeatIntervalSeconds = 60
+	statusFile               = "/usr/local/src/.pi-sensor-status"
 )
 
 func main() {
@@ -69,10 +71,19 @@ func main() {
 		}
 	})
 
-	lastStatus := UNKNOWN
+	var lastStatus string
+	b, err := os.ReadFile(statusFile)
+	if err == nil {
+		lastStatus = strings.Trim(strings.TrimSpace(string(b)), "\n")
+	} else {
+		logger.Println("error reading status file:", err)
+		lastStatus = UNKNOWN
+	}
+
 	var currentStatus string
 	for true {
 		currentStatus = pinClient.CurrentStatus()
+		os.WriteFile(statusFile, []byte(currentStatus), 0644)
 		if currentStatus != lastStatus {
 			logger.Println(fmt.Sprintf("%s is %s", *sensorSource, currentStatus))
 			lastStatus = currentStatus
