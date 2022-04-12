@@ -10,4 +10,7 @@ import (
 func Test_Manifest(t *testing.T) {
 	_, err := manifest.GetManifest("../.pi-app-deployer.yaml", "pi-sensor-agent")
 	assert.NoError(t, err)
+
+	_, err = manifest.GetManifest("../.pi-app-deployer.yaml", "door-light")
+	assert.NoError(t, err)
 }
