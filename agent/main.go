@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -23,6 +24,7 @@ var (
 const (
 	topic                    = "sensor/status"
 	heartbeatIntervalSeconds = 60
+	statusFile               = "/usr/local/src/.pi-sensor-status"
 )
 
 func main() {
@@ -69,10 +71,19 @@ func main() {
 		}
 	})
 
-	lastStatus := UNKNOWN
+	lastStatus, err := getLastStatus(statusFile)
+	if err != nil {
+		logger.Println(fmt.Errorf("error reading status file: %s. Setting status to %s", err, UNKNOWN))
+		lastStatus = UNKNOWN
+	}
+
 	var currentStatus string
 	for true {
 		currentStatus = pinClient.CurrentStatus()
+		err = writeStatus(statusFile, currentStatus)
+		if err != nil {
+			logger.Println("error writing status file:", err)
+		}
 		if currentStatus != lastStatus {
 			logger.Println(fmt.Sprintf("%s is %s", *sensorSource, currentStatus))
 			lastStatus = currentStatus
@@ -88,4 +99,17 @@ func configureHeartbeat(mqttClient mqttClient, sensorSource string) {
 		mqttClient.publishHeartbeat(sensorSource, time.Now().UTC().Unix())
 	})
 	cronLib.Start()
+}
+
+func getLastStatus(path string) (string, error) {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Trim(strings.TrimSpace(string(b)), "\n"), nil
+}
+
+func writeStatus(path, status string) error {
+	return os.WriteFile(path, []byte(status), 0644)
 }
