@@ -22,13 +22,13 @@ jobs:
           make vet
           make test
       - name: Run build
-        run: make build
+        run: make build-ci
       - uses: actions/upload-artifact@v2
         with:
           name: app_${{ github.sha }}
           path: |
-            build/door-light
-            build/pi-sensor-agent
+            door-light
+            pi-sensor-agent
             .pi-app-deployer.yaml
       - name: Build front end
         run: |

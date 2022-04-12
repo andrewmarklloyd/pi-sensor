@@ -5,6 +5,9 @@ build:
 	GOOS=linux GOARCH=arm GOARM=5 go build -o build/pi-sensor-agent agent/*.go
 	GOOS=linux GOARCH=arm GOARM=5 go build -o build/door-light scripts/door-light/main.go
 
+build-ci: build
+	mv build/* .
+
 deploy-dev: build
 	scp pi-sensor-agent pi@${IP}:dev-pi-sensor-agent
 
