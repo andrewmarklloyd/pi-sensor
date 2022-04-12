@@ -24,7 +24,7 @@ var (
 const (
 	topic                    = "sensor/status"
 	heartbeatIntervalSeconds = 60
-	statusFile               = "/usr/local/src/.pi-sensor-status"
+	statusFile               = "/home/pi/.pi-sensor-status"
 )
 
 func main() {
