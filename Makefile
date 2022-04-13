@@ -5,7 +5,16 @@ build:
 	GOOS=linux GOARCH=arm GOARM=5 go build -o build/pi-sensor-agent agent/*.go
 	GOOS=linux GOARCH=arm GOARM=5 go build -o build/door-light scripts/door-light/main.go
 
-build-ci: build
+build-frontend:
+	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
+	. $HOME/.nvm/nvm.sh
+	cd server/frontend
+	nvm install
+	nvm use
+	npm install
+	npm run build
+
+build-ci: build build-frontend
 	mv build/* .
 
 deploy-dev: build

@@ -28,15 +28,6 @@ jobs:
             door-light
             pi-sensor-agent
             .pi-app-deployer.yaml
-      - name: Build front end
-        run: |
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
-          . $HOME/.nvm/nvm.sh
-          cd server/frontend
-          nvm install
-          nvm use
-          npm install
-          npm run build
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
       - name: Deploy Heroku Staging
