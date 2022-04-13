@@ -10,33 +10,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Setup Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: '1.16.0'
-      - name: Install dependencies
-        run: |
-          go get -u golang.org/x/lint/golint
-      - name: Check
-        run: |
-          make vet
-          make test
-      - name: Run build
-        run: make build-ci
-      - uses: actions/upload-artifact@v2
-        with:
-          name: app_${{ github.sha }}
-          path: |
-            door-light
-            pi-sensor-agent
-            .pi-app-deployer.yaml
-      - name: Build front end
-        run: |
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
-          . $HOME/.nvm/nvm.sh
-          cd server/frontend
-          nvm install
-          nvm use
-          npm install
-          npm run build
+      - name: Install Heroku CLI
+        run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
+      - name: Deploy container
+        run: heroku container:push web -a pi-sensor-staging
+      # - name: Setup Go
+      #   uses: actions/setup-go@v2
+      #   with:
+      #     go-version: '1.16.0'
+      # - name: Install dependencies
+      #   run: |
+      #     go get -u golang.org/x/lint/golint
+      # - name: Check
+      #   run: |
+      #     make vet
+      #     make test
+      # - name: Run build
+      #   run: make build-ci
+      # - uses: actions/upload-artifact@v2
+      #   with:
+      #     name: app_${{ github.sha }}
+      #     path: |
+      #       door-light
+      #       pi-sensor-agent
+      #       .pi-app-deployer.yaml
+      # - name: Build front end
+      #   run: |
+      #     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
+      #     . $HOME/.nvm/nvm.sh
+      #     cd server/frontend
+      #     nvm install
+      #     nvm use
+      #     npm install
+      #     npm run build
 
