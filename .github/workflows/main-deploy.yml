@@ -12,13 +12,15 @@ jobs:
     runs-on: ubuntu-latest
     name: Pi App Deployer
     steps:
+      - uses: actions/checkout@v2
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
       - name: Deploy container
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
-        run: heroku container:push web -a pi-sensor-staging
+        run: |
+          heroku container:login
+          heroku container:push web -a pi-sensor
         # https://pi-sensor.herokuapp.com/health
       - name: Deploy Pi Sensor Agent
         uses: andrewmarklloyd/pi-app-deployer-action@main
