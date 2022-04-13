@@ -6,6 +6,7 @@ COPY . .
 ENV GO111MODULE=on
 
 RUN make build
+# TODO: add front end to dockerfile
 
 FROM scratch
 

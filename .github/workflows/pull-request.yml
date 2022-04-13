@@ -2,6 +2,8 @@ name: Main Build
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 jobs:
   build:
@@ -21,13 +23,6 @@ jobs:
           make test
       - name: Run build
         run: make build-ci
-      - uses: actions/upload-artifact@v2
-        with:
-          name: app_${{ github.sha }}
-          path: |
-            door-light
-            pi-sensor-agent
-            .pi-app-deployer.yaml
       - name: Build front end
         run: |
           curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
@@ -37,12 +32,13 @@ jobs:
           nvm use
           npm install
           npm run build
-      - name: Install Heroku CLI
-        run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
-      - name: Deploy Heroku Staging
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: |
-          heroku container:login
-          heroku container:push web -a pi-sensor-staging
-          heroku container:release web -a pi-sensor-staging
+      # TODO: deploy review app on PRs
+      # - name: Install Heroku CLI
+      #   run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
+      # - name: Deploy Heroku Review App
+      #   env:
+      #     HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      #   run: |
+      #     heroku container:login
+      #     heroku container:push web -a pi-sensor-staging
+      #     heroku container:release web -a pi-sensor-staging
