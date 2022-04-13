@@ -1,5 +1,7 @@
 .PHONY: build test
 
+SHELL := /bin/bash
+
 build:
 	GOARCH=arm64 GOARM=5 go build -o build/pi-sensor-server server/*.go
 	GOOS=linux GOARCH=arm GOARM=5 go build -o build/pi-sensor-agent agent/*.go
@@ -7,7 +9,8 @@ build:
 
 build-frontend:
 	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.37.2/install.sh | bash
-	export NVM_DIR="$HOME/.nvm"
+	export NVM_DIR="${HOME}/.nvm"
+	source ${NVM_DIR}/nvm.sh
 	cd server/frontend
 	nvm install
 	nvm use
