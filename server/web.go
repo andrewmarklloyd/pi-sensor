@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -66,6 +67,7 @@ func newWebServer(serverConfig ServerConfig,
 	}
 	sessionStore = sessions.NewCookieStore([]byte(serverConfig.googleConfig.sessionSecret), nil)
 	stateConfig := gologin.DebugOnlyCookieConfig
+	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
 	router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(sensorRestartHandler))).Methods(post)
 	router.Handle("/api/sensor/arming", requireLogin(http.HandlerFunc(sensorArmingHandler))).Methods(post)
 	router.Handle("/api/sensor/all", requireLogin(http.HandlerFunc(allSensorsHandler))).Methods(get)
@@ -201,4 +203,8 @@ func isAuthenticated(req *http.Request) bool {
 		return true
 	}
 	return false
+}
+
+func healthHandler(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(w, "ok")
 }
