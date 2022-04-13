@@ -9,6 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
@@ -22,6 +23,7 @@ jobs:
           make test
       - name: Run build
         run: make build-ci
+        # TODO: don't upload artifacts for PR
       - uses: actions/upload-artifact@v2
         with:
           name: app_${{ github.sha }}
@@ -38,7 +40,6 @@ jobs:
           nvm use
           npm install
           npm run build
-      - uses: actions/checkout@v2
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
       - name: Deploy container
