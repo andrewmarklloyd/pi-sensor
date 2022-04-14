@@ -1,9 +1,7 @@
 .PHONY: build test
 
-# SHELL := /bin/bash
-
 build:
-	GOARCH=arm64 GOARM=5 go build -o build/pi-sensor-server server/*.go
+	CGO_ENABLED=0 GOARCH=amd64 go build -o build/pi-sensor-server server/*.go
 	GOOS=linux GOARCH=arm GOARM=5 go build -o build/pi-sensor-agent agent/*.go
 	GOOS=linux GOARCH=arm GOARM=5 go build -o build/door-light door_light/*.go
 

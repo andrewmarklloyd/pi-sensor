@@ -93,7 +93,8 @@ func newWebServer(serverConfig ServerConfig,
 
 func (s webServer) startServer() {
 	logger.Println("Starting web server")
-	logger.Fatal(s.httpServer.ListenAndServe())
+	err := s.httpServer.ListenAndServe()
+	logger.Fatal("Error starting web server:", err)
 }
 
 func (s webServer) sendMessage(channel string, message Message) {

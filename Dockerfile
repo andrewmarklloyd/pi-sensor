@@ -5,12 +5,13 @@ COPY . .
 
 ENV GO111MODULE=on
 
-FROM scratch
+RUN make build
+RUN make build-frontend
+
+FROM alpine
 
 WORKDIR /app
+COPY --from=builder /app/build/pi-sensor-server /app/
+COPY --from=builder /app/server/frontend/build /app/frontend/build
 
-COPY --from=builder /app/build/pi-sensor-server /usr/bin/
-RUN mkdir /usr/bin/frontend
-COPY server/frontend/build frontend/
-
-ENTRYPOINT ["/usr/bin/pi-sensor-server"]
+ENTRYPOINT ["/app/pi-sensor-server"]
