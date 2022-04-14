@@ -6,7 +6,7 @@ build:
 	GOOS=linux GOARCH=arm GOARM=5 go build -o build/door-light door_light/*.go
 
 build-frontend:
-	./scripts/build-front.sh
+	./.github/scripts/build-front.sh
 
 build-ci: build build-frontend
 	mv build/* .

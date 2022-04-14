@@ -26,7 +26,4 @@ jobs:
       - name: Deploy Heroku Staging
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: |
-          heroku container:login
-          heroku container:push web -a pi-sensor-staging
-          heroku container:release web -a pi-sensor-staging
+        run: ./.github/scripts/deploy-heroku.sh pi-sensor-staging
