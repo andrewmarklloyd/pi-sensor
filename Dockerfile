@@ -5,13 +5,12 @@ COPY . .
 
 ENV GO111MODULE=on
 
-RUN make build
-# TODO: add front end to dockerfile
-
 FROM scratch
 
 WORKDIR /app
 
 COPY --from=builder /app/build/pi-sensor-server /usr/bin/
+RUN mkdir /usr/bin/frontend
+COPY server/frontend/build frontend/
 
 ENTRYPOINT ["/usr/bin/pi-sensor-server"]
