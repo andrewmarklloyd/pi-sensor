@@ -7,7 +7,6 @@ test.sh
 .DS_Store
 credentials.json
 token.json
-door-light
 build/
 .secrets
 run.sh

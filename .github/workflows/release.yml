@@ -25,6 +25,6 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
-        project_path: "./scripts/door-light"
+        project_path: "./door-light"
         binary_name: "door-light"
         extra_files: .pi-app-updater.yaml

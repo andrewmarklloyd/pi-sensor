@@ -1,7 +1,5 @@
 name: Main Build
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -22,5 +20,5 @@ jobs:
           make vet
           make test
       - name: Run build
-        run: make build-ci
+        run: make build
       # TODO: deploy review app on PRs
