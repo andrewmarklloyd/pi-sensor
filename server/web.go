@@ -207,5 +207,5 @@ func isAuthenticated(req *http.Request) bool {
 }
 
 func healthHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "ok")
+	fmt.Fprintf(w, fmt.Sprintf(`{"version":"%s"}`, version))
 }

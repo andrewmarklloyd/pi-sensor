@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+var version = ""
+
 var (
 	brokerurl        = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
 	redisurl         = flag.String("redisurl", os.Getenv("REDIS_URL"), "The redis cluster to connect to")
@@ -128,7 +130,7 @@ func allSensorsHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	logger.Println("Initializing server")
+	logger.Println("Initializing server, version", version)
 	flag.Parse()
 
 	if *brokerurl == "" {
