@@ -18,12 +18,9 @@ jobs:
       - name: Deploy Heroku
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          PI_APP_DEPLOYER_API_KEY: ${{ secrets.PI_APP_DEPLOYER_API_KEY }}
-        run: |
-          heroku container:login
-          heroku container:push web -a pi-sensor
-          heroku container:release web -a pi-sensor
-        # https://pi-sensor.herokuapp.com/health
+          GITHUB_SHA:  ${{ github.sha }}
+          SERVER_API_KEY: ${{ secrets.SERVER_API_KEY_PROD }}
+        run: ./.github/scripts/deploy-heroku.sh pi-sensor
       - name: Deploy Pi Sensor Agent
         uses: andrewmarklloyd/pi-app-deployer-action@main
         env:

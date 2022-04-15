@@ -67,7 +67,7 @@ func newWebServer(serverConfig ServerConfig,
 	}
 	sessionStore = sessions.NewCookieStore([]byte(serverConfig.googleConfig.sessionSecret), nil)
 	stateConfig := gologin.DebugOnlyCookieConfig
-	router.Handle("/health", requireLogin(http.HandlerFunc(healthHandler))).Methods(get)
+	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
 	router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(sensorRestartHandler))).Methods(post)
 	router.Handle("/api/sensor/arming", requireLogin(http.HandlerFunc(sensorArmingHandler))).Methods(post)
 	router.Handle("/api/sensor/all", requireLogin(http.HandlerFunc(allSensorsHandler))).Methods(get)
@@ -207,5 +207,16 @@ func isAuthenticated(req *http.Request) bool {
 }
 
 func healthHandler(w http.ResponseWriter, req *http.Request) {
+	allowedApiKey := os.Getenv("SERVER_API_KEY")
+	apiKey := req.Header.Get("api-key")
+	if apiKey == "" {
+		http.Error(w, `{"error":"unauthenticated"}`, http.StatusUnauthorized)
+		return
+	}
+	if apiKey != allowedApiKey {
+		http.Error(w, `{"error":"unauthenticated"}`, http.StatusUnauthorized)
+		return
+	}
+
 	fmt.Fprintf(w, fmt.Sprintf(`{"version":"%s"}`, version))
 }

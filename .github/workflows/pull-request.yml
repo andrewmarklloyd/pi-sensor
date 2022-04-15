@@ -19,13 +19,6 @@ jobs:
         run: |
           make vet
           make test
-      # - name: Cache Build
-      #   uses: actions/cache@v1
-      #   with:
-      #     path: |
-      #       ./pi-sensor-server
-      #       ./server/frontend/build
-      #     key: ${{ runner.OS }}-build
       - name: Run build
         run: |
           make build
@@ -36,4 +29,5 @@ jobs:
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           GITHUB_SHA:  ${{ github.sha }}
+          SERVER_API_KEY: ${{ secrets.SERVER_API_KEY_STAGING }}
         run: ./.github/scripts/deploy-heroku.sh pi-sensor-staging
