@@ -12,7 +12,7 @@ app=${1}
 get_version() {
   curl -s -X GET \
     -H "api-key: ${SERVER_API_KEY}" \
-    https://${app}.herokuapp.com/health
+    https://${app}.herokuapp.com/health | jq -r '.version'
 }
 
 heroku container:login
