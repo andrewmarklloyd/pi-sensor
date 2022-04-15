@@ -7,6 +7,10 @@ if ! command -v jq &> /dev/null; then
   apt-get install jq -y
 fi
 
+if ! command -v heroku &> /dev/null; then
+  curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
+fi
+
 app=${1}
 
 get_version() {

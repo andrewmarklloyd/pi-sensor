@@ -20,7 +20,9 @@ jobs:
           make vet
           make test
       - name: Run build
-        run: make build-ci
+        run: |
+          make build
+          make build-frontend
       - uses: actions/upload-artifact@v2
         with:
           name: app_${{ github.sha }}

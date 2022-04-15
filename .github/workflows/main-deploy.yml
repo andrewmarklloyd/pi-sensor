@@ -13,8 +13,6 @@ jobs:
     name: Pi App Deployer
     steps:
       - uses: actions/checkout@v2
-      - name: Install Heroku CLI
-        run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
       - name: Deploy Heroku
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}

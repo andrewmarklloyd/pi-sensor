@@ -23,8 +23,6 @@ jobs:
         run: |
           make build
           make build-frontend
-      - name: Install Heroku CLI
-        run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
       - name: Deploy Heroku Staging
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
