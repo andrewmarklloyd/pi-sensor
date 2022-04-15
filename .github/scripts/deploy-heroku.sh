@@ -33,3 +33,5 @@ while [[ ${version} != ${GITHUB_SHA} ]]; do
   i=$((i+1))
   sleep 5
 done
+
+echo "Successfully deployed version ${version}"
