@@ -19,15 +19,17 @@ jobs:
         run: |
           make vet
           make test
-      - name: Cache Build
-        uses: actions/cache@v1
-        with:
-          path: |
-            ./pi-sensor-server
-            ./server/frontend/build
-          key: ${{ runner.OS }}-build
+      # - name: Cache Build
+      #   uses: actions/cache@v1
+      #   with:
+      #     path: |
+      #       ./pi-sensor-server
+      #       ./server/frontend/build
+      #     key: ${{ runner.OS }}-build
       - name: Run build
-        run: make build-ci
+        run: |
+          make build
+          make build-frontend
       - name: Install Heroku CLI
         run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
       - name: Deploy Heroku Staging
