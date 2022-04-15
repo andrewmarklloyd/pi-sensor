@@ -8,9 +8,6 @@ build:
 build-frontend:
 	./.github/scripts/build-front.sh
 
-build-ci: build build-frontend
-	mv build/* .
-
 deploy-dev: build
 	scp pi-sensor-agent pi@${IP}:dev-pi-sensor-agent
 
