@@ -21,7 +21,7 @@ heroku container:release web -a ${app}
 
 echo "Deploying version ${GITHUB_SHA}"
 
-version="unknown"
+version=$(get_version)
 i=0
 while [[ ${version} != ${GITHUB_SHA} ]]; do
   echo "Attempt number ${i}, deployed version: ${version}"
