@@ -18,6 +18,7 @@ jobs:
       - name: Deploy Heroku
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          PI_APP_DEPLOYER_API_KEY: ${{ secrets.PI_APP_DEPLOYER_API_KEY }}
         run: |
           heroku container:login
           heroku container:push web -a pi-sensor
