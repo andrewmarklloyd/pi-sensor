@@ -76,7 +76,10 @@ func newWebServer(serverConfig ServerConfig,
 	router.Handle("/google/callback", google.StateHandler(stateConfig, google.CallbackHandler(oauth2Config, issueSession(serverConfig), nil)))
 	router.HandleFunc("/logout", logoutHandler)
 	router.HandleFunc(unauthPath, unauthHandler).Methods(get)
-	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
+	spa := spaHandler{
+		staticPath: "frontend/build",
+		indexPath:  "index.html",
+	}
 	router.PathPrefix("/").Handler(requireLogin(spa))
 
 	srv := &http.Server{

@@ -8,6 +8,9 @@ build:
 build-frontend:
 	./.github/scripts/build-front.sh
 
+build-dev:
+	CGO_ENABLED=0 GOOS=linux go build -ldflags="-X 'main.version=`git rev-parse HEAD`'" -o build/pi-sensor-server server/*.go
+
 deploy-dev: build
 	scp pi-sensor-agent pi@${IP}:dev-pi-sensor-agent
 
