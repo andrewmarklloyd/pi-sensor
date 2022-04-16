@@ -1,10 +1,10 @@
 name: Main Build
 on:
-  push:
+  pull_request:
     branches: [ main ]
   workflow_dispatch:
 jobs:
-  build:
+  pull_request:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -23,10 +23,9 @@ jobs:
         run: |
           make build
           make build-frontend
-      - uses: actions/upload-artifact@v2
-        with:
-          name: app_${{ github.sha }}
-          path: |
-            door-light
-            pi-sensor-agent
-            .pi-app-deployer.yaml
+      - name: Deploy Heroku Staging
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          GITHUB_SHA:  ${{ github.sha }}
+          SERVER_API_KEY: ${{ secrets.SERVER_API_KEY_STAGING }}
+        run: ./.github/scripts/deploy-heroku.sh pi-sensor-staging

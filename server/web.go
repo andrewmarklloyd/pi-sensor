@@ -76,7 +76,10 @@ func newWebServer(serverConfig ServerConfig,
 	router.Handle("/google/callback", google.StateHandler(stateConfig, google.CallbackHandler(oauth2Config, issueSession(serverConfig), nil)))
 	router.HandleFunc("/logout", logoutHandler)
 	router.HandleFunc(unauthPath, unauthHandler).Methods(get)
-	spa := spaHandler{staticPath: "frontend/build", indexPath: "index.html"}
+	spa := spaHandler{
+		staticPath: "frontend/build",
+		indexPath:  "index.html",
+	}
 	router.PathPrefix("/").Handler(requireLogin(spa))
 
 	srv := &http.Server{
@@ -93,7 +96,8 @@ func newWebServer(serverConfig ServerConfig,
 
 func (s webServer) startServer() {
 	logger.Println("Starting web server")
-	logger.Fatal(s.httpServer.ListenAndServe())
+	err := s.httpServer.ListenAndServe()
+	logger.Fatal("Error starting web server:", err)
 }
 
 func (s webServer) sendMessage(channel string, message Message) {
@@ -206,5 +210,16 @@ func isAuthenticated(req *http.Request) bool {
 }
 
 func healthHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "ok")
+	allowedApiKey := os.Getenv("SERVER_API_KEY")
+	apiKey := req.Header.Get("api-key")
+	if apiKey == "" {
+		http.Error(w, `{"error":"unauthenticated"}`, http.StatusUnauthorized)
+		return
+	}
+	if apiKey != allowedApiKey {
+		http.Error(w, `{"error":"unauthenticated"}`, http.StatusUnauthorized)
+		return
+	}
+
+	fmt.Fprintf(w, fmt.Sprintf(`{"version":"%s"}`, version))
 }

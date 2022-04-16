@@ -9,6 +9,7 @@ type ServerConfig struct {
 	mockMode     bool
 	googleConfig GoogleConfig
 	twilioConfig TwilioConfig
+	version      string
 }
 
 type GoogleConfig struct {

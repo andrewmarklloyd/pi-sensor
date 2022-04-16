@@ -1,16 +1,8 @@
-FROM golang:1.16 as builder
+FROM alpine
 
-WORKDIR /app
-COPY . .
-
-ENV GO111MODULE=on
-
-RUN make build
-
-FROM scratch
+COPY build/pi-sensor-server /app/
+COPY server/frontend/build /app/frontend/build
 
 WORKDIR /app
 
-COPY --from=builder /app/build/pi-sensor-server /usr/bin/
-
-ENTRYPOINT ["/usr/bin/pi-sensor-server"]
+ENTRYPOINT ["/app/pi-sensor-server"]
