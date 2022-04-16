@@ -11,7 +11,19 @@ if ! command -v heroku &> /dev/null; then
   curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
 fi
 
-app=${1}
+promote() {
+  echo "Promoting staging to production"
+  heroku pipelines:promote -a pi-sensor-staging -t pi-sensor
+  health_check
+}
+
+deploy() {
+  echo "Deploying version ${GITHUB_SHA}"
+  heroku container:login
+  heroku container:push web -a ${app}
+  heroku container:release web -a ${app}
+  health_check
+}
 
 get_version() {
   curl -s -X GET \
@@ -19,23 +31,33 @@ get_version() {
     https://${app}.herokuapp.com/health | jq -r '.version'
 }
 
-heroku container:login
-heroku container:push web -a ${app}
-heroku container:release web -a ${app}
-
-echo "Deploying version ${GITHUB_SHA}"
-
-version=$(get_version)
-i=0
-while [[ ${version} != ${GITHUB_SHA} ]]; do
-  echo "Attempt number ${i}, deployed version: ${version}"
-  if [[ ${i} -gt 12 ]]; then
-    echo "Exceeded max attempts checking deployment health, deployment failed"
-    exit 1
-  fi
+health_check() {
   version=$(get_version)
-  i=$((i+1))
-  sleep 5
-done
+  i=0
+  while [[ ${version} != ${GITHUB_SHA} ]]; do
+    echo "Attempt number ${i}, deployed version: ${version}"
+    if [[ ${i} -gt 12 ]]; then
+      echo "Exceeded max attempts checking deployment health, deployment failed"
+      exit 1
+    fi
+    version=$(get_version)
+    i=$((i+1))
+    sleep 5
+  done
 
-echo "Successfully deployed version ${version}"
+  echo "Successfully deployed version ${version}"
+  exit 0
+}
+
+cmd=${1}
+if [[ ${cmd} == "deploy" ]]; then
+  app=pi-sensor-staging
+  deploy
+elif [[ ${cmd} == "promote" ]]; then
+  app=pi-sensor
+  promote
+else
+  echo "First arg should be 'deploy' or 'promote'"
+  exit 1
+fi
+
