@@ -21,8 +21,7 @@ jobs:
           make test
       - name: Run build
         run: |
-          make build
-          make build-frontend
+          make build-ci
       - name: Deploy Heroku Staging
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}

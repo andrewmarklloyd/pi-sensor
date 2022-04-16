@@ -21,8 +21,7 @@ jobs:
           make test
       - name: Run build
         run: |
-          make build
-          make build-frontend
+          make build-ci
       - uses: actions/upload-artifact@v2
         with:
           name: app_${{ github.sha }}
