@@ -11,12 +11,6 @@ if ! command -v heroku &> /dev/null; then
   curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
 fi
 
-promote() {
-  echo "Promoting staging to production"
-  heroku pipelines:promote -a pi-sensor-staging -t pi-sensor
-  health_check
-}
-
 deploy() {
   echo "Deploying version ${GITHUB_SHA}"
   heroku container:login
@@ -49,15 +43,5 @@ health_check() {
   exit 0
 }
 
-cmd=${1}
-if [[ ${cmd} == "deploy" ]]; then
-  app=pi-sensor-staging
-  deploy
-elif [[ ${cmd} == "promote" ]]; then
-  app=pi-sensor
-  promote
-else
-  echo "First arg should be 'deploy' or 'promote'"
-  exit 1
-fi
-
+app=${1}
+deploy
