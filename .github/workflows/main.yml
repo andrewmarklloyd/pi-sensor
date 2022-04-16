@@ -4,7 +4,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
 jobs:
-  build:
+  build_deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -30,18 +30,18 @@ jobs:
             door-light
             pi-sensor-agent
             .pi-app-deployer.yaml
-      - name: Deploy Heroku
+      - name: Deploy Heroku Staging
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           GITHUB_SHA:  ${{ github.sha }}
           SERVER_API_KEY: ${{ secrets.SERVER_API_KEY_STAGING }}
-        run: ./.github/scripts/deploy-heroku.sh deploy
-      - name: Promote Production
+        run: ./.github/scripts/deploy-heroku.sh pi-sensor-staging
+      - name: Deploy Heroku Production
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           GITHUB_SHA:  ${{ github.sha }}
           SERVER_API_KEY: ${{ secrets.SERVER_API_KEY_PROD }}
-        run: ./.github/scripts/deploy-heroku.sh promote
+        run: ./.github/scripts/deploy-heroku.sh pi-sensor
       - name: Deploy Pi Sensor Agent
         uses: andrewmarklloyd/pi-app-deployer-action@main
         env:
