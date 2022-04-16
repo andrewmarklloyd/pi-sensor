@@ -10,7 +10,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    name: Pi App Deployer
+    name: Deploy
     steps:
       - uses: actions/checkout@v2
       - name: Deploy Heroku

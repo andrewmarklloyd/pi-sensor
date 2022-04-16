@@ -30,3 +30,25 @@ jobs:
             door-light
             pi-sensor-agent
             .pi-app-deployer.yaml
+      - name: Deploy Heroku
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          GITHUB_SHA:  ${{ github.sha }}
+          SERVER_API_KEY: ${{ secrets.SERVER_API_KEY_PROD }}
+        run: ./.github/scripts/deploy-heroku.sh pi-sensor-staging
+      - name: Deploy Pi Sensor Agent
+        uses: andrewmarklloyd/pi-app-deployer-action@main
+        env:
+          PI_APP_DEPLOYER_API_KEY: ${{ secrets.PI_APP_DEPLOYER_API_KEY }}
+        with:
+          repoName: andrewmarklloyd/pi-sensor
+          manifestName: pi-sensor-agent
+          host: https://pi-app-deployer.herokuapp.com
+      - name: Deploy Door Light
+        uses: andrewmarklloyd/pi-app-deployer-action@main
+        env:
+          PI_APP_DEPLOYER_API_KEY: ${{ secrets.PI_APP_DEPLOYER_API_KEY }}
+        with:
+          repoName: andrewmarklloyd/pi-sensor
+          manifestName: door-light
+          host: https://pi-app-deployer.herokuapp.com
