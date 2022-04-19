@@ -36,7 +36,7 @@ func main() {
 		log.Fatalln("sensorSource is required")
 	}
 
-	logger = log.New(os.Stdout, fmt.Sprintf("[Pi-Senser Agent-%s] ", *sensorSource), log.LstdFlags)
+	logger = log.New(os.Stdout, fmt.Sprintf("[Pi-Sensor Agent-%s] ", *sensorSource), log.LstdFlags)
 	version := os.Getenv("APP_VERSION")
 	logger.Print("Initializing app, version:", version)
 
