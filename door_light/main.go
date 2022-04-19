@@ -79,7 +79,7 @@ func main() {
 	cronLib.AddFunc(fmt.Sprintf("@every %ds", heartbeatIntervalSeconds), func() {
 		err := _mqttClient.publishHeartbeat(appSource, time.Now().UTC().Unix())
 		if err != nil {
-			logger.Println(err)
+			logger.Println("error publishing heartbeat:", err)
 		}
 	})
 	cronLib.Start()
