@@ -274,6 +274,16 @@ func main() {
 		heartbeatTimerMap[heartbeat.Source] = timer
 	})
 
+	ticker := time.NewTicker(6 * time.Hour)
+	go func() {
+		for range ticker.C {
+			err = messenger.CheckBalance()
+			if err != nil {
+				logger.Println(err)
+			}
+		}
+	}()
+
 	_webServer.startServer()
 }
 

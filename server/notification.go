@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -49,4 +50,39 @@ func (m Messenger) SendMessage(body string) (string, error) {
 	} else {
 		return "", fmt.Errorf("Response code: %s", resp.Status)
 	}
+}
+
+func (m Messenger) CheckBalance() error {
+	limit := 0.80
+	urlStr := "https://api.twilio.com/2010-04-01/Accounts/" + m.AccountSID + "/Balance.json"
+	msgData := url.Values{}
+	msgDataReader := *strings.NewReader(msgData.Encode())
+
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", urlStr, &msgDataReader)
+	req.SetBasicAuth(m.AccountSID, m.AuthToken)
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	var data map[string]interface{}
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&data)
+	if err != nil {
+		return err
+	}
+
+	balance, err := strconv.ParseFloat(data["balance"].(string), 8)
+	if err != nil {
+		return err
+	}
+
+	if balance < limit {
+		return fmt.Errorf(fmt.Sprintf("WARNING: Twilio balance %f is less than limit %f", balance, limit))
+	}
+
+	return nil
 }
