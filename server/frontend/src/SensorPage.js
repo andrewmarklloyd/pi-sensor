@@ -63,6 +63,7 @@ class SensorPage extends Component {
           <Card.Body>
               <p>Last activity: {unixToDate(this.state.timestamp)}</p>
               <p>Alerting: {this.state.armed === "true" ? "Armed" : "Disarmed"}</p>
+              <p>Version: {this.state.version}</p>
               <button onClick={() => this.restartSensor(this.state.source)}>
                 Restart
               </button>

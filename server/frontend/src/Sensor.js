@@ -59,7 +59,8 @@ class Sensor extends Component {
               source: this.props.source,
               timesince: this.props.timesince,
               armed: this.props.armed,
-              timestamp: this.props.timestamp
+              timestamp: this.props.timestamp,
+              version: this.props.version
             }
           }}>
             {this.props.source}

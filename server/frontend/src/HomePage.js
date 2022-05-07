@@ -49,7 +49,8 @@ class Home extends Component {
           timesince: timeSince(element.timestamp),
           icon: updated.icon,
           color: updated.color,
-          armed: d.arming[element.source]
+          armed: d.arming[element.source],
+          version: element.version
         })
       })
       component.setState({data: sensors})
@@ -64,7 +65,7 @@ class Home extends Component {
           <Grid.Row cards={true}>
           <Grid.Col sm={6} lg={3}>
             {this.state.data.map(item => (
-              <Sensor key={item.source} source={item.source} socket={socket} status={item.status} icon={item.icon} color={item.color} timestamp={item.timestamp} timesince={item.timesince} armed={item.armed}/>
+              <Sensor key={item.source} source={item.source} socket={socket} status={item.status} icon={item.icon} color={item.color} timestamp={item.timestamp} timesince={item.timesince} armed={item.armed} version={item.version}/>
             ))
             }
           </Grid.Col>
