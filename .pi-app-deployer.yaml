@@ -6,6 +6,8 @@ heroku:
   app: pi-sensor
   env:
     - CLOUDMQTT_URL
+    - CLOUDMQTT_AGENT_USER
+    - CLOUDMQTT_AGENT_PASSWORD
 env: # non-secret env vars, required to be passed in agent install
   - SENSOR_SOURCE # varies by deployment
 ---

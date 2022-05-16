@@ -16,6 +16,8 @@ require (
 	github.com/jaedle/golang-tplink-hs100 v0.4.1
 	github.com/lib/pq v1.10.4
 	github.com/robfig/cron v1.2.0
+	github.com/spf13/cobra v1.3.0
+	github.com/spf13/viper v1.10.1
 	github.com/stianeikeland/go-rpio v4.2.0+incompatible
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
