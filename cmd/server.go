@@ -121,7 +121,7 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	domain := urlSplit[1]
 	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", serverConfig.MqttServerUser, serverConfig.MqttServerPassword, domain)
 
-	mqttClient := mqtt.NewMQTTClient(mqttAddr, *logger)
+	mqttClient := mqtt.NewMQTTClient(mqttAddr, logger)
 
 	messenger := notification.NewMessenger(serverConfig.TwilioConfig)
 

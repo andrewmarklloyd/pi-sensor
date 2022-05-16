@@ -69,7 +69,7 @@ func main() {
 		pinNum = defaultPin
 	}
 	fmt.Println(mqttAddr)
-	mqttClient := mqtt.NewMQTTClient(mqttAddr, *logger)
+	mqttClient := mqtt.NewMQTTClient(mqttAddr, logger)
 	err = mqttClient.Connect()
 	if err != nil {
 		logger.Fatalln("error connecting to mqtt:", err)

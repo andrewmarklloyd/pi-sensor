@@ -15,10 +15,10 @@ type fn func(string)
 
 type MqttClient struct {
 	client mqtt.Client
-	logger log.Logger
+	logger *log.Logger
 }
 
-func NewMQTTClient(addr string, logger log.Logger) MqttClient {
+func NewMQTTClient(addr string, logger *log.Logger) MqttClient {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(addr)
 	var clientID string
