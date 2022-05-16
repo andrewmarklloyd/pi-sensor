@@ -45,6 +45,7 @@ health_check() {
   exit 0
 }
 
+git status
 SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
 app=${1}
 deploy
