@@ -68,7 +68,7 @@ func main() {
 		logger.Printf("Failed to parse GPIO_PIN env var, using default %d", defaultPin)
 		pinNum = defaultPin
 	}
-	fmt.Println(mqttAddr)
+
 	mqttClient := mqtt.NewMQTTClient(mqttAddr, logger)
 	err = mqttClient.Connect()
 	if err != nil {
