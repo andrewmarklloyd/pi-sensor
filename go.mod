@@ -16,10 +16,13 @@ require (
 	github.com/jaedle/golang-tplink-hs100 v0.4.1
 	github.com/lib/pq v1.10.4
 	github.com/robfig/cron v1.2.0
+	github.com/spf13/cobra v1.3.0
+	github.com/spf13/viper v1.10.1
 	github.com/stianeikeland/go-rpio v4.2.0+incompatible
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
+	golang.org/x/tools v0.1.10 // indirect
 	google.golang.org/api v0.63.0
 )

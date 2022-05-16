@@ -1,4 +1,4 @@
-package main
+package gpio
 
 import (
 	"fmt"
@@ -15,12 +15,12 @@ const (
 	UNKNOWN = "UNKNOWN"
 )
 
-type pinClient struct {
+type PinClient struct {
 	pin      rpio.Pin
 	mockMode bool
 }
 
-func newPinClient(pinNumber int, mockMode bool) pinClient {
+func NewPinClient(pinNumber int, mockMode bool) PinClient {
 	pin := rpio.Pin(pinNumber)
 	err := rpio.Open()
 	if err != nil {
@@ -29,10 +29,14 @@ func newPinClient(pinNumber int, mockMode bool) pinClient {
 		pin.Input()
 		pin.PullUp()
 	}
-	return pinClient{pin, mockMode}
+
+	return PinClient{
+		pin,
+		mockMode,
+	}
 }
 
-func (c *pinClient) CurrentStatus() string {
+func (c *PinClient) CurrentStatus() string {
 	var pinState int
 	if c.mockMode {
 		rand.Seed(time.Now().Unix())
@@ -53,6 +57,6 @@ func (c *pinClient) CurrentStatus() string {
 	return UNKNOWN
 }
 
-func (c *pinClient) Cleanup() {
+func (c *PinClient) Cleanup() {
 	rpio.Close()
 }
