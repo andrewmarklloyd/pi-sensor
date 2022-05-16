@@ -13,7 +13,7 @@ if ! command -v heroku &> /dev/null; then
 fi
 
 deploy() {
-  echo "Deploying version ${GITHUB_SHA}"
+  echo "Deploying version ${SHORT_SHA}"
   heroku container:login
   heroku container:push web -a ${app}
   heroku container:release web -a ${app}
@@ -29,7 +29,8 @@ get_version() {
 health_check() {
   version=$(get_version)
   i=0
-  while [[ ${version} != ${GITHUB_SHA} ]]; do
+  echo "Waiting for deployed version to be: ${SHORT_SHA}"
+  while [[ ${version} != ${SHORT_SHA} ]]; do
     echo "Attempt number ${i}, deployed version: ${version}"
     if [[ ${i} -gt 12 ]]; then
       echo "Exceeded max attempts checking deployment health, deployment failed"
@@ -44,5 +45,6 @@ health_check() {
   exit 0
 }
 
+SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
 app=${1}
 deploy
