@@ -69,7 +69,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	sessionStore = sessions.NewCookieStore([]byte(serverConfig.GoogleConfig.SessionSecret), nil)
 	stateConfig := gologin.DebugOnlyCookieConfig
 	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
-	// router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(sensorRestartHandler))).Methods(post)
+	router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(w.sensorRestartHandler))).Methods(post)
 	router.Handle("/api/sensor/arming", requireLogin(http.HandlerFunc(w.sensorArmingHandler))).Methods(post)
 	router.Handle("/api/sensor/all", requireLogin(http.HandlerFunc(w.allSensorsHandler))).Methods(get)
 	router.Handle("/api/report", requireLogin(http.HandlerFunc(w.reportHandler))).Methods(get)
@@ -140,7 +140,7 @@ func (s WebServer) newSocketConnection(c *gosocketio.Channel) {
 }
 
 func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request) {
-	var p config.ArmingPayload
+	var p config.APIPayload
 	err := json.NewDecoder(req.Body).Decode(&p)
 	if err != nil {
 		http.Error(w, "Error parsing request", http.StatusBadRequest)
@@ -154,6 +154,22 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 
 	s.serverClients.Redis.WriteArming(p.Source, armed, context.Background())
 	fmt.Fprintf(w, fmt.Sprintf(`{"status":"success", "armed":"%s"}`, armed))
+}
+
+func (s WebServer) sensorRestartHandler(w http.ResponseWriter, req *http.Request) {
+	var sensor config.APIPayload
+	err := json.NewDecoder(req.Body).Decode(&sensor)
+	if err != nil {
+		http.Error(w, "Error parsing request", http.StatusBadRequest)
+		return
+	}
+	err = s.serverClients.Mqtt.PublishSensorRestart(sensor.Source)
+	if err != nil {
+		http.Error(w, "Error publishing restart message", http.StatusBadRequest)
+		return
+	}
+	logger.Println(fmt.Sprintf("Publishing sensor restart message for %s", sensor.Source))
+	fmt.Fprintf(w, "{\"status\":\"success\"}")
 }
 
 func (s WebServer) allSensorsHandler(w http.ResponseWriter, req *http.Request) {

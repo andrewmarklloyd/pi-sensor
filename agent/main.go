@@ -11,18 +11,21 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/robfig/cron"
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/gpio"
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
 )
 
 var (
-	brokerurl    = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The MQTT broker to connect")
-	sensorSource = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")
-	mockFlag     = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
-	logger       *log.Logger
+	brokerurl     = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The MQTT broker to connect")
+	agentUser     = flag.String("agentuser", os.Getenv("CLOUDMQTT_AGENT_USER"), "The MQTT agent user to connect")
+	agentPassword = flag.String("agentpassword", os.Getenv("CLOUDMQTT_AGENT_PASSWORD"), "The MQTT agent password to connect")
+	sensorSource  = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")
+	mockFlag      = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
+	logger        *log.Logger
 )
 
 const (
-	topic                    = "sensor/status"
 	heartbeatIntervalSeconds = 60
 	statusFile               = "/home/pi/.pi-sensor-status"
 )
@@ -32,9 +35,26 @@ func main() {
 	if *brokerurl == "" {
 		log.Fatalln("one broker is required")
 	}
+
 	if *sensorSource == "" {
 		log.Fatalln("sensorSource is required")
 	}
+
+	if *agentUser == "" {
+		logger.Fatalln("CLOUDMQTT_AGENT_USER environment variable not found")
+	}
+
+	if *agentPassword == "" {
+		logger.Fatalln("CLOUDMQTT_AGENT_PASSWORD environment variable not found")
+	}
+
+	urlSplit := strings.Split(*brokerurl, "@")
+	if len(urlSplit) != 2 {
+		logger.Fatalln("unexpected CLOUDMQTT_URL parsing error")
+	}
+	domain := urlSplit[1]
+
+	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", *agentUser, *agentPassword, domain)
 
 	logger = log.New(os.Stdout, fmt.Sprintf("[Pi-Sensor Agent-%s] ", *sensorSource), log.LstdFlags)
 	version := os.Getenv("APP_VERSION")
@@ -48,9 +68,13 @@ func main() {
 		logger.Printf("Failed to parse GPIO_PIN env var, using default %d", defaultPin)
 		pinNum = defaultPin
 	}
-
-	mqttClient := newMQTTClient(*brokerurl, topic, *sensorSource, mockMode)
-	pinClient := newPinClient(pinNum, mockMode)
+	fmt.Println(mqttAddr)
+	mqttClient := mqtt.NewMQTTClient(mqttAddr, logger)
+	err = mqttClient.Connect()
+	if err != nil {
+		logger.Fatalln("error connecting to mqtt:", err)
+	}
+	pinClient := gpio.NewPinClient(pinNum, mockMode)
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -62,9 +86,19 @@ func main() {
 		os.Exit(0)
 	}()
 
-	configureHeartbeat(mqttClient, *sensorSource)
+	h := config.Heartbeat{
+		Name: *sensorSource,
+		Type: config.HeartbeatTypeSensor,
+	}
 
-	mqttClient.subscribeRestart(func(messageString string) {
+	ticker := time.NewTicker(heartbeatIntervalSeconds * time.Second)
+	go func() {
+		for range ticker.C {
+			mqttClient.PublishHeartbeat(h)
+		}
+	}()
+
+	mqttClient.Subscribe(config.SensorRestartTopic, func(messageString string) {
 		if *sensorSource == messageString {
 			logger.Println("Received restart message, restarting app now")
 			os.Exit(0)
@@ -73,8 +107,8 @@ func main() {
 
 	lastStatus, err := getLastStatus(statusFile)
 	if err != nil {
-		logger.Println(fmt.Errorf("error reading status file: %s. Setting status to %s", err, UNKNOWN))
-		lastStatus = UNKNOWN
+		logger.Println(fmt.Errorf("error reading status file: %s. Setting status to %s", err, config.UNKNOWN))
+		lastStatus = config.UNKNOWN
 	}
 
 	var currentStatus string
@@ -87,18 +121,17 @@ func main() {
 		if currentStatus != lastStatus {
 			logger.Println(fmt.Sprintf("%s is %s", *sensorSource, currentStatus))
 			lastStatus = currentStatus
-			mqttClient.publish(*sensorSource, currentStatus, time.Now().UTC().Unix())
+
+			err := mqttClient.PublishSensorStatus(config.SensorStatus{
+				Source: *sensorSource,
+				Status: currentStatus,
+			})
+			if err != nil {
+				logger.Println("Error publishing message to sensor status channel:", err)
+			}
 		}
 		time.Sleep(5 * time.Second)
 	}
-}
-
-func configureHeartbeat(mqttClient mqttClient, sensorSource string) {
-	cronLib := cron.New()
-	cronLib.AddFunc(fmt.Sprintf("@every %ds", heartbeatIntervalSeconds), func() {
-		mqttClient.publishHeartbeat(sensorSource, time.Now().UTC().Unix())
-	})
-	cronLib.Start()
 }
 
 func getLastStatus(path string) (string, error) {

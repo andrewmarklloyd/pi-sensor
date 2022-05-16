@@ -83,3 +83,7 @@ func (c MqttClient) PublishSensorStatus(h config.SensorStatus) error {
 	}
 	return c.publish(config.SensorStatusTopic, string(j))
 }
+
+func (c MqttClient) PublishSensorRestart(sensorSource string) error {
+	return c.publish(config.SensorRestartTopic, sensorSource)
+}

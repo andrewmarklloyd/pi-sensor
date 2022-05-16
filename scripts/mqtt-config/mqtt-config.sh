@@ -20,12 +20,14 @@ create_agent_user() {
   post user "{\"username\": \"${CLOUDMQTT_AGENT_USER}\",\"password\": \"${CLOUDMQTT_AGENT_PASSWORD}\"}"
   post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_AGENT_USER}\",\"pattern\":\"sensor/status\",\"read\":false,\"write\":true}"
   post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_AGENT_USER}\",\"pattern\":\"sensor/heartbeat\",\"read\":false,\"write\":true}"
+  post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_AGENT_USER}\",\"pattern\":\"sensor/restart\",\"read\":true,\"write\":false}"
 }
 
 create_server_user() {
   post user "{\"username\": \"${CLOUDMQTT_SERVER_USER}\",\"password\": \"${CLOUDMQTT_SERVER_PASSWORD}\"}"
   post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_SERVER_USER}\",\"pattern\":\"sensor/status\",\"read\":true,\"write\":false}"
   post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_SERVER_USER}\",\"pattern\":\"sensor/heartbeat\",\"read\":true,\"write\":false}"
+  post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_SERVER_USER}\",\"pattern\":\"sensor/restart\",\"read\":false,\"write\":true}"
 }
 
 config=$(get_config)

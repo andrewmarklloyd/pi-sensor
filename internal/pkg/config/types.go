@@ -34,6 +34,6 @@ type SensorState struct {
 	Arming  map[string]string `json:"arming"`
 }
 
-type ArmingPayload struct {
+type APIPayload struct {
 	Source string `json:"source"`
 }
