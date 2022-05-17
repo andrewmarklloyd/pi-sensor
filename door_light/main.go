@@ -84,6 +84,10 @@ func main() {
 	}
 
 	mqttClient := mqtt.NewMQTTClient(mqttAddr, logger)
+	err = mqttClient.Connect()
+	if err != nil {
+		logger.Fatalln("error connecting to mqtt:", err)
+	}
 	cronLib := cron.New()
 	cronLib.AddFunc(fmt.Sprintf("@every %ds", heartbeatIntervalSeconds), func() {
 		err := mqttClient.PublishHeartbeat(h)
