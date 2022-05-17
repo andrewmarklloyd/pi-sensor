@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
-import { unixToDate } from "./DataModel";
+import { trimVersion, unixToDate } from "./DataModel";
 
 
 import {
@@ -63,7 +63,7 @@ class SensorPage extends Component {
           <Card.Body>
               <p>Last activity: {unixToDate(this.state.timestamp)}</p>
               <p>Alerting: {this.state.armed === "true" ? "Armed" : "Disarmed"}</p>
-              <p>Version: {this.state.version}</p>
+              <p>Version: {trimVersion(this.state.version)}</p>
               <button onClick={() => this.restartSensor(this.state.source)}>
                 Restart
               </button>
