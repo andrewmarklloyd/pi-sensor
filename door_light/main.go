@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
-	"sync"
 	"time"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/gofrs/uuid"
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
 	"github.com/jaedle/golang-tplink-hs100/pkg/configuration"
 	"github.com/jaedle/golang-tplink-hs100/pkg/hs100"
 	"github.com/robfig/cron"
@@ -22,12 +20,8 @@ var (
 )
 
 const (
-	sensorStatusChannel      = "sensor/status"
-	sensorHeartbeatChannel   = "sensor/heartbeat"
 	heartbeatIntervalSeconds = 60
-	appSource                = "app_door-light"
-	OPEN                     = "OPEN"
-	CLOSED                   = "CLOSED"
+	appSource                = "door-light"
 )
 
 func main() {
@@ -37,11 +31,20 @@ func main() {
 	}
 	logger.Println(fmt.Sprintf("Running app version: %s", appVersion))
 	brokerurl := flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
+	agentUser := flag.String("agentuser", os.Getenv("CLOUDMQTT_AGENT_USER"), "The MQTT agent user to connect")
+	agentPassword := flag.String("agentpassword", os.Getenv("CLOUDMQTT_AGENT_PASSWORD"), "The MQTT agent password to connect")
 	deviceNamesArg := flag.String("devicenames", os.Getenv("DOOR_LIGHT_DEVICE_NAMES"), "The devices to control as a comma separated list")
 	door := flag.String("door", os.Getenv("DOOR_LIGHT_DOOR"), "The door to monitor")
 	if *brokerurl == "" {
 		logger.Fatalln("at least one broker is required")
 	}
+	urlSplit := strings.Split(*brokerurl, "@")
+	if len(urlSplit) != 2 {
+		logger.Fatalln("unexpected CLOUDMQTT_URL parsing error")
+	}
+	domain := urlSplit[1]
+
+	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", *agentUser, *agentPassword, domain)
 
 	deviceNames := strings.Split(*deviceNamesArg, ",")
 	if len(deviceNames) == 0 {
@@ -74,17 +77,23 @@ func main() {
 		logger.Fatalln(fmt.Sprintf("None of discovered devices matches expected device names: %s", deviceNames))
 	}
 
-	_mqttClient := newMQTTClient(*brokerurl)
+	h := config.Heartbeat{
+		Name:    appSource,
+		Type:    config.HeartbeatTypeSensor,
+		Version: appVersion,
+	}
+
+	mqttClient := mqtt.NewMQTTClient(mqttAddr, logger)
 	cronLib := cron.New()
 	cronLib.AddFunc(fmt.Sprintf("@every %ds", heartbeatIntervalSeconds), func() {
-		err := _mqttClient.publishHeartbeat(appSource, time.Now().UTC().Unix())
+		err := mqttClient.PublishHeartbeat(h)
 		if err != nil {
 			logger.Println("error publishing heartbeat:", err)
 		}
 	})
 	cronLib.Start()
 
-	_mqttClient.Subscribe(sensorStatusChannel, func(messageString string) {
+	mqttClient.Subscribe(config.SensorStatusTopic, func(messageString string) {
 		for _, d := range targetDevices {
 			err := triggerOutlet(d, messageString, *door)
 			if err != nil {
@@ -95,54 +104,6 @@ func main() {
 
 	go forever()
 	select {} // block forever
-}
-
-type fn func(string)
-
-var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	logger.Println("Connected to MQTT server")
-}
-
-var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	logger.Fatalf("Connection to MQTT server lost: %v", err)
-}
-
-type mqttClient struct {
-	client mqtt.Client
-}
-
-func newMQTTClient(brokerurl string) mqttClient {
-	opts := mqtt.NewClientOptions()
-	opts.AddBroker(brokerurl)
-	var clientID string
-	u, _ := uuid.NewV4()
-	clientID = u.String()
-	logger.Println("Starting MQTT client with id", clientID)
-	opts.SetClientID(clientID)
-	opts.OnConnect = connectHandler
-	opts.OnConnectionLost = connectLostHandler
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		panic(token.Error())
-	}
-	return mqttClient{
-		client,
-	}
-}
-
-func (c mqttClient) Cleanup() {
-	c.client.Disconnect(250)
-}
-
-func (c mqttClient) Subscribe(topic string, subscribeHandler fn) {
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	if token := c.client.Subscribe(topic, 0, func(client mqtt.Client, msg mqtt.Message) {
-		subscribeHandler(string(msg.Payload()))
-	}); token.Wait() && token.Error() != nil {
-		logger.Fatal(token.Error())
-	}
 }
 
 func forever() {
@@ -159,20 +120,12 @@ func triggerOutlet(outlet hs100.Hs100, messageString string, door string) error 
 	if err != nil {
 		return fmt.Errorf("getting outlet name: %s", err)
 	}
-	if strings.Contains(messageString, OPEN) {
+	if strings.Contains(messageString, config.OPEN) {
 		logger.Println(fmt.Sprintf("Turning %s outlet ON", name))
 		return outlet.TurnOn()
-	} else if strings.Contains(messageString, CLOSED) {
+	} else if strings.Contains(messageString, config.CLOSED) {
 		logger.Println(fmt.Sprintf("Turning %s outlet OFF", name))
 		return outlet.TurnOff()
 	}
-	return fmt.Errorf(fmt.Sprintf("Message did not contain %s or %s", OPEN, CLOSED))
-}
-
-func (c mqttClient) publishHeartbeat(sensorSource string, timestamp int64) error {
-	ts := strconv.FormatInt(timestamp, 10)
-	text := fmt.Sprintf("%s|%s", sensorSource, ts)
-	token := c.client.Publish(sensorHeartbeatChannel, 0, false, text)
-	token.Wait()
-	return token.Error()
+	return fmt.Errorf(fmt.Sprintf("Message did not contain %s or %s", config.OPEN, config.CLOSED))
 }
