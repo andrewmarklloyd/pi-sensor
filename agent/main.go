@@ -58,6 +58,9 @@ func main() {
 
 	logger = log.New(os.Stdout, fmt.Sprintf("[Pi-Sensor Agent-%s] ", *sensorSource), log.LstdFlags)
 	version := os.Getenv("APP_VERSION")
+	if version == "" {
+		version = "unknown"
+	}
 	logger.Print("Initializing app, version:", version)
 
 	mockMode, _ := strconv.ParseBool(*mockFlag)
@@ -87,8 +90,9 @@ func main() {
 	}()
 
 	h := config.Heartbeat{
-		Name: *sensorSource,
-		Type: config.HeartbeatTypeSensor,
+		Name:    *sensorSource,
+		Type:    config.HeartbeatTypeSensor,
+		Version: version,
 	}
 
 	ticker := time.NewTicker(heartbeatIntervalSeconds * time.Second)
@@ -123,8 +127,9 @@ func main() {
 			lastStatus = currentStatus
 
 			err := mqttClient.PublishSensorStatus(config.SensorStatus{
-				Source: *sensorSource,
-				Status: currentStatus,
+				Source:  *sensorSource,
+				Status:  currentStatus,
+				Version: version,
 			})
 			if err != nil {
 				logger.Println("Error publishing message to sensor status channel:", err)
