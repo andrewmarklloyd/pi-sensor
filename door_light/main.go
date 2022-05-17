@@ -79,7 +79,7 @@ func main() {
 
 	h := config.Heartbeat{
 		Name:    appSource,
-		Type:    config.HeartbeatTypeSensor,
+		Type:    config.HeartbeatTypeApp,
 		Version: appVersion,
 	}
 

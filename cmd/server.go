@@ -145,7 +145,7 @@ func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClie
 	} else if h.Type == config.HeartbeatTypeSensor {
 		messageString, err := serverClients.Redis.ReadState(h.Name, context.Background())
 		if err != nil {
-			logger.Println("Error handling timeout: reading redis state", err)
+			logger.Println(fmt.Sprintf("Error handling timeout: reading redis state: %s Message string was: %s", err, messageString))
 			return
 		}
 
