@@ -9,8 +9,8 @@ on:
 
 jobs:
   deploy_apps:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Deploy Pi Sensor Agent
         uses: andrewmarklloyd/pi-app-deployer-action@main
