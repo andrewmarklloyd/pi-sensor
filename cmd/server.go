@@ -84,7 +84,7 @@ func runServer() {
 			currentTimer.Stop()
 		}
 
-		timer := time.AfterFunc(config.HeartbeatTimeout, func() { handleAppHeartbeatTimeout(h, serverClients.Messenger) })
+		timer := time.AfterFunc(config.HeartbeatTimeout, func() { handleHeartbeatTimeout(h, serverClients, serverConfig, webServer) })
 		heartbeatTimerMap[h.Name] = timer
 	})
 
@@ -133,8 +133,59 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	}, nil
 }
 
-func handleAppHeartbeatTimeout(h config.Heartbeat, msgr notification.Messenger) {
+func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClients, serverConfig config.ServerConfig, webServer WebServer) {
+	if h.Type == config.HeartbeatTypeApp {
+		logger.Println(fmt.Sprintf("Heartbeat timeout occurred for %s", h.Name))
+		if !serverConfig.MockMode {
+			_, err := serverClients.Messenger.SendMessage(fmt.Sprintf("%s has lost connection", h.Name))
+			if err != nil {
+				logger.Println("Error sending app heartbeat timeout message:", err)
+			}
+		}
+	} else if h.Type == config.HeartbeatTypeSensor {
+		messageString, err := serverClients.Redis.ReadState(h.Name, context.Background())
+		if err != nil {
+			logger.Println("Error handling timeout: reading redis state", err)
+			return
+		}
 
+		lastStatus := config.SensorStatus{}
+		err = json.Unmarshal([]byte(messageString), &lastStatus)
+		if err != nil {
+			logger.Println("Error handling timeout: unmarshalling state", err)
+			return
+		}
+
+		logger.Println(fmt.Sprintf("Heartbeat timeout occurred for %s", lastStatus.Source))
+
+		lastStatus.Status = config.UNKNOWN
+		lastStatusJson, err := json.Marshal(lastStatus)
+		if err != nil {
+			logger.Println("Error handling timeout: marshalling state", err)
+			return
+		}
+		err = serverClients.Redis.WriteState(lastStatus.Source, string(lastStatusJson), context.Background())
+		if err != nil {
+			logger.Println(fmt.Sprintf("Error writing message state after heartbeat timeout. Message: %s", messageString))
+			return
+		}
+
+		if !serverConfig.MockMode {
+			_, err = serverClients.Messenger.SendMessage(fmt.Sprintf("%s sensor has lost connection", lastStatus.Source))
+			if err != nil {
+				logger.Println("error sending heartbeat timeout message:", err)
+			}
+		}
+
+		webServer.SendMessage(config.SensorStatusTopic, lastStatus)
+
+		writeErr := serverClients.Postgres.WriteSensorStatus(lastStatus)
+		if writeErr != nil {
+			logger.Println("Error writing sensor status to postgres:", writeErr)
+		}
+	} else {
+		logger.Println("Unknown heartbeat type receieved:", h)
+	}
 }
 
 func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer WebServer, serverConfig config.ServerConfig, message string, delayTimerMap map[string]*time.Timer) error {

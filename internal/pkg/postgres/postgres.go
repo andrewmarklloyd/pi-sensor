@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	// TODO: add update table stmt
 	createTableStmt = `CREATE TABLE IF NOT EXISTS status(source text, status text, timestamp text);`
 	limit           = 100
 )
