@@ -10,7 +10,7 @@ on:
 jobs:
   deploy_apps:
     runs-on: ubuntu-latest
-    # TODO: get this working: if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Deploy Pi Sensor Agent
         uses: andrewmarklloyd/pi-app-deployer-action@main
@@ -28,14 +28,14 @@ jobs:
           repoName: andrewmarklloyd/pi-sensor
           manifestName: door-light
           host: https://pi-app-deployer.herokuapp.com
-    - uses: ravsamhq/notify-slack-action@v1
-      if: always()
-      with:
-        status: ${{ job.status }}
-        token: ${{ secrets.GITHUB_TOKEN }}
-        notification_title: '{workflow} has {status_message}'
-        message_format: '{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>'
-        footer: 'Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>'
-        notify_when: 'failure'
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - uses: ravsamhq/notify-slack-action@v1
+        if: always()
+        with:
+          status: ${{ job.status }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          notification_title: '{workflow} has {status_message}'
+          message_format: '{emoji} *{workflow}* {status_message} in <{repo_url}|{repo}>'
+          footer: 'Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>'
+          notify_when: 'failure'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
