@@ -109,7 +109,11 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		return clients.ServerClients{}, fmt.Errorf("Error creating redis client: %s", err)
 	}
 
-	postgresClient, err := postgres.NewPostgresClient(serverConfig.PostgresURL)
+	migrate := false
+	if os.Getenv("MIGRATE_DB") == "true" {
+		migrate = true
+	}
+	postgresClient, err := postgres.NewPostgresClient(serverConfig.PostgresURL, migrate)
 	if err != nil {
 		return clients.ServerClients{}, fmt.Errorf("Error creating postgres client: %s", err)
 	}
