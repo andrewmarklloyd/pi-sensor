@@ -76,7 +76,7 @@ func runServer() {
 		var h config.Heartbeat
 		err := json.Unmarshal([]byte(messageString), &h)
 		if err != nil {
-			logger.Println("error unmarshalling message from heartbeat channel:", err)
+			logger.Println(fmt.Errorf("error unmarshalling message from heartbeat channel: %s. Message received was: %s", err, messageString))
 			return
 		}
 		currentTimer := heartbeatTimerMap[h.Name]
