@@ -29,29 +29,36 @@ function unixToDate(unixTimestamp) {
 }
 
 function timeSince(unixTimestamp) {
-    var date = new Date(unixTimestamp * 1000)
-    var seconds = Math.floor((new Date() - date) / 1000)
-    var interval = seconds / 31536000
-    if (interval > 1) {
-      return Math.floor(interval) + " years ago"
-    }
-    interval = seconds / 2592000
-    if (interval > 1) {
-      return Math.floor(interval) + " months ago"
-    }
-    interval = seconds / 86400
-    if (interval > 1) {
-      return Math.floor(interval) + " days ago"
-    }
-    interval = seconds / 3600
-    if (interval > 1) {
-      return Math.floor(interval) + " hours ago"
-    }
-    interval = seconds / 60
-    if (interval > 1) {
-      return Math.floor(interval) + " minutes ago"
-    }
-    return Math.floor(seconds) + " seconds ago"
+  var date = new Date(unixTimestamp * 1000)
+  var seconds = Math.floor((new Date() - date) / 1000)
+  var interval = seconds / 31536000
+  if (interval > 1) {
+    return Math.floor(interval) + " years ago"
   }
+  interval = seconds / 2592000
+  if (interval > 1) {
+    return Math.floor(interval) + " months ago"
+  }
+  interval = seconds / 86400
+  if (interval > 1) {
+    return Math.floor(interval) + " days ago"
+  }
+  interval = seconds / 3600
+  if (interval > 1) {
+    return Math.floor(interval) + " hours ago"
+  }
+  interval = seconds / 60
+  if (interval > 1) {
+    return Math.floor(interval) + " minutes ago"
+  }
+  return Math.floor(seconds) + " seconds ago"
+}
 
-export {translateStatus, unixToDate, timeSince}
+function trimVersion(version) {
+  if (version == "") {
+    return version
+  }
+  return version.substring(0,7)
+}
+
+export {translateStatus, unixToDate, timeSince, trimVersion}
