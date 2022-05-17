@@ -21,6 +21,8 @@ heroku:
     - CLOUDMQTT_URL
     - DOOR_LIGHT_DOOR
     - DOOR_LIGHT_DEVICE_NAMES
+    - CLOUDMQTT_AGENT_USER
+    - CLOUDMQTT_AGENT_PASSWORD
 ---
 apiVersion: pi-app-deployer/v1
 kind: Manifest
