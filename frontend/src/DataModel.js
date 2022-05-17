@@ -55,7 +55,7 @@ function timeSince(unixTimestamp) {
 }
 
 function trimVersion(version) {
-  if (version == "") {
+  if (version === "") {
     return version
   }
   return version.substring(0,7)
