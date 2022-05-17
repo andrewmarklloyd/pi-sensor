@@ -19,14 +19,16 @@ const (
 )
 
 type Heartbeat struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Version string `json:"version"`
 }
 
 type SensorStatus struct {
 	Source    string `json:"source"`
 	Status    string `json:"status"`
 	Timestamp string `json:"timestamp"`
+	Version   string `json:"version"`
 }
 
 type SensorState struct {
