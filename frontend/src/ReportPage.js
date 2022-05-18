@@ -7,7 +7,7 @@ import {
   Table
 } from "tabler-react";
 
-import { unixToDate } from "./DataModel";
+import { trimVersion, unixToDate } from "./DataModel";
 
 import SiteWrapper from "./SiteWrapper";
 
@@ -106,6 +106,7 @@ class ReportPage extends Component {
                 <Table.ColHeader>Time</Table.ColHeader>
                 <Table.ColHeader>Door</Table.ColHeader>
                 <Table.ColHeader>Status</Table.ColHeader>
+                <Table.ColHeader>Version</Table.ColHeader>
               </Table.Header>
               <Table.Body>
               {this.state.messages.map(item => (
@@ -113,6 +114,7 @@ class ReportPage extends Component {
                   <Table.Col>{unixToDate(item.timestamp)}</Table.Col>
                   <Table.Col>{item.source}</Table.Col>
                   <Table.Col>{item.status}</Table.Col>
+                  <Table.Col>{trimVersion(item.version)}</Table.Col>
                 </Table.Row>
               ))
               }
