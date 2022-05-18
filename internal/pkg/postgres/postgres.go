@@ -141,12 +141,3 @@ func (c *Client) migrateTable() error {
 
 	return nil
 }
-
-func (c *Client) Fix() error {
-	stmt := `ALTER TABLE status DROP COLUMN version;`
-	_, err := c.sqlDB.Exec(stmt)
-	if err != nil {
-		return err
-	}
-	return nil
-}
