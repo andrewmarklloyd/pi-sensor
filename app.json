@@ -11,10 +11,6 @@
     "heroku-postbuild": "./scripts/build.sh"
   },
   "env": {
-    "GIN_MODE": {
-      "description": "Run production gin server",
-      "value": "release"
-    },
     "GOVERSION": {
       "description": "Heroku does not support setting go version in go.mod",
       "value": "1.14.3"
