@@ -21,9 +21,8 @@ import (
 )
 
 var (
-	logger          = log.New(os.Stdout, "[Pi-Sensor Server] ", log.LstdFlags)
-	forwarderLogger = log.New(os.Stdout, "[Log Forwarder] ", log.LstdFlags)
-	version         = "unknown"
+	logger  = log.New(os.Stdout, "[Pi-Sensor Server] ", log.LstdFlags)
+	version = "unknown"
 )
 
 func runServer() {
