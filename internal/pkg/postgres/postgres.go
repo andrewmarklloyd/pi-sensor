@@ -127,8 +127,23 @@ func (c *Client) GetSensorStatus(source string, page int) ([]config.SensorStatus
 }
 
 func (c *Client) migrateTable() error {
-	stmt := `ALTER TABLE status ADD COLUMN version text;`
-	// stmt := `ALTER TABLE status DROP COLUMN version;`
+	stmt := `ALTER TABLE status ADD COLUMN IF NOT EXISTS version text DEFAULT '';`
+	_, err := c.sqlDB.Exec(stmt)
+	if err != nil {
+		return err
+	}
+
+	stmt = `UPDATE status SET version='' WHERE version IS NULL;`
+	_, err = c.sqlDB.Exec(stmt)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) Fix() error {
+	stmt := `ALTER TABLE status DROP COLUMN version;`
 	_, err := c.sqlDB.Exec(stmt)
 	if err != nil {
 		return err
