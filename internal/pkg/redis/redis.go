@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -25,6 +26,9 @@ func NewRedisClient(redisURL string) (Client, error) {
 	options, err := redis.ParseURL(redisURL)
 	if err != nil {
 		return redisClient, err
+	}
+	options.TLSConfig = &tls.Config{
+		InsecureSkipVerify: true,
 	}
 	redisClient.client = *redis.NewClient(options)
 
