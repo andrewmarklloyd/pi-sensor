@@ -6,6 +6,7 @@ type ServerConfig struct {
 	MqttServerPassword string
 	Topic              string
 	RedisURL           string
+	RedisTLSURL        string
 	PostgresURL        string
 	Port               string
 	MockMode           bool
