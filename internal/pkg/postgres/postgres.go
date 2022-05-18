@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"database/sql"
-	"fmt"
 	"math"
 	"strings"
 
@@ -11,53 +10,34 @@ import (
 )
 
 const (
-	createTableStmt          = `CREATE TABLE IF NOT EXISTS status(source text, status text, timestamp text);`
-	createTableStmtMigration = `CREATE TABLE IF NOT EXISTS status(source text, status text, timestamp text, version text);`
-	limit                    = 100
+	createTableStmt = `CREATE TABLE IF NOT EXISTS status(source text, status text, timestamp text, version text);`
+	limit           = 100
 )
 
 type Client struct {
-	sqlDB   *sql.DB
-	migrate bool
+	sqlDB *sql.DB
 }
 
-func NewPostgresClient(databaseURL string, migrate bool) (Client, error) {
-	postgresClient := Client{
-		migrate: migrate,
-	}
+func NewPostgresClient(databaseURL string) (Client, error) {
+	postgresClient := Client{}
 	db, err := sql.Open("postgres", databaseURL)
 	if err != nil {
 		return postgresClient, err
 	}
 	postgresClient.sqlDB = db
 
-	if migrate {
-		err := postgresClient.migrateTable()
-		if err != nil {
-			return postgresClient, fmt.Errorf("error migrating table: %s", err)
-		}
-	} else {
-		_, err = db.Exec(createTableStmt)
-		if err != nil {
-			return postgresClient, err
-		}
+	_, err = db.Exec(createTableStmt)
+	if err != nil {
+		return postgresClient, err
 	}
 	return postgresClient, nil
 }
 
 func (c *Client) WriteSensorStatus(s config.SensorStatus) error {
-	if c.migrate {
-		stmt := "INSERT INTO status(source, status, timestamp, version) VALUES($1, $2, $3, $4)"
-		_, err := c.sqlDB.Exec(stmt, s.Source, s.Status, s.Timestamp, s.Version)
-		if err != nil {
-			return err
-		}
-	} else {
-		stmt := "INSERT INTO status(source, status, timestamp) VALUES($1, $2, $3)"
-		_, err := c.sqlDB.Exec(stmt, s.Source, s.Status, s.Timestamp)
-		if err != nil {
-			return err
-		}
+	stmt := "INSERT INTO status(source, status, timestamp, version) VALUES($1, $2, $3, $4)"
+	_, err := c.sqlDB.Exec(stmt, s.Source, s.Status, s.Timestamp, s.Version)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -110,12 +90,7 @@ func (c *Client) GetSensorStatus(source string, page int) ([]config.SensorStatus
 	var messages []config.SensorStatus
 	for rows.Next() {
 		var m config.SensorStatus
-		var err error
-		if c.migrate {
-			err = rows.Scan(&m.Source, &m.Status, &m.Timestamp, &m.Version)
-		} else {
-			err = rows.Scan(&m.Source, &m.Status, &m.Timestamp)
-		}
+		err := rows.Scan(&m.Source, &m.Status, &m.Timestamp, &m.Version)
 
 		if err != nil {
 			return nil, numPages, err
@@ -124,20 +99,4 @@ func (c *Client) GetSensorStatus(source string, page int) ([]config.SensorStatus
 	}
 	err = rows.Err()
 	return messages, numPages, nil
-}
-
-func (c *Client) migrateTable() error {
-	stmt := `ALTER TABLE status ADD COLUMN IF NOT EXISTS version text DEFAULT '';`
-	_, err := c.sqlDB.Exec(stmt)
-	if err != nil {
-		return err
-	}
-
-	stmt = `UPDATE status SET version='' WHERE version IS NULL;`
-	_, err = c.sqlDB.Exec(stmt)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
