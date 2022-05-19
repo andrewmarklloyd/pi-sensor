@@ -46,7 +46,7 @@ class SiteWrapper extends React.Component {
             <a href="https://github.com/tabler/tabler-react">Tabler React</a>
           ],
           note:
-            "Site designed using Tabler React",
+            `App Version: ${process.env.REACT_APP_VERSION}`,
         }}
       >
         {this.props.children}
