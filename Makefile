@@ -9,7 +9,7 @@ build:
 	GOOS=linux GOARCH=arm GOARM=5 go build -o build/door-light door_light/*.go
 
 build-frontend:
-	./.github/scripts/build-front.sh
+	REACT_APP_VERSION=$(GIT_TREE_STATE) ./.github/scripts/build-front.sh
 
 build-ci: build build-frontend
 	cp ./build/* .
@@ -29,3 +29,4 @@ test:
 
 clean:
 	rm -rf build/
+	rm -rf frontend/build/
