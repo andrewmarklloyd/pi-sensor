@@ -43,10 +43,10 @@ class SiteWrapper extends React.Component {
         footerProps={{
           links: [
             <a href="https://github.com/andrewmarklloyd/pi-sensor">Source Code</a>,
-            <a href="https://github.com/tabler/tabler-react">Tabler React</a>
+            <a href="https://github.com/tabler/tabler-react">Built with Tabler React</a>
           ],
           note:
-            `App Version: ${process.env.REACT_APP_VERSION}`,
+            <a href={"https://github.com/andrewmarklloyd/pi-sensor/commit/"+process.env.REACT_APP_VERSION}>App Version {process.env.REACT_APP_VERSION}</a>
         }}
       >
         {this.props.children}
