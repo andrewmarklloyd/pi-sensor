@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/aws"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
@@ -28,6 +29,7 @@ var (
 func runServer() {
 	logger.Println("Running server version:", version)
 	serverConfig := config.ServerConfig{
+		AppName:            viper.GetString("APP_NAME"),
 		MqttBrokerURL:      viper.GetString("CLOUDMQTT_URL"),
 		MqttServerUser:     viper.GetString("CLOUDMQTT_SERVER_USER"),
 		MqttServerPassword: viper.GetString("CLOUDMQTT_SERVER_PASSWORD"),
@@ -48,6 +50,12 @@ func runServer() {
 			AuthToken:  viper.GetString("TWILIO_AUTH_TOKEN"),
 			To:         viper.GetString("TWILIO_TO"),
 			From:       viper.GetString("TWILIO_FROM"),
+		},
+		S3Config: config.S3Config{
+			AccessKeyID:     viper.GetString("BUCKETEER_AWS_ACCESS_KEY_ID"),
+			SecretAccessKey: viper.GetString("BUCKETEER_AWS_SECRET_ACCESS_KEY"),
+			Region:          viper.GetString("BUCKETEER_AWS_REGION"),
+			Bucket:          viper.GetString("BUCKETEER_BUCKET_NAME"),
 		},
 	}
 
@@ -88,6 +96,16 @@ func runServer() {
 		heartbeatTimerMap[h.Name] = timer
 	})
 
+	// configureCronJobs(serverClients)
+	runDataRetention(serverConfig)
+
+	err = webServer.httpServer.ListenAndServe()
+	if err != nil {
+		logger.Fatalln("Error starting web server:", err)
+	}
+}
+
+func configureCronJobs(serverClients clients.ServerClients) {
 	ticker := time.NewTicker(6 * time.Hour)
 	go func() {
 		for range ticker.C {
@@ -96,11 +114,45 @@ func runServer() {
 			}
 		}
 	}()
+}
 
-	err = webServer.httpServer.ListenAndServe()
+func runDataRetention(serverConfig config.ServerConfig, serverClients clients.ServerClients) {
+	// cmd.Execute()
+	maxRows := 1150
+
+	c, err := aws.NewClient(serverConfig)
 	if err != nil {
-		logger.Fatalln("Error starting web server:", err)
+		panic(err)
 	}
+	fmt.Println(c)
+
+	rowsAboveMax, err := serverClients.Postgres.GetRowsAboveMax(maxRows)
+	if err != nil {
+		panic(err)
+	}
+	numberRowsAboveMax := len(rowsAboveMax)
+
+	if numberRowsAboveMax == 0 {
+		fmt.Println("Row count is less than or equal to max, no action required")
+		os.Exit(0)
+	}
+
+	readOnly := false
+	if readOnly == true {
+		fmt.Println(fmt.Sprintf("found %d rows above the max. read only mode, not deleting rows", numberRowsAboveMax))
+		os.Exit(0)
+	}
+
+	err = c.UploadBackupFile(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	os.Exit(0)
+
+	// download backup file to /tmp
+	// if not exists...
+
 }
 
 func createClients(serverConfig config.ServerConfig) (clients.ServerClients, error) {

@@ -1,6 +1,7 @@
 package config
 
 type ServerConfig struct {
+	AppName            string
 	MqttBrokerURL      string
 	MqttServerUser     string
 	MqttServerPassword string
@@ -12,6 +13,7 @@ type ServerConfig struct {
 	MockMode           bool
 	GoogleConfig       GoogleConfig
 	TwilioConfig       TwilioConfig
+	S3Config           S3Config
 	Version            string
 }
 
@@ -28,4 +30,11 @@ type TwilioConfig struct {
 	AuthToken  string
 	To         string
 	From       string
+}
+
+type S3Config struct {
+	AccessKeyID     string
+	SecretAccessKey string
+	Region          string
+	Bucket          string
 }

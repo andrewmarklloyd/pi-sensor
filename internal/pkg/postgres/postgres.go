@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"fmt"
 	"math"
 	"strings"
 
@@ -99,4 +100,71 @@ func (c *Client) GetSensorStatus(source string, page int) ([]config.SensorStatus
 	}
 	err = rows.Err()
 	return messages, numPages, nil
+}
+
+func (c *Client) GetRowCount() (int, error) {
+	countStmt := "SELECT COUNT(*) FROM status"
+	countRow := c.sqlDB.QueryRow(countStmt)
+
+	if countRow.Err() != nil {
+		return -1, countRow.Err()
+	}
+
+	var rowCount int
+	err := countRow.Scan(&rowCount)
+	if err != nil {
+		return -1, err
+	}
+	return rowCount, nil
+}
+
+func (c *Client) DeleteRows(rowsAboveMax []config.SensorStatus) error {
+	query := "DELETE FROM status WHERE timestamp BETWEEN $1 AND $2"
+	firstRow := rowsAboveMax[0].Timestamp
+	lastRow := rowsAboveMax[len(rowsAboveMax)-1].Timestamp
+	res, err := c.sqlDB.Exec(query, firstRow, lastRow)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if len(rowsAboveMax) == int(rowsAffected) {
+		fmt.Println(fmt.Sprintf("Successfully deleted '%d' rows", rowsAffected))
+	} else {
+		fmt.Println(fmt.Sprintf("WARN: number of rows deleted '%d' did not match expected number '%d'. This could indicate a data loss situation", rowsAffected, len(rowsAboveMax)))
+	}
+
+	return nil
+}
+
+func (c *Client) GetRowsAboveMax(max int) ([]config.SensorStatus, error) {
+	var statuses []config.SensorStatus
+
+	rowCount, err := c.GetRowCount()
+	if err != nil {
+		return statuses, err
+	}
+
+	if rowCount <= max {
+		return statuses, nil
+	}
+
+	rowsAboveMax := rowCount - max
+
+	stmt := `SELECT * FROM status ORDER by timestamp ASC LIMIT $1`
+	rows, err := c.sqlDB.Query(stmt, rowsAboveMax)
+	defer rows.Close()
+
+	for rows.Next() {
+		var s config.SensorStatus
+		err := rows.Scan(&s.Source, &s.Status, &s.Timestamp, &s.Version)
+		if err != nil {
+			return statuses, err
+		}
+		statuses = append(statuses, s)
+	}
+	return statuses, nil
 }
