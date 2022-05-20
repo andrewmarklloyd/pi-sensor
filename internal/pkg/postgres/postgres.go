@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"database/sql"
-	"fmt"
 	"math"
 	"strings"
 
@@ -118,26 +117,20 @@ func (c *Client) GetRowCount() (int, error) {
 	return rowCount, nil
 }
 
-func (c *Client) DeleteRows(rowsAboveMax []config.SensorStatus) error {
+func (c *Client) DeleteRows(rowsAboveMax []config.SensorStatus) (int64, error) {
 	query := "DELETE FROM status WHERE timestamp BETWEEN $1 AND $2"
 	firstRow := rowsAboveMax[0].Timestamp
 	lastRow := rowsAboveMax[len(rowsAboveMax)-1].Timestamp
 	res, err := c.sqlDB.Exec(query, firstRow, lastRow)
 	if err != nil {
-		return err
+		return -1, err
 	}
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return err
+		return -1, err
 	}
 
-	if len(rowsAboveMax) == int(rowsAffected) {
-		fmt.Println(fmt.Sprintf("Successfully deleted '%d' rows", rowsAffected))
-	} else {
-		fmt.Println(fmt.Sprintf("WARN: number of rows deleted '%d' did not match expected number '%d'. This could indicate a data loss situation", rowsAffected, len(rowsAboveMax)))
-	}
-
-	return nil
+	return rowsAffected, nil
 }
 
 func (c *Client) GetRowsAboveMax(max int) ([]config.SensorStatus, error) {

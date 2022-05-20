@@ -1,7 +1,9 @@
 package aws
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -11,6 +13,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go/aws"
+)
+
+const (
+	backupPrefix = "backups"
 )
 
 type Client struct {
@@ -35,7 +41,7 @@ func NewClient(serverConfig sConfig.ServerConfig) (Client, error) {
 	return Client{
 		S3:            client,
 		Bucket:        serverConfig.S3Config.Bucket,
-		BackupFileKey: fmt.Sprintf("backups/%s", serverConfig.AppName),
+		BackupFileKey: fmt.Sprintf("%s/%s", backupPrefix, serverConfig.AppName),
 		TmpWritePath:  fmt.Sprintf("/tmp/%s", serverConfig.AppName),
 	}, nil
 }
@@ -47,7 +53,7 @@ func (c *Client) UploadBackupFile(ctx context.Context) error {
 	}
 
 	uploader := manager.NewUploader(c.S3)
-	result, err := uploader.Upload(ctx, &s3.PutObjectInput{
+	_, err = uploader.Upload(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(c.Bucket),
 		Key:    aws.String(c.BackupFileKey),
 		Body:   file,
@@ -56,14 +62,69 @@ func (c *Client) UploadBackupFile(ctx context.Context) error {
 		return err
 	}
 
-	fmt.Println(result)
+	return nil
+}
+
+func (c *Client) downloadFileExists(ctx context.Context) (bool, error) {
+	paginator := s3.NewListObjectsV2Paginator(c.S3, &s3.ListObjectsV2Input{
+		Bucket: aws.String(c.Bucket),
+		Prefix: aws.String(backupPrefix),
+	})
+
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return false, err
+		}
+		for _, obj := range page.Contents {
+			if *obj.Key == c.BackupFileKey {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func (c *Client) DownloadOrCreateBackupFile(ctx context.Context) error {
+	tmpFile, err := os.Create(c.TmpWritePath)
+	if err != nil {
+		return err
+	}
+	defer tmpFile.Close()
+
+	exists, err := c.downloadFileExists(context.Background())
+	if exists {
+		downloader := manager.NewDownloader(c.S3)
+		_, err = downloader.Download(ctx, tmpFile, &s3.GetObjectInput{
+			Bucket: aws.String(c.Bucket),
+			Key:    aws.String(c.BackupFileKey),
+		})
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
 
-func (c *Client) DownloadBackupFile(ctx context.Context) error {
+func (c *Client) WriteBackupFile(statuses []sConfig.SensorStatus) error {
+	file, err := os.OpenFile(c.TmpWritePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
 
-	// downloader := manager.NewDownloader(c.S3)
-
+	datawriter := bufio.NewWriter(file)
+	for _, data := range statuses {
+		j, err := json.Marshal(data)
+		if err != nil {
+			return err
+		}
+		_, err = datawriter.WriteString(fmt.Sprintf("%s\n", string(j)))
+		if err != nil {
+			return err
+		}
+	}
+	datawriter.Flush()
+	defer file.Close()
 	return nil
 }

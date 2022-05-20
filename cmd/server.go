@@ -96,8 +96,7 @@ func runServer() {
 		heartbeatTimerMap[h.Name] = timer
 	})
 
-	// configureCronJobs(serverClients)
-	runDataRetention(serverConfig)
+	configureCronJobs(serverClients)
 
 	err = webServer.httpServer.ListenAndServe()
 	if err != nil {
@@ -106,53 +105,77 @@ func runServer() {
 }
 
 func configureCronJobs(serverClients clients.ServerClients) {
-	ticker := time.NewTicker(6 * time.Hour)
+	// ticker := time.NewTicker(6 * time.Hour)
+	// go func() {
+	// 	for range ticker.C {
+	// 		if err := serverClients.Messenger.CheckBalance(); err != nil {
+	// 			logger.Println(err)
+	// 		}
+	// 	}
+	// }()
+
+	// TODO: update frequency
+	dataTicker := time.NewTicker(5 * time.Second)
 	go func() {
-		for range ticker.C {
-			if err := serverClients.Messenger.CheckBalance(); err != nil {
+		for range dataTicker.C {
+			numRows, err := runDataRetention(serverClients)
+			if err != nil {
 				logger.Println(err)
+			} else {
+				logger.Println("Number of rows deleted and stored in S3 backup:", numRows)
 			}
 		}
 	}()
+
 }
 
-func runDataRetention(serverConfig config.ServerConfig, serverClients clients.ServerClients) {
-	// cmd.Execute()
+func runDataRetention(serverClients clients.ServerClients) (int, error) {
 	maxRows := 1150
-
-	c, err := aws.NewClient(serverConfig)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(c)
 
 	rowsAboveMax, err := serverClients.Postgres.GetRowsAboveMax(maxRows)
 	if err != nil {
-		panic(err)
+		return -1, err
 	}
 	numberRowsAboveMax := len(rowsAboveMax)
 
 	if numberRowsAboveMax == 0 {
-		fmt.Println("Row count is less than or equal to max, no action required")
-		os.Exit(0)
+		logger.Println("Row count is less than or equal to max, no action required")
+		return 0, err
 	}
 
 	readOnly := false
 	if readOnly == true {
-		fmt.Println(fmt.Sprintf("found %d rows above the max. read only mode, not deleting rows", numberRowsAboveMax))
-		os.Exit(0)
+		logger.Println(fmt.Sprintf("found %d rows above the max. read only mode, not deleting rows", numberRowsAboveMax))
+		return 0, err
 	}
 
-	err = c.UploadBackupFile(context.Background())
+	ctx := context.Background()
+
+	err = serverClients.AWS.DownloadOrCreateBackupFile(ctx)
 	if err != nil {
-		panic(err)
+		return -1, err
 	}
 
-	os.Exit(0)
+	err = serverClients.AWS.WriteBackupFile(rowsAboveMax)
+	if err != nil {
+		return -1, err
+	}
 
-	// download backup file to /tmp
-	// if not exists...
+	err = serverClients.AWS.UploadBackupFile(ctx)
+	if err != nil {
+		return -1, err
+	}
 
+	rowsAffected, err := serverClients.Postgres.DeleteRows(rowsAboveMax)
+	if err != nil {
+		return -1, err
+	}
+
+	if int(rowsAffected) != numberRowsAboveMax {
+		return int(rowsAffected), fmt.Errorf(fmt.Sprintf("Number of rows deleted '%d' did not match expected number '%d'. This could indicate a data loss situation", rowsAffected, numberRowsAboveMax))
+	}
+
+	return int(rowsAffected), nil
 }
 
 func createClients(serverConfig config.ServerConfig) (clients.ServerClients, error) {
@@ -177,11 +200,17 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 
 	messenger := notification.NewMessenger(serverConfig.TwilioConfig)
 
+	awsClient, err := aws.NewClient(serverConfig)
+	if err != nil {
+		return clients.ServerClients{}, fmt.Errorf("error creating AWS client: %s", err)
+	}
+
 	return clients.ServerClients{
 		Redis:     redisClient,
 		Postgres:  postgresClient,
 		Mqtt:      mqttClient,
 		Messenger: messenger,
+		AWS:       awsClient,
 	}, nil
 }
 
