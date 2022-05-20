@@ -33,8 +33,10 @@ type TwilioConfig struct {
 }
 
 type S3Config struct {
-	AccessKeyID     string
-	SecretAccessKey string
-	Region          string
-	Bucket          string
+	AccessKeyID      string
+	SecretAccessKey  string
+	Region           string
+	Bucket           string
+	MaxRetentionRows int
+	RetentionEnabled bool
 }

@@ -31,10 +31,11 @@ func NewClient(serverConfig sConfig.ServerConfig) (Client, error) {
 	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(serverConfig.S3Config.AccessKeyID, serverConfig.S3Config.SecretAccessKey, "")),
 	)
-	cfg.Region = serverConfig.S3Config.Region
 	if err != nil {
-		return Client{}, err
+		return Client{}, fmt.Errorf("loading default config: %s", err)
 	}
+
+	cfg.Region = serverConfig.S3Config.Region
 
 	client := s3.NewFromConfig(cfg)
 
@@ -49,7 +50,7 @@ func NewClient(serverConfig sConfig.ServerConfig) (Client, error) {
 func (c *Client) UploadBackupFile(ctx context.Context) error {
 	file, err := os.Open(c.TmpWritePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("opening tmp file: %s", err)
 	}
 
 	uploader := manager.NewUploader(c.S3)
@@ -59,7 +60,7 @@ func (c *Client) UploadBackupFile(ctx context.Context) error {
 		Body:   file,
 	})
 	if err != nil {
-		return err
+		return fmt.Errorf("uploading backup file to s3: %s", err)
 	}
 
 	return nil
@@ -74,7 +75,7 @@ func (c *Client) downloadFileExists(ctx context.Context) (bool, error) {
 	for paginator.HasMorePages() {
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("paginating response from AWS: %s", err)
 		}
 		for _, obj := range page.Contents {
 			if *obj.Key == c.BackupFileKey {
@@ -88,7 +89,7 @@ func (c *Client) downloadFileExists(ctx context.Context) (bool, error) {
 func (c *Client) DownloadOrCreateBackupFile(ctx context.Context) error {
 	tmpFile, err := os.Create(c.TmpWritePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("creating tmp file: %s", err)
 	}
 	defer tmpFile.Close()
 
@@ -100,7 +101,7 @@ func (c *Client) DownloadOrCreateBackupFile(ctx context.Context) error {
 			Key:    aws.String(c.BackupFileKey),
 		})
 		if err != nil {
-			return err
+			return fmt.Errorf("downloading backup file from S3: %s", err)
 		}
 	}
 
@@ -110,18 +111,18 @@ func (c *Client) DownloadOrCreateBackupFile(ctx context.Context) error {
 func (c *Client) WriteBackupFile(statuses []sConfig.SensorStatus) error {
 	file, err := os.OpenFile(c.TmpWritePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return err
+		return fmt.Errorf("opening tmp file: %s", err)
 	}
 
 	datawriter := bufio.NewWriter(file)
 	for _, data := range statuses {
 		j, err := json.Marshal(data)
 		if err != nil {
-			return err
+			return fmt.Errorf("marshalling sensor status: %s", err)
 		}
 		_, err = datawriter.WriteString(fmt.Sprintf("%s\n", string(j)))
 		if err != nil {
-			return err
+			return fmt.Errorf("writing string to datawriter: %s", err)
 		}
 	}
 	datawriter.Flush()

@@ -26,6 +26,11 @@ var (
 	version = "unknown"
 )
 
+const (
+	// TODO: update frequency
+	dataRetentionCronFrequency = 5 * time.Second
+)
+
 func runServer() {
 	logger.Println("Running server version:", version)
 	serverConfig := config.ServerConfig{
@@ -52,10 +57,12 @@ func runServer() {
 			From:       viper.GetString("TWILIO_FROM"),
 		},
 		S3Config: config.S3Config{
-			AccessKeyID:     viper.GetString("BUCKETEER_AWS_ACCESS_KEY_ID"),
-			SecretAccessKey: viper.GetString("BUCKETEER_AWS_SECRET_ACCESS_KEY"),
-			Region:          viper.GetString("BUCKETEER_AWS_REGION"),
-			Bucket:          viper.GetString("BUCKETEER_BUCKET_NAME"),
+			AccessKeyID:      viper.GetString("BUCKETEER_AWS_ACCESS_KEY_ID"),
+			SecretAccessKey:  viper.GetString("BUCKETEER_AWS_SECRET_ACCESS_KEY"),
+			Region:           viper.GetString("BUCKETEER_AWS_REGION"),
+			Bucket:           viper.GetString("BUCKETEER_BUCKET_NAME"),
+			RetentionEnabled: viper.GetBool("DB_RETENTION_ENABLED"),
+			MaxRetentionRows: parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
 		},
 	}
 
@@ -96,7 +103,7 @@ func runServer() {
 		heartbeatTimerMap[h.Name] = timer
 	})
 
-	configureCronJobs(serverClients)
+	configureCronJobs(serverClients, serverConfig)
 
 	err = webServer.httpServer.ListenAndServe()
 	if err != nil {
@@ -104,48 +111,54 @@ func runServer() {
 	}
 }
 
-func configureCronJobs(serverClients clients.ServerClients) {
-	// ticker := time.NewTicker(6 * time.Hour)
-	// go func() {
-	// 	for range ticker.C {
-	// 		if err := serverClients.Messenger.CheckBalance(); err != nil {
-	// 			logger.Println(err)
-	// 		}
-	// 	}
-	// }()
-
-	// TODO: update frequency
-	dataTicker := time.NewTicker(5 * time.Second)
+func configureCronJobs(serverClients clients.ServerClients, serverConfig config.ServerConfig) {
+	ticker := time.NewTicker(6 * time.Hour)
 	go func() {
-		for range dataTicker.C {
-			numRows, err := runDataRetention(serverClients)
-			if err != nil {
+		for range ticker.C {
+			if err := serverClients.Messenger.CheckBalance(); err != nil {
 				logger.Println(err)
-			} else {
-				logger.Println("Number of rows deleted and stored in S3 backup:", numRows)
 			}
 		}
 	}()
 
+	if serverConfig.S3Config.RetentionEnabled {
+		dataTicker := time.NewTicker(dataRetentionCronFrequency)
+		go func() {
+			for range dataTicker.C {
+				numRows, err := runDataRetention(serverClients, serverConfig)
+				if err != nil {
+					logger.Println("error running data retention:", err)
+				} else {
+					logger.Println("Number of rows deleted and stored in S3 backup:", numRows)
+				}
+			}
+		}()
+	}
 }
 
-func runDataRetention(serverClients clients.ServerClients) (int, error) {
-	maxRows := 1150
-
-	rowsAboveMax, err := serverClients.Postgres.GetRowsAboveMax(maxRows)
+// using viper.Getint is unsafe because if the env
+// var is unset, viper will return 0 resulting in
+// all rows being deleted from the database
+func parseRetentionRowsConfig(rows string) int {
+	if rows == "" {
+		return 10000
+	}
+	rowsInt, err := strconv.Atoi(rows)
 	if err != nil {
-		return -1, err
+		logger.Fatalln("failed to parse retention rows from string:", err)
+	}
+	return rowsInt
+}
+
+func runDataRetention(serverClients clients.ServerClients, serverConfig config.ServerConfig) (int, error) {
+	rowsAboveMax, err := serverClients.Postgres.GetRowsAboveMax(serverConfig.S3Config.MaxRetentionRows)
+	if err != nil {
+		return -1, fmt.Errorf("%s", err)
 	}
 	numberRowsAboveMax := len(rowsAboveMax)
 
 	if numberRowsAboveMax == 0 {
-		logger.Println("Row count is less than or equal to max, no action required")
-		return 0, err
-	}
-
-	readOnly := false
-	if readOnly == true {
-		logger.Println(fmt.Sprintf("found %d rows above the max. read only mode, not deleting rows", numberRowsAboveMax))
+		logger.Println(fmt.Sprintf("Row count is less than or equal to max %d, no action required", serverConfig.S3Config.MaxRetentionRows))
 		return 0, err
 	}
 
@@ -153,22 +166,22 @@ func runDataRetention(serverClients clients.ServerClients) (int, error) {
 
 	err = serverClients.AWS.DownloadOrCreateBackupFile(ctx)
 	if err != nil {
-		return -1, err
+		return -1, fmt.Errorf("downloading or creating backup file: %s", err)
 	}
 
 	err = serverClients.AWS.WriteBackupFile(rowsAboveMax)
 	if err != nil {
-		return -1, err
+		return -1, fmt.Errorf("writing local tmp backup file: %s", err)
 	}
 
 	err = serverClients.AWS.UploadBackupFile(ctx)
 	if err != nil {
-		return -1, err
+		return -1, fmt.Errorf("uploading backup file to S3: %s", err)
 	}
 
 	rowsAffected, err := serverClients.Postgres.DeleteRows(rowsAboveMax)
 	if err != nil {
-		return -1, err
+		return -1, fmt.Errorf("deleting rows from postgres: %s", err)
 	}
 
 	if int(rowsAffected) != numberRowsAboveMax {
