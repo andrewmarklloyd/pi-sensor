@@ -66,7 +66,7 @@ func (c *Client) UploadBackupFile(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) downloadFileExists(ctx context.Context) (bool, error) {
+func (c *Client) backupFileExistsInS3(ctx context.Context) (bool, error) {
 	paginator := s3.NewListObjectsV2Paginator(c.S3, &s3.ListObjectsV2Input{
 		Bucket: aws.String(c.Bucket),
 		Prefix: aws.String(backupPrefix),
@@ -87,13 +87,14 @@ func (c *Client) downloadFileExists(ctx context.Context) (bool, error) {
 }
 
 func (c *Client) DownloadOrCreateBackupFile(ctx context.Context) error {
+	// os.Create truncates the file if it exists
 	tmpFile, err := os.Create(c.TmpWritePath)
 	if err != nil {
 		return fmt.Errorf("creating tmp file: %s", err)
 	}
 	defer tmpFile.Close()
 
-	exists, err := c.downloadFileExists(context.Background())
+	exists, err := c.backupFileExistsInS3(context.Background())
 	if exists {
 		downloader := manager.NewDownloader(c.S3)
 		_, err = downloader.Download(ctx, tmpFile, &s3.GetObjectInput{

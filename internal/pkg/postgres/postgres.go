@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"fmt"
 	"math"
 	"strings"
 
@@ -149,6 +150,9 @@ func (c *Client) GetRowsAboveMax(max int) ([]config.SensorStatus, error) {
 
 	stmt := `SELECT * FROM status ORDER by timestamp ASC LIMIT $1`
 	rows, err := c.sqlDB.Query(stmt, rowsAboveMax)
+	if err != nil {
+		return statuses, fmt.Errorf("executing select query: %s", err)
+	}
 	defer rows.Close()
 
 	for rows.Next() {

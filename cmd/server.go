@@ -27,8 +27,7 @@ var (
 )
 
 const (
-	// TODO: update frequency
-	dataRetentionCronFrequency = 5 * time.Second
+	dataRetentionCronFrequency = 6 * time.Hour
 )
 
 func runServer() {
@@ -129,7 +128,9 @@ func configureCronJobs(serverClients clients.ServerClients, serverConfig config.
 				if err != nil {
 					logger.Println("error running data retention:", err)
 				} else {
-					logger.Println("Number of rows deleted and stored in S3 backup:", numRows)
+					if numRows > 0 {
+						logger.Println("Number of rows deleted and stored in S3 backup:", numRows)
+					}
 				}
 			}
 		}()
