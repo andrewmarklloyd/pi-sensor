@@ -121,7 +121,18 @@ func configureCronJobs(serverClients clients.ServerClients, serverConfig config.
 	}()
 
 	if serverConfig.S3Config.RetentionEnabled {
-		dataTicker := time.NewTicker(dataRetentionCronFrequency)
+		var dataTicker *time.Ticker
+		dbRetentionCronFreq := os.Getenv("DB_RETENTION_CRON")
+		if dbRetentionCronFreq == "" {
+			dataTicker = time.NewTicker(dataRetentionCronFrequency)
+		} else {
+			dbRetentionCronInt, err := strconv.Atoi(dbRetentionCronFreq)
+			if err != nil {
+				logger.Fatalln("failed to parse test data cron freq from string:", err)
+			}
+			dataTicker = time.NewTicker(time.Duration(dbRetentionCronInt) * time.Second)
+		}
+
 		go func() {
 			for range dataTicker.C {
 				numRows, err := runDataRetention(serverClients, serverConfig)
