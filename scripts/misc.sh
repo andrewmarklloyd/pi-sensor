@@ -11,11 +11,11 @@ aws_commands() {
 
 
 restore_local_db() {
-    export PGHOSTADDR=192.168.1.76
+    export PGHOST=localhost
     export PGPORT=5432
     export PGUSER=postgres
     export PGPASSWORD=mysecretpassword
-    echo postgres://${PGUSER}:${PGPASSWORD}@${PGHOSTADDR}:${PGPORT}?sslmode=disable | pbcopy
+    echo postgres://${PGUSER}:${PGPASSWORD}@${PGHOST}:${PGPORT}?sslmode=disable | pbcopy
 
     docker rm -f postgres
 
