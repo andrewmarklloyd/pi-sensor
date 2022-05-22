@@ -119,10 +119,19 @@ func (c *Client) GetRowCount() (int, error) {
 }
 
 func (c *Client) DeleteRows(rowsAboveMax []config.SensorStatus) (int64, error) {
-	query := "DELETE FROM status WHERE timestamp BETWEEN $1 AND $2"
-	firstRow := rowsAboveMax[0].Timestamp
-	lastRow := rowsAboveMax[len(rowsAboveMax)-1].Timestamp
-	res, err := c.sqlDB.Exec(query, firstRow, lastRow)
+	var err error
+	var res sql.Result
+	if len(rowsAboveMax) == 1 {
+		query := "DELETE FROM status WHERE timestamp IS $1"
+		row := rowsAboveMax[0].Timestamp
+		res, err = c.sqlDB.Exec(query, row)
+	} else {
+		query := "DELETE FROM status WHERE timestamp BETWEEN $1 AND $2"
+		firstRow := rowsAboveMax[0].Timestamp
+		lastRow := rowsAboveMax[len(rowsAboveMax)-1].Timestamp
+		res, err = c.sqlDB.Exec(query, firstRow, lastRow)
+	}
+
 	if err != nil {
 		return -1, err
 	}
