@@ -118,11 +118,16 @@ func (c *Client) GetRowCount() (int, error) {
 	return rowCount, nil
 }
 
+// DeleteRows removes all rows from the db between or equal
+// to the timestamps of the rowsAboveMax passed in.
+// Potentially two sensors could publish at the exact same
+// timestamp resulting in more rows deleted than intended
+// but this is pretty unlikely
 func (c *Client) DeleteRows(rowsAboveMax []config.SensorStatus) (int64, error) {
 	var err error
 	var res sql.Result
 	if len(rowsAboveMax) == 1 {
-		query := "DELETE FROM status WHERE timestamp IS $1"
+		query := "DELETE FROM status WHERE timestamp = $1"
 		row := rowsAboveMax[0].Timestamp
 		res, err = c.sqlDB.Exec(query, row)
 	} else {
