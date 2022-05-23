@@ -124,25 +124,21 @@ func (c *Client) GetRowCount() (int, error) {
 // timestamp resulting in more rows deleted than intended
 // but this is pretty unlikely
 func (c *Client) DeleteRows(rowsAboveMax []config.SensorStatus) (int64, error) {
-	var err error
-	var res sql.Result
-	if len(rowsAboveMax) == 1 {
+	rowsAffected := int64(0)
+	// I could not find a way to build a dynamic query to delete
+	// multiple rows. Looping this way is probably not the best
+	// but it works for now
+	for _, v := range rowsAboveMax {
 		query := "DELETE FROM status WHERE timestamp = $1"
-		row := rowsAboveMax[0].Timestamp
-		res, err = c.sqlDB.Exec(query, row)
-	} else {
-		query := "DELETE FROM status WHERE timestamp BETWEEN $1 AND $2"
-		firstRow := rowsAboveMax[0].Timestamp
-		lastRow := rowsAboveMax[len(rowsAboveMax)-1].Timestamp
-		res, err = c.sqlDB.Exec(query, firstRow, lastRow)
-	}
-
-	if err != nil {
-		return -1, err
-	}
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return -1, err
+		res, err := c.sqlDB.Exec(query, v.Timestamp)
+		if err != nil {
+			return -1, err
+		}
+		ra, err := res.RowsAffected()
+		if err != nil {
+			return -1, err
+		}
+		rowsAffected += ra
 	}
 
 	return rowsAffected, nil
