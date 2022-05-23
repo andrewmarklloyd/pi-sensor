@@ -2,6 +2,18 @@
 
 set -eu
 
+redis() {
+    REDIS_URL=$(heroku config:get REDIS_URL -a pi-sensor)
+
+    tmp=${REDIS_URL#*//:}
+    pw=${tmp%@*}
+    hostTmp=${tmp#*@}
+    host=${hostTmp%:*}
+    port=${hostTmp#*:}
+
+    redis-cli -a ${pw} -h ${host} -p ${port}
+}
+
 aws_commands() {
     aws s3api put-bucket-versioning --bucket ${BUCKETEER_BUCKET_NAME} --versioning-configuration Status=Enabled
 
@@ -9,6 +21,13 @@ aws_commands() {
     aws s3 cp /tmp/pi-sensor-staging-2 s3://${BUCKETEER_BUCKET_NAME}/backups/pi-sensor-staging
 }
 
+full_backup_s3() {
+  f="pi-sensor-$(date +%s).json"
+  rm -f /tmp/pi-sensor
+  go run main.go
+  mv /tmp/pi-sensor ${f}
+  aws s3 cp ${f} s3://${BUCKETEER_BUCKET_NAME}/backups/${f}
+}
 
 restore_local_db() {
     export PGHOST=localhost
