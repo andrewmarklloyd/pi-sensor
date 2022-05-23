@@ -42,8 +42,8 @@ func NewClient(serverConfig sConfig.ServerConfig) (Client, error) {
 	return Client{
 		S3:            client,
 		Bucket:        serverConfig.S3Config.Bucket,
-		BackupFileKey: fmt.Sprintf("%s/%s", backupPrefix, serverConfig.AppName),
-		TmpWritePath:  fmt.Sprintf("/tmp/%s", serverConfig.AppName),
+		BackupFileKey: fmt.Sprintf("%s/%s.json", backupPrefix, serverConfig.AppName),
+		TmpWritePath:  fmt.Sprintf("/tmp/%s.json", serverConfig.AppName),
 	}, nil
 }
 
