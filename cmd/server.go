@@ -132,6 +132,7 @@ func configureCronJobs(serverClients clients.ServerClients, serverConfig config.
 			}
 			dataTicker = time.NewTicker(time.Duration(dbRetentionCronInt) * time.Second)
 		}
+		logger.Println(fmt.Sprintf("Configuring data retention cron job. DB_RETENTION_CRON: %s, max retention rows: %d", dbRetentionCronFreq, serverConfig.S3Config.MaxRetentionRows))
 
 		go func() {
 			for range dataTicker.C {
