@@ -182,7 +182,8 @@ func runDataRetention(serverClients clients.ServerClients, serverConfig config.S
 		return -1, fmt.Errorf("downloading or creating backup file: %s", err)
 	}
 
-	err = serverClients.AWS.WriteBackupFile(rowsAboveMax)
+	append := true
+	err = serverClients.AWS.WriteBackupFile(rowsAboveMax, append)
 	if err != nil {
 		return -1, fmt.Errorf("writing local tmp backup file: %s", err)
 	}

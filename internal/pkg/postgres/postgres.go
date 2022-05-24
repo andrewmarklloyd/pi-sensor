@@ -175,3 +175,23 @@ func (c *Client) GetRowsAboveMax(max int) ([]config.SensorStatus, error) {
 	}
 	return statuses, nil
 }
+
+func (c *Client) GetAllRows() ([]config.SensorStatus, error) {
+	var statuses []config.SensorStatus
+	stmt := `SELECT * FROM status ORDER by timestamp`
+	rows, err := c.sqlDB.Query(stmt)
+	if err != nil {
+		return statuses, fmt.Errorf("executing select query: %s", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var s config.SensorStatus
+		err := rows.Scan(&s.Source, &s.Status, &s.Timestamp, &s.Version)
+		if err != nil {
+			return statuses, err
+		}
+		statuses = append(statuses, s)
+	}
+	return statuses, nil
+}

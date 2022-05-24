@@ -109,8 +109,15 @@ func (c *Client) DownloadOrCreateBackupFile(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) WriteBackupFile(statuses []sConfig.SensorStatus) error {
-	file, err := os.OpenFile(c.TmpWritePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+func (c *Client) WriteBackupFile(statuses []sConfig.SensorStatus, append bool) error {
+	var mode int
+	if append {
+		mode = os.O_APPEND | os.O_CREATE | os.O_WRONLY
+	} else {
+		mode = os.O_CREATE | os.O_WRONLY
+	}
+
+	file, err := os.OpenFile(c.TmpWritePath, mode, 0644)
 	if err != nil {
 		return fmt.Errorf("opening tmp file: %s", err)
 	}

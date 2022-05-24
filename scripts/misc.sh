@@ -49,3 +49,14 @@ restore_local_db() {
 
     psql -a -f /tmp/tmp.sql
 }
+
+mock_data() {
+    rm -f /tmp/mock.sql
+    for x in $(seq 1 100); do
+        t=$(date -v-${x}m +%s)
+        echo "INSERT INTO status(source, status, timestamp, version) VALUES('garage', 'OPEN', '${t}', '1671a0a8c76461d43763e67b503756f8ed685c7c');" >> /tmp/mock.sql
+    done
+    psql ${DATABASE_URL} -a -f /tmp/mock.sql
+}
+
+mock_data
