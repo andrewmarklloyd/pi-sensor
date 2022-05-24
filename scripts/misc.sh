@@ -58,5 +58,3 @@ mock_data() {
     done
     psql ${DATABASE_URL} -a -f /tmp/mock.sql
 }
-
-mock_data

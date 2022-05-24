@@ -118,11 +118,8 @@ func (c *Client) GetRowCount() (int, error) {
 	return rowCount, nil
 }
 
-// DeleteRows removes all rows from the db between or equal
-// to the timestamps of the rowsAboveMax passed in.
-// Potentially two sensors could publish at the exact same
-// timestamp resulting in more rows deleted than intended
-// but this is pretty unlikely
+// DeleteRows removes all rows from the db where timestamp
+// is in the sensor status slice
 func (c *Client) DeleteRows(rowsAboveMax []config.SensorStatus) (int64, error) {
 	rowsAffected := int64(0)
 	// I could not find a way to build a dynamic query to delete
