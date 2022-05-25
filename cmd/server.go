@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/aws"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
@@ -25,9 +26,14 @@ var (
 	version = "unknown"
 )
 
+const (
+	dataRetentionCronFrequency = 6 * time.Hour
+)
+
 func runServer() {
 	logger.Println("Running server version:", version)
 	serverConfig := config.ServerConfig{
+		AppName:            viper.GetString("APP_NAME"),
 		MqttBrokerURL:      viper.GetString("CLOUDMQTT_URL"),
 		MqttServerUser:     viper.GetString("CLOUDMQTT_SERVER_USER"),
 		MqttServerPassword: viper.GetString("CLOUDMQTT_SERVER_PASSWORD"),
@@ -48,6 +54,14 @@ func runServer() {
 			AuthToken:  viper.GetString("TWILIO_AUTH_TOKEN"),
 			To:         viper.GetString("TWILIO_TO"),
 			From:       viper.GetString("TWILIO_FROM"),
+		},
+		S3Config: config.S3Config{
+			AccessKeyID:      viper.GetString("BUCKETEER_AWS_ACCESS_KEY_ID"),
+			SecretAccessKey:  viper.GetString("BUCKETEER_AWS_SECRET_ACCESS_KEY"),
+			Region:           viper.GetString("BUCKETEER_AWS_REGION"),
+			Bucket:           viper.GetString("BUCKETEER_BUCKET_NAME"),
+			RetentionEnabled: viper.GetBool("DB_RETENTION_ENABLED"),
+			MaxRetentionRows: parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
 		},
 	}
 
@@ -88,6 +102,15 @@ func runServer() {
 		heartbeatTimerMap[h.Name] = timer
 	})
 
+	configureCronJobs(serverClients, serverConfig)
+
+	err = webServer.httpServer.ListenAndServe()
+	if err != nil {
+		logger.Fatalln("Error starting web server:", err)
+	}
+}
+
+func configureCronJobs(serverClients clients.ServerClients, serverConfig config.ServerConfig) {
 	ticker := time.NewTicker(6 * time.Hour)
 	go func() {
 		for range ticker.C {
@@ -97,10 +120,89 @@ func runServer() {
 		}
 	}()
 
-	err = webServer.httpServer.ListenAndServe()
-	if err != nil {
-		logger.Fatalln("Error starting web server:", err)
+	if serverConfig.S3Config.RetentionEnabled {
+		var dataTicker *time.Ticker
+		dbRetentionCronFreq := os.Getenv("DB_RETENTION_CRON")
+		if dbRetentionCronFreq == "" {
+			dataTicker = time.NewTicker(dataRetentionCronFrequency)
+		} else {
+			dbRetentionCronInt, err := strconv.Atoi(dbRetentionCronFreq)
+			if err != nil {
+				logger.Fatalln("failed to parse test data cron freq from string:", err)
+			}
+			dataTicker = time.NewTicker(time.Duration(dbRetentionCronInt) * time.Second)
+		}
+		logger.Println(fmt.Sprintf("Configuring data retention cron job. DB_RETENTION_CRON: %s, max retention rows: %d", dbRetentionCronFreq, serverConfig.S3Config.MaxRetentionRows))
+
+		go func() {
+			for range dataTicker.C {
+				numRows, err := runDataRetention(serverClients, serverConfig)
+				if err != nil {
+					logger.Println("error running data retention:", err)
+				} else {
+					if numRows > 0 {
+						logger.Println("Number of rows deleted and stored in S3 backup:", numRows)
+					}
+				}
+			}
+		}()
 	}
+}
+
+// using viper.Getint is unsafe because if the env
+// var is unset, viper will return 0 resulting in
+// all rows being deleted from the database
+func parseRetentionRowsConfig(rows string) int {
+	if rows == "" {
+		return 10000
+	}
+	rowsInt, err := strconv.Atoi(rows)
+	if err != nil {
+		logger.Fatalln("failed to parse retention rows from string:", err)
+	}
+	return rowsInt
+}
+
+func runDataRetention(serverClients clients.ServerClients, serverConfig config.ServerConfig) (int, error) {
+	rowsAboveMax, err := serverClients.Postgres.GetRowsAboveMax(serverConfig.S3Config.MaxRetentionRows)
+	if err != nil {
+		return -1, fmt.Errorf("%s", err)
+	}
+	numberRowsAboveMax := len(rowsAboveMax)
+
+	if numberRowsAboveMax == 0 {
+		logger.Println(fmt.Sprintf("Row count is less than or equal to max %d, no action required", serverConfig.S3Config.MaxRetentionRows))
+		return 0, err
+	}
+
+	ctx := context.Background()
+
+	err = serverClients.AWS.DownloadOrCreateBackupFile(ctx)
+	if err != nil {
+		return -1, fmt.Errorf("downloading or creating backup file: %s", err)
+	}
+
+	append := true
+	err = serverClients.AWS.WriteBackupFile(rowsAboveMax, append)
+	if err != nil {
+		return -1, fmt.Errorf("writing local tmp backup file: %s", err)
+	}
+
+	err = serverClients.AWS.UploadBackupFile(ctx)
+	if err != nil {
+		return -1, fmt.Errorf("uploading backup file to S3: %s", err)
+	}
+
+	rowsAffected, err := serverClients.Postgres.DeleteRows(rowsAboveMax)
+	if err != nil {
+		return -1, fmt.Errorf("deleting rows from postgres: %s", err)
+	}
+
+	if int(rowsAffected) != numberRowsAboveMax {
+		return int(rowsAffected), fmt.Errorf(fmt.Sprintf("Number of rows deleted '%d' did not match expected number '%d'. This could indicate a data loss situation", rowsAffected, numberRowsAboveMax))
+	}
+
+	return int(rowsAffected), nil
 }
 
 func createClients(serverConfig config.ServerConfig) (clients.ServerClients, error) {
@@ -125,11 +227,17 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 
 	messenger := notification.NewMessenger(serverConfig.TwilioConfig)
 
+	awsClient, err := aws.NewClient(serverConfig)
+	if err != nil {
+		return clients.ServerClients{}, fmt.Errorf("error creating AWS client: %s", err)
+	}
+
 	return clients.ServerClients{
 		Redis:     redisClient,
 		Postgres:  postgresClient,
 		Mqtt:      mqttClient,
 		Messenger: messenger,
+		AWS:       awsClient,
 	}, nil
 }
 

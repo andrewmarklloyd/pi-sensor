@@ -5,6 +5,11 @@ go 1.16
 require (
 	github.com/ambelovsky/gosf-socketio v0.0.0-20201109193639-add9d32f8b19
 	github.com/andrewmarklloyd/pi-app-deployer v0.0.21
+	github.com/aws/aws-sdk-go v1.36.30
+	github.com/aws/aws-sdk-go-v2/config v1.15.7
+	github.com/aws/aws-sdk-go-v2/credentials v1.12.2
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.12
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.26.10
 	github.com/dghubble/gologin/v2 v2.3.0
 	github.com/dghubble/sessions v0.1.0
 	github.com/eclipse/paho.mqtt.golang v1.3.5

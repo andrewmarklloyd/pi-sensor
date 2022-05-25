@@ -17,6 +17,7 @@ deploy() {
   heroku container:login
   heroku container:push web -a ${app}
   heroku container:release web -a ${app}
+  sleep 5
   health_check
 }
 
@@ -28,6 +29,7 @@ get_version() {
 
 health_check() {
   version=$(get_version)
+  echo "deployed version: ${version}"
   i=0
   echo "Waiting for deployed version to be: ${SHORT_SHA}"
   while [[ ${version} != ${SHORT_SHA} ]]; do

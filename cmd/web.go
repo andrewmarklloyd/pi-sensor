@@ -242,7 +242,6 @@ func issueSession(serverConfig config.ServerConfig) http.Handler {
 		session := sessionStore.New(sessionName)
 		session.Values[sessionUserKey] = googleUser.Id
 		session.Save(w)
-		fmt.Println(session.Values)
 		http.Redirect(w, req, "/", http.StatusFound)
 	}
 	return http.HandlerFunc(fn)
