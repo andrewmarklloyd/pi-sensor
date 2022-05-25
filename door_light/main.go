@@ -31,20 +31,30 @@ func main() {
 	}
 	logger.Println(fmt.Sprintf("Running app version: %s", appVersion))
 	brokerurl := flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The broker to connect to")
-	agentUser := flag.String("agentuser", os.Getenv("CLOUDMQTT_AGENT_USER"), "The MQTT agent user to connect")
-	agentPassword := flag.String("agentpassword", os.Getenv("CLOUDMQTT_AGENT_PASSWORD"), "The MQTT agent password to connect")
+	appUser := flag.String("appUser", os.Getenv("CLOUDMQTT_APP_USER"), "The MQTT app user to connect")
+	appUserPassword := flag.String("appUserPassword", os.Getenv("CLOUDMQTT_APP_PASSWORD"), "The MQTT app user password to connect")
 	deviceNamesArg := flag.String("devicenames", os.Getenv("DOOR_LIGHT_DEVICE_NAMES"), "The devices to control as a comma separated list")
 	door := flag.String("door", os.Getenv("DOOR_LIGHT_DOOR"), "The door to monitor")
+
 	if *brokerurl == "" {
 		logger.Fatalln("at least one broker is required")
 	}
+
+	if *appUser == "" {
+		logger.Fatalln("appUser is required")
+	}
+
+	if *appUserPassword == "" {
+		logger.Fatalln("appUserPassword is required")
+	}
+
 	urlSplit := strings.Split(*brokerurl, "@")
 	if len(urlSplit) != 2 {
 		logger.Fatalln("unexpected CLOUDMQTT_URL parsing error")
 	}
 	domain := urlSplit[1]
 
-	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", *agentUser, *agentPassword, domain)
+	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", *appUser, *appUserPassword, domain)
 
 	deviceNames := strings.Split(*deviceNamesArg, ",")
 	if len(deviceNames) == 0 {
