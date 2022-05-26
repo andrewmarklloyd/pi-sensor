@@ -27,8 +27,8 @@ var (
 )
 
 const (
-	dataRetentionCronFrequency = 6 * time.Hour
-	fullBackupCronFrequency    = 8 * time.Hour
+	dataRetentionCronFrequency = 12 * time.Hour
+	fullBackupCronFrequency    = 6 * time.Hour
 )
 
 func runServer() {
