@@ -20,10 +20,12 @@ const (
 )
 
 type Client struct {
-	S3            *s3.Client
-	Bucket        string
-	BackupFileKey string
-	TmpWritePath  string
+	S3                     *s3.Client
+	Bucket                 string
+	RetentionBackupFileKey string
+	RetentionTmpWritePath  string
+	FullBackupFileKey      string
+	FullBackupTmpWritePath string
 }
 
 func NewClient(serverConfig sConfig.ServerConfig) (Client, error) {
@@ -40,15 +42,17 @@ func NewClient(serverConfig sConfig.ServerConfig) (Client, error) {
 	client := s3.NewFromConfig(cfg)
 
 	return Client{
-		S3:            client,
-		Bucket:        serverConfig.S3Config.Bucket,
-		BackupFileKey: fmt.Sprintf("%s/%s.json", backupPrefix, serverConfig.AppName),
-		TmpWritePath:  fmt.Sprintf("/tmp/%s.json", serverConfig.AppName),
+		S3:                     client,
+		Bucket:                 serverConfig.S3Config.Bucket,
+		RetentionBackupFileKey: fmt.Sprintf("%s/%s-retention.json", backupPrefix, serverConfig.AppName),
+		RetentionTmpWritePath:  fmt.Sprintf("/tmp/%s-retention.json", serverConfig.AppName),
+		FullBackupFileKey:      fmt.Sprintf("%s/%s-full-backup.json", backupPrefix, serverConfig.AppName),
+		FullBackupTmpWritePath: fmt.Sprintf("/tmp/%s-full-backup.json", serverConfig.AppName),
 	}, nil
 }
 
-func (c *Client) UploadBackupFile(ctx context.Context) error {
-	file, err := os.Open(c.TmpWritePath)
+func (c *Client) UploadBackupFile(ctx context.Context, tmpWritePath, backupFileKey string) error {
+	file, err := os.Open(tmpWritePath)
 	if err != nil {
 		return fmt.Errorf("opening tmp file: %s", err)
 	}
@@ -56,7 +60,7 @@ func (c *Client) UploadBackupFile(ctx context.Context) error {
 	uploader := manager.NewUploader(c.S3)
 	_, err = uploader.Upload(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(c.Bucket),
-		Key:    aws.String(c.BackupFileKey),
+		Key:    aws.String(backupFileKey),
 		Body:   file,
 	})
 	if err != nil {
@@ -66,7 +70,7 @@ func (c *Client) UploadBackupFile(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) backupFileExistsInS3(ctx context.Context) (bool, error) {
+func (c *Client) backupFileExistsInS3(ctx context.Context, key string) (bool, error) {
 	paginator := s3.NewListObjectsV2Paginator(c.S3, &s3.ListObjectsV2Input{
 		Bucket: aws.String(c.Bucket),
 		Prefix: aws.String(backupPrefix),
@@ -78,7 +82,7 @@ func (c *Client) backupFileExistsInS3(ctx context.Context) (bool, error) {
 			return false, fmt.Errorf("paginating response from AWS: %s", err)
 		}
 		for _, obj := range page.Contents {
-			if *obj.Key == c.BackupFileKey {
+			if *obj.Key == key {
 				return true, nil
 			}
 		}
@@ -86,20 +90,20 @@ func (c *Client) backupFileExistsInS3(ctx context.Context) (bool, error) {
 	return false, nil
 }
 
-func (c *Client) DownloadOrCreateBackupFile(ctx context.Context) error {
+func (c *Client) DownloadOrCreateBackupFile(ctx context.Context, tmpWritePath, backupFileKey string) error {
 	// os.Create truncates the file if it exists
-	tmpFile, err := os.Create(c.TmpWritePath)
+	tmpFile, err := os.Create(tmpWritePath)
 	if err != nil {
 		return fmt.Errorf("creating tmp file: %s", err)
 	}
 	defer tmpFile.Close()
 
-	exists, err := c.backupFileExistsInS3(context.Background())
+	exists, err := c.backupFileExistsInS3(ctx, backupFileKey)
 	if exists {
 		downloader := manager.NewDownloader(c.S3)
 		_, err = downloader.Download(ctx, tmpFile, &s3.GetObjectInput{
 			Bucket: aws.String(c.Bucket),
-			Key:    aws.String(c.BackupFileKey),
+			Key:    aws.String(backupFileKey),
 		})
 		if err != nil {
 			return fmt.Errorf("downloading backup file from S3: %s", err)
@@ -109,7 +113,7 @@ func (c *Client) DownloadOrCreateBackupFile(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) WriteBackupFile(statuses []sConfig.SensorStatus, append bool) error {
+func (c *Client) WriteBackupFile(statuses []sConfig.SensorStatus, append bool, tmpWritePath string) error {
 	var mode int
 	if append {
 		mode = os.O_APPEND | os.O_CREATE | os.O_WRONLY
@@ -117,7 +121,7 @@ func (c *Client) WriteBackupFile(statuses []sConfig.SensorStatus, append bool) e
 		mode = os.O_CREATE | os.O_WRONLY
 	}
 
-	file, err := os.OpenFile(c.TmpWritePath, mode, 0644)
+	file, err := os.OpenFile(tmpWritePath, mode, 0644)
 	if err != nil {
 		return fmt.Errorf("opening tmp file: %s", err)
 	}

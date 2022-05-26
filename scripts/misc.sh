@@ -52,9 +52,14 @@ restore_local_db() {
 
 mock_data() {
     rm -f /tmp/mock.sql
-    for x in $(seq 1 100); do
+    for x in $(seq 1 50); do
         t=$(date -v-${x}m +%s)
         echo "INSERT INTO status(source, status, timestamp, version) VALUES('garage', 'OPEN', '${t}', '1671a0a8c76461d43763e67b503756f8ed685c7c');" >> /tmp/mock.sql
     done
     psql ${DATABASE_URL} -a -f /tmp/mock.sql
+}
+
+get_config() {
+    app=${1}
+    heroku config -a ${app} -j | jq -r 'to_entries[] | "export \(.key)=\(.value)"'
 }
