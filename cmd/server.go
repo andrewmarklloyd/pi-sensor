@@ -28,6 +28,7 @@ var (
 
 const (
 	dataRetentionCronFrequency = 6 * time.Hour
+	fullBackupCronFrequency    = 8 * time.Hour
 )
 
 func runServer() {
@@ -56,12 +57,13 @@ func runServer() {
 			From:       viper.GetString("TWILIO_FROM"),
 		},
 		S3Config: config.S3Config{
-			AccessKeyID:      viper.GetString("BUCKETEER_AWS_ACCESS_KEY_ID"),
-			SecretAccessKey:  viper.GetString("BUCKETEER_AWS_SECRET_ACCESS_KEY"),
-			Region:           viper.GetString("BUCKETEER_AWS_REGION"),
-			Bucket:           viper.GetString("BUCKETEER_BUCKET_NAME"),
-			RetentionEnabled: viper.GetBool("DB_RETENTION_ENABLED"),
-			MaxRetentionRows: parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
+			AccessKeyID:       viper.GetString("BUCKETEER_AWS_ACCESS_KEY_ID"),
+			SecretAccessKey:   viper.GetString("BUCKETEER_AWS_SECRET_ACCESS_KEY"),
+			Region:            viper.GetString("BUCKETEER_AWS_REGION"),
+			Bucket:            viper.GetString("BUCKETEER_BUCKET_NAME"),
+			RetentionEnabled:  viper.GetBool("DB_RETENTION_ENABLED"),
+			MaxRetentionRows:  parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
+			FullBackupEnabled: viper.GetBool("DB_FULL_BACKUP_ENABLED"),
 		},
 	}
 
@@ -102,6 +104,14 @@ func runServer() {
 		heartbeatTimerMap[h.Name] = timer
 	})
 
+	if serverConfig.S3Config.RetentionEnabled {
+		runDataRetention(serverClients, serverConfig)
+	}
+
+	if serverConfig.S3Config.FullBackupEnabled {
+		runFullBackup(serverClients, serverConfig)
+	}
+
 	configureCronJobs(serverClients, serverConfig)
 
 	err = webServer.httpServer.ListenAndServe()
@@ -121,29 +131,19 @@ func configureCronJobs(serverClients clients.ServerClients, serverConfig config.
 	}()
 
 	if serverConfig.S3Config.RetentionEnabled {
-		var dataTicker *time.Ticker
-		dbRetentionCronFreq := os.Getenv("DB_RETENTION_CRON")
-		if dbRetentionCronFreq == "" {
-			dataTicker = time.NewTicker(dataRetentionCronFrequency)
-		} else {
-			dbRetentionCronInt, err := strconv.Atoi(dbRetentionCronFreq)
-			if err != nil {
-				logger.Fatalln("failed to parse test data cron freq from string:", err)
-			}
-			dataTicker = time.NewTicker(time.Duration(dbRetentionCronInt) * time.Second)
-		}
-		logger.Println(fmt.Sprintf("Configuring data retention cron job. DB_RETENTION_CRON: %s, max retention rows: %d", dbRetentionCronFreq, serverConfig.S3Config.MaxRetentionRows))
-
+		dataTicker := time.NewTicker(dataRetentionCronFrequency)
 		go func() {
 			for range dataTicker.C {
-				numRows, err := runDataRetention(serverClients, serverConfig)
-				if err != nil {
-					logger.Println("error running data retention:", err)
-				} else {
-					if numRows > 0 {
-						logger.Println("Number of rows deleted and stored in S3 backup:", numRows)
-					}
-				}
+				runDataRetention(serverClients, serverConfig)
+			}
+		}()
+	}
+
+	if serverConfig.S3Config.FullBackupEnabled {
+		dataTicker := time.NewTicker(fullBackupCronFrequency)
+		go func() {
+			for range dataTicker.C {
+				runFullBackup(serverClients, serverConfig)
 			}
 		}()
 	}
@@ -163,46 +163,81 @@ func parseRetentionRowsConfig(rows string) int {
 	return rowsInt
 }
 
-func runDataRetention(serverClients clients.ServerClients, serverConfig config.ServerConfig) (int, error) {
+func runDataRetention(serverClients clients.ServerClients, serverConfig config.ServerConfig) {
+	logger.Println("Running data retention")
 	rowsAboveMax, err := serverClients.Postgres.GetRowsAboveMax(serverConfig.S3Config.MaxRetentionRows)
 	if err != nil {
-		return -1, fmt.Errorf("%s", err)
+		logger.Println(fmt.Errorf("error getting rows above max: %s", err))
+		return
 	}
 	numberRowsAboveMax := len(rowsAboveMax)
 
 	if numberRowsAboveMax == 0 {
 		logger.Println(fmt.Sprintf("Row count is less than or equal to max %d, no action required", serverConfig.S3Config.MaxRetentionRows))
-		return 0, err
+		return
 	}
 
 	ctx := context.Background()
 
-	err = serverClients.AWS.DownloadOrCreateBackupFile(ctx)
+	err = serverClients.AWS.DownloadOrCreateBackupFile(ctx, serverClients.AWS.RetentionTmpWritePath, serverClients.AWS.RetentionBackupFileKey)
 	if err != nil {
-		return -1, fmt.Errorf("downloading or creating backup file: %s", err)
+		logger.Println(fmt.Errorf("downloading or creating backup file: %s", err))
+		return
 	}
 
 	append := true
-	err = serverClients.AWS.WriteBackupFile(rowsAboveMax, append)
+	err = serverClients.AWS.WriteBackupFile(rowsAboveMax, append, serverClients.AWS.RetentionTmpWritePath)
 	if err != nil {
-		return -1, fmt.Errorf("writing local tmp backup file: %s", err)
+		logger.Println(fmt.Errorf("writing local tmp backup file: %s", err))
+		return
 	}
 
-	err = serverClients.AWS.UploadBackupFile(ctx)
+	err = serverClients.AWS.UploadBackupFile(ctx, serverClients.AWS.RetentionTmpWritePath, serverClients.AWS.RetentionBackupFileKey)
 	if err != nil {
-		return -1, fmt.Errorf("uploading backup file to S3: %s", err)
+		logger.Println(fmt.Errorf("uploading backup file to S3: %s", err))
+		return
 	}
 
 	rowsAffected, err := serverClients.Postgres.DeleteRows(rowsAboveMax)
 	if err != nil {
-		return -1, fmt.Errorf("deleting rows from postgres: %s", err)
+		logger.Println(fmt.Errorf("deleting rows from postgres: %s", err))
+		return
 	}
 
-	if int(rowsAffected) != numberRowsAboveMax {
-		return int(rowsAffected), fmt.Errorf(fmt.Sprintf("Number of rows deleted '%d' did not match expected number '%d'. This could indicate a data loss situation", rowsAffected, numberRowsAboveMax))
+	numRowsAffected := int(rowsAffected)
+	if numRowsAffected != numberRowsAboveMax {
+		logger.Println(fmt.Errorf(fmt.Sprintf("Number of rows deleted '%d' did not match expected number '%d'. This could indicate a data loss situation", rowsAffected, numberRowsAboveMax)))
+		return
 	}
 
-	return int(rowsAffected), nil
+	if numRowsAffected > 0 {
+		logger.Println("Number of rows deleted and stored in S3 backup:", numRowsAffected)
+	}
+}
+
+func runFullBackup(serverClients clients.ServerClients, serverConfig config.ServerConfig) {
+	logger.Println("Running full database backup")
+	rows, err := serverClients.Postgres.GetAllRows()
+	if err != nil {
+		logger.Println(fmt.Errorf("getting all rows from db: %s", err))
+		return
+	}
+
+	append := false
+	err = serverClients.AWS.WriteBackupFile(rows, append, serverClients.AWS.FullBackupTmpWritePath)
+	if err != nil {
+		logger.Println(fmt.Errorf("writing backup tmp file: %s", err))
+		return
+	}
+
+	ctx := context.Background()
+	err = serverClients.AWS.UploadBackupFile(ctx, serverClients.AWS.FullBackupTmpWritePath, serverClients.AWS.FullBackupFileKey)
+	if err != nil {
+		logger.Println(fmt.Errorf("uploading backup file to S3: %s", err))
+		return
+	}
+
+	logger.Println(fmt.Sprintf("Full backup to S3 success, number of rows backed up: %d", len(rows)))
 }
 
 func createClients(serverConfig config.ServerConfig) (clients.ServerClients, error) {
