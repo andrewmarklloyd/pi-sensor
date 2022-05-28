@@ -1,0 +1,15 @@
+{
+  "Rules": [
+    {
+      "ID": "backup-noncurrent",
+      "Filter": {
+        "Prefix": "backups/"
+      },
+      "NoncurrentVersionExpiration": {
+        "NoncurrentDays": 7,
+        "NewerNoncurrentVersions": 50
+      },
+      "Status": "Enabled"
+    }
+  ]
+}
