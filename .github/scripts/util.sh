@@ -14,9 +14,15 @@ redis() {
     redis-cli -a ${pw} -h ${host} -p ${port}
 }
 
-aws_commands() {
+aws_bucket_config() {
     aws s3api put-bucket-versioning --bucket ${BUCKETEER_BUCKET_NAME} --versioning-configuration Status=Enabled
+    aws s3api put-bucket-lifecycle-configuration \
+        --bucket ${BUCKETEER_BUCKET_NAME} \
+        --lifecycle-configuration file://assets/lifecycle.json
+}
 
+aws_commands() {
+    aws s3 ls ${BUCKETEER_BUCKET_NAME} --recursive --human-readable --summarize
     cat /tmp/pi-sensor-staging | jq -c -s 'unique_by(.timestamp)[]' > /tmp/pi-sensor-staging-2
     aws s3 cp /tmp/pi-sensor-staging-2 s3://${BUCKETEER_BUCKET_NAME}/backups/pi-sensor-staging
 }

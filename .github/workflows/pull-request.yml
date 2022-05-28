@@ -19,6 +19,11 @@ jobs:
       - name: Run build
         run: |
           make build-ci
+      - name: Infrastructure Config
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          HEROKU_APP=pi-sensor-staging ./.github/scripts/infra-config.sh
       - name: Deploy Heroku Staging
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
