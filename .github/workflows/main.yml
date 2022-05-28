@@ -26,12 +26,22 @@ jobs:
             door-light
             pi-sensor-agent
             .pi-app-deployer.yaml
+      - name: Infrastructure Config Staging
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          HEROKU_APP=pi-sensor-staging ./.github/scripts/infra-config.sh
       - name: Deploy Heroku Staging
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           GITHUB_SHA:  ${{ github.sha }}
           SERVER_API_KEY: ${{ secrets.SERVER_API_KEY_STAGING }}
         run: ./.github/scripts/deploy-heroku.sh pi-sensor-staging
+      - name: Infrastructure Config Production
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: |
+          HEROKU_APP=pi-sensor ./.github/scripts/infra-config.sh
       - name: Deploy Heroku Production
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
