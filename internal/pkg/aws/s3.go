@@ -141,3 +141,17 @@ func (c *Client) WriteBackupFile(statuses []sConfig.SensorStatus, append bool, t
 	defer file.Close()
 	return nil
 }
+
+func (c *Client) DeleteObject(backupFileKey string) error {
+	input := &s3.DeleteObjectInput{
+		Bucket: aws.String(c.Bucket),
+		Key:    aws.String(backupFileKey),
+	}
+
+	_, err := c.S3.DeleteObject(context.Background(), input)
+	if err != nil {
+		return fmt.Errorf("deleting object: %s", err)
+	}
+
+	return nil
+}

@@ -1,0 +1,157 @@
+package cmd
+
+import (
+	"bufio"
+	"database/sql"
+	"encoding/json"
+	"os"
+	"reflect"
+	"strconv"
+	"testing"
+	"time"
+
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
+)
+
+// truncate db, write 10 status, run retention, expect last 5 from slice are in db, expect first 5 are in retention file
+// write 3 more status, run retention, expect last 2 from original slice and 3 from new slice are in db
+func Test_Retention(t *testing.T) {
+	viper.SetConfigFile("../.env")
+	viper.AutomaticEnv()
+	err := viper.ReadInConfig()
+	assert.NoError(t, err)
+
+	maxRetentionRows := 5
+	serverConfig := config.ServerConfig{
+		AppName:            viper.GetString("APP_NAME"),
+		MqttBrokerURL:      viper.GetString("CLOUDMQTT_URL"),
+		MqttServerUser:     viper.GetString("CLOUDMQTT_SERVER_USER"),
+		MqttServerPassword: viper.GetString("CLOUDMQTT_SERVER_PASSWORD"),
+		RedisURL:           viper.GetString("REDIS_URL"),
+		RedisTLSURL:        viper.GetString("REDIS_TLS_URL"),
+		PostgresURL:        viper.GetString("STAGING_DATABASE_URL"),
+		Port:               viper.GetString("PORT"),
+		MockMode:           viper.GetBool("MOCK_MODE"),
+		GoogleConfig: config.GoogleConfig{
+			AuthorizedUsers: viper.GetString("AUTHORIZED_USERS"),
+			ClientId:        viper.GetString("GOOGLE_CLIENT_ID"),
+			ClientSecret:    viper.GetString("GOOGLE_CLIENT_SECRET"),
+			RedirectURL:     viper.GetString("REDIRECT_URL"),
+			SessionSecret:   viper.GetString("SESSION_SECRET"),
+		},
+		TwilioConfig: config.TwilioConfig{
+			AccountSID: viper.GetString("TWILIO_ACCOUNT_SID"),
+			AuthToken:  viper.GetString("TWILIO_AUTH_TOKEN"),
+			To:         viper.GetString("TWILIO_TO"),
+			From:       viper.GetString("TWILIO_FROM"),
+		},
+		S3Config: config.S3Config{
+			AccessKeyID:       viper.GetString("BUCKETEER_AWS_ACCESS_KEY_ID"),
+			SecretAccessKey:   viper.GetString("BUCKETEER_AWS_SECRET_ACCESS_KEY"),
+			Region:            viper.GetString("BUCKETEER_AWS_REGION"),
+			Bucket:            viper.GetString("BUCKETEER_BUCKET_NAME"),
+			RetentionEnabled:  viper.GetBool("DB_RETENTION_ENABLED"),
+			MaxRetentionRows:  maxRetentionRows,
+			FullBackupEnabled: viper.GetBool("DB_FULL_BACKUP_ENABLED"),
+		},
+	}
+
+	serverClients, err := createClients(serverConfig)
+	assert.NoError(t, err)
+
+	db, err := sql.Open("postgres", serverConfig.PostgresURL)
+	assert.NoError(t, err)
+	query := "TRUNCATE status"
+	_, err = db.Exec(query)
+	assert.NoError(t, err)
+
+	start := time.Now().Add(time.Duration(-24) * time.Hour)
+	statuses := make([]config.SensorStatus, 0)
+	for i := 0; i < 10; i++ {
+		then := start.Add(time.Duration(i) * time.Minute)
+		timestamp := strconv.FormatInt(then.UTC().Unix(), 10)
+		statuses = append(statuses, config.SensorStatus{
+			Source:    "garage",
+			Status:    "OPEN",
+			Timestamp: timestamp,
+			Version:   "1671a0a8c76461d43763e67b503756f8ed685c7c",
+		})
+	}
+
+	for _, s := range statuses {
+		stmt := "INSERT INTO status(source, status, timestamp, version) VALUES($1, $2, $3, $4)"
+		_, err := db.Exec(stmt, s.Source, s.Status, s.Timestamp, s.Version)
+		assert.NoError(t, err)
+	}
+
+	err = serverClients.AWS.DeleteObject(serverClients.AWS.RetentionBackupFileKey)
+	assert.NoError(t, err)
+
+	runDataRetention(serverClients, serverConfig)
+	var dbStatuses []config.SensorStatus
+	stmt := `SELECT * FROM status ORDER by timestamp`
+	rows, err := db.Query(stmt)
+	assert.NoError(t, err)
+	defer rows.Close()
+	for rows.Next() {
+		var s config.SensorStatus
+		err := rows.Scan(&s.Source, &s.Status, &s.Timestamp, &s.Version)
+		assert.NoError(t, err)
+		dbStatuses = append(dbStatuses, s)
+	}
+
+	expectedDbStatuses := statuses[5:10]
+	assert.Equal(t, expectedDbStatuses, dbStatuses)
+
+	file, err := os.Open("/tmp/pi-sensor-staging-retention.json")
+	assert.NoError(t, err)
+	defer file.Close()
+	actualRetentionStatuses := make([]config.SensorStatus, 0)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		var status config.SensorStatus
+		err := json.Unmarshal([]byte(scanner.Text()), &status)
+		assert.NoError(t, err)
+		actualRetentionStatuses = append(actualRetentionStatuses, status)
+	}
+	assert.NoError(t, scanner.Err())
+	assert.Equal(t, statuses[0:5], actualRetentionStatuses)
+
+	newStatuses := make([]config.SensorStatus, 0)
+	for i := 11; i < 14; i++ {
+		then := start.Add(time.Duration(i) * time.Minute)
+		timestamp := strconv.FormatInt(then.UTC().Unix(), 10)
+		newStatuses = append(newStatuses, config.SensorStatus{
+			Source:    "front-door",
+			Status:    "CLOSED",
+			Timestamp: timestamp,
+			Version:   "1671a0a8c76461d43763e67b503756f8ed685c7c",
+		})
+	}
+
+	for _, s := range newStatuses {
+		stmt := "INSERT INTO status(source, status, timestamp, version) VALUES($1, $2, $3, $4)"
+		_, err := db.Exec(stmt, s.Source, s.Status, s.Timestamp, s.Version)
+		assert.NoError(t, err)
+	}
+
+	runDataRetention(serverClients, serverConfig)
+
+	var newDBStatuses []config.SensorStatus
+	stmt = `SELECT * FROM status ORDER by timestamp`
+	rows, err = db.Query(stmt)
+	assert.NoError(t, err)
+	defer rows.Close()
+	for rows.Next() {
+		var s config.SensorStatus
+		err := rows.Scan(&s.Source, &s.Status, &s.Timestamp, &s.Version)
+		assert.NoError(t, err)
+		newDBStatuses = append(newDBStatuses, s)
+	}
+
+	assert.Equal(t, 5, len(newDBStatuses))
+	newExpectedDBStatuses := append(statuses[8:10], newStatuses...)
+	assert.True(t, reflect.DeepEqual(newExpectedDBStatuses, newDBStatuses))
+}
