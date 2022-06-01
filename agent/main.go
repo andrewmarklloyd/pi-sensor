@@ -98,7 +98,10 @@ func main() {
 	ticker := time.NewTicker(heartbeatIntervalSeconds * time.Second)
 	go func() {
 		for range ticker.C {
-			mqttClient.PublishHeartbeat(h)
+			err := mqttClient.PublishHeartbeat(h)
+			if err != nil {
+				logger.Println("error publishing heartbeat:", err)
+			}
 		}
 	}()
 
