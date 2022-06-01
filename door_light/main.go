@@ -12,7 +12,6 @@ import (
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
 	"github.com/jaedle/golang-tplink-hs100/pkg/configuration"
 	"github.com/jaedle/golang-tplink-hs100/pkg/hs100"
-	"github.com/robfig/cron"
 )
 
 var (
@@ -98,14 +97,16 @@ func main() {
 	if err != nil {
 		logger.Fatalln("error connecting to mqtt:", err)
 	}
-	cronLib := cron.New()
-	cronLib.AddFunc(fmt.Sprintf("@every %ds", heartbeatIntervalSeconds), func() {
-		err := mqttClient.PublishHeartbeat(h)
-		if err != nil {
-			logger.Println("error publishing heartbeat:", err)
+
+	ticker := time.NewTicker(heartbeatIntervalSeconds * time.Second)
+	go func() {
+		for range ticker.C {
+			err := mqttClient.PublishHeartbeat(h)
+			if err != nil {
+				logger.Println("error publishing heartbeat:", err)
+			}
 		}
-	})
-	cronLib.Start()
+	}()
 
 	mqttClient.Subscribe(config.SensorStatusTopic, func(messageString string) {
 		for _, d := range targetDevices {
