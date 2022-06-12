@@ -20,6 +20,7 @@ jobs:
           repoName: andrewmarklloyd/pi-sensor
           manifestName: pi-sensor-agent
           host: https://pi-app-deployer.herokuapp.com
+          artifactName: app_${{ github.sha }}
       - name: Deploy Door Light
         uses: andrewmarklloyd/pi-app-deployer-action@main
         env:
@@ -28,6 +29,7 @@ jobs:
           repoName: andrewmarklloyd/pi-sensor
           manifestName: door-light
           host: https://pi-app-deployer.herokuapp.com
+          artifactName: app_${{ github.sha }}
       - uses: ravsamhq/notify-slack-action@v1
         if: always()
         with:
