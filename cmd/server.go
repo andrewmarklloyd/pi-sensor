@@ -77,6 +77,13 @@ func runServer() {
 		logger.Fatalln("error connecting to mqtt:", err)
 	}
 
+	info, err := serverClients.AWS.GetBucketInfo(context.Background())
+	if err != nil {
+		logger.Fatalln("error getting bucket info:", err)
+	}
+
+	logger.Println(fmt.Sprintf("AWS Bucket Info - Size: %d bytes, Versions: %d, DeleteMarkers: %d", info.Size, info.NumVersions, info.NumDeleteMarkers))
+
 	webServer := newWebServer(serverConfig, serverClients)
 
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)

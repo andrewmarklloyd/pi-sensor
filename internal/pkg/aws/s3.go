@@ -28,6 +28,12 @@ type Client struct {
 	FullBackupTmpWritePath string
 }
 
+type BucketInfo struct {
+	NumVersions      int
+	NumDeleteMarkers int
+	Size             int64
+}
+
 func NewClient(serverConfig sConfig.ServerConfig) (Client, error) {
 	ctx := context.Background()
 	cfg, err := config.LoadDefaultConfig(ctx,
@@ -140,4 +146,34 @@ func (c *Client) WriteBackupFile(statuses []sConfig.SensorStatus, append bool, t
 	datawriter.Flush()
 	defer file.Close()
 	return nil
+}
+
+func (c *Client) GetBucketInfo(ctx context.Context) (BucketInfo, error) {
+	input := &s3.ListObjectVersionsInput{
+		Bucket: aws.String(c.Bucket),
+	}
+
+	versionOut, err := c.S3.ListObjectVersions(ctx, input)
+	if err != nil {
+		return BucketInfo{}, err
+	}
+
+	objectOut, err := c.S3.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+		Bucket: aws.String(c.Bucket),
+	})
+
+	if err != nil {
+		return BucketInfo{}, fmt.Errorf("cannot ListObjectsV2 in %s/%s: %s", c.Bucket, backupPrefix, err.Error())
+	}
+
+	var size int64
+	for _, object := range objectOut.Contents {
+		size += object.Size
+	}
+
+	return BucketInfo{
+		NumVersions:      len(versionOut.Versions),
+		NumDeleteMarkers: len(versionOut.DeleteMarkers),
+		Size:             size,
+	}, nil
 }
