@@ -16,6 +16,7 @@ redis() {
 
 aws_bucket_config() {
     aws s3api put-bucket-versioning --bucket ${BUCKETEER_BUCKET_NAME} --versioning-configuration Status=Enabled
+    aws s3api get-bucket-versioning --bucket ${BUCKETEER_BUCKET_NAME}
     aws s3api put-bucket-lifecycle-configuration \
         --bucket ${BUCKETEER_BUCKET_NAME} \
         --lifecycle-configuration file://assets/lifecycle.json
