@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	mqttC "github.com/eclipse/paho.mqtt.golang"
+
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
 	"github.com/jaedle/golang-tplink-hs100/pkg/configuration"
@@ -92,7 +94,11 @@ func main() {
 		Version: appVersion,
 	}
 
-	mqttClient := mqtt.NewMQTTClient(mqttAddr, logger)
+	mqttClient := mqtt.NewMQTTClient(mqttAddr, func(client mqttC.Client) {
+		logger.Println("Connected to MQTT server")
+	}, func(client mqttC.Client, err error) {
+		logger.Fatalf("Connection to MQTT server lost: %v", err)
+	})
 	err = mqttClient.Connect()
 	if err != nil {
 		logger.Fatalln("error connecting to mqtt:", err)

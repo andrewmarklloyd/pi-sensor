@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -17,12 +15,14 @@ import (
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/notification"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/postgres"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/redis"
+	mqttC "github.com/eclipse/paho.mqtt.golang"
+	"go.uber.org/zap"
 
 	"github.com/spf13/viper"
 )
 
 var (
-	logger  = log.New(os.Stdout, "[Pi-Sensor Server] ", log.LstdFlags)
+	logger  *zap.SugaredLogger
 	version = "unknown"
 )
 
@@ -32,7 +32,11 @@ const (
 )
 
 func runServer() {
-	logger.Println("Running server version:", version)
+	l, _ := zap.NewProduction()
+	logger = l.Sugar().Named("pi-sensor-server")
+	defer logger.Sync()
+	logger.Infof("Running server version: %s", version)
+
 	serverConfig := config.ServerConfig{
 		AppName:            viper.GetString("APP_NAME"),
 		MqttBrokerURL:      viper.GetString("CLOUDMQTT_URL"),
@@ -69,20 +73,20 @@ func runServer() {
 
 	serverClients, err := createClients(serverConfig)
 	if err != nil {
-		logger.Fatalln("Error creating clients:", err)
+		logger.Fatalf("Error creating clients: %s", err)
 	}
 
 	err = serverClients.Mqtt.Connect()
 	if err != nil {
-		logger.Fatalln("error connecting to mqtt:", err)
+		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
 
 	info, err := serverClients.AWS.GetBucketInfo(context.Background())
 	if err != nil {
-		logger.Fatalln("error getting bucket info:", err)
+		logger.Fatalf("error getting bucket info: %s", err)
 	}
 
-	logger.Println(fmt.Sprintf("AWS Bucket Info - Size: %d bytes, Versions: %d, DeleteMarkers: %d", info.Size, info.NumVersions, info.NumDeleteMarkers))
+	logger.Infof("AWS Bucket Info - Size: %d bytes, Versions: %d, DeleteMarkers: %d", info.Size, info.NumVersions, info.NumDeleteMarkers)
 
 	webServer := newWebServer(serverConfig, serverClients)
 
@@ -90,7 +94,7 @@ func runServer() {
 	serverClients.Mqtt.Subscribe(config.SensorStatusTopic, func(message string) {
 		err := handleSensorStatusSubscribe(serverClients, webServer, serverConfig, message, delayTimerMap)
 		if err != nil {
-			logger.Println(err)
+			logger.Errorf("handling sensor status message: %s", err)
 		}
 	})
 
@@ -99,7 +103,7 @@ func runServer() {
 		var h config.Heartbeat
 		err := json.Unmarshal([]byte(messageString), &h)
 		if err != nil {
-			logger.Println(fmt.Errorf("error unmarshalling message from heartbeat channel: %s. Message received was: %s", err, messageString))
+			logger.Errorf("error unmarshalling message from heartbeat channel: %s. Message received was: %s", err, messageString)
 			return
 		}
 		currentTimer := heartbeatTimerMap[h.Name]
@@ -123,7 +127,7 @@ func runServer() {
 
 	err = webServer.httpServer.ListenAndServe()
 	if err != nil {
-		logger.Fatalln("Error starting web server:", err)
+		logger.Fatalf("Error starting web server: %s", err)
 	}
 }
 
@@ -132,7 +136,7 @@ func configureCronJobs(serverClients clients.ServerClients, serverConfig config.
 	go func() {
 		for range ticker.C {
 			if err := serverClients.Messenger.CheckBalance(); err != nil {
-				logger.Println(err)
+				logger.Errorf("checking twilio balance: %s", err)
 			}
 		}
 	}()
@@ -165,22 +169,22 @@ func parseRetentionRowsConfig(rows string) int {
 	}
 	rowsInt, err := strconv.Atoi(rows)
 	if err != nil {
-		logger.Fatalln("failed to parse retention rows from string:", err)
+		logger.Fatalf("failed to parse retention rows from string: %s", err)
 	}
 	return rowsInt
 }
 
 func runDataRetention(serverClients clients.ServerClients, serverConfig config.ServerConfig) {
-	logger.Println("Running data retention")
+	logger.Info("Running data retention")
 	rowsAboveMax, err := serverClients.Postgres.GetRowsAboveMax(serverConfig.S3Config.MaxRetentionRows)
 	if err != nil {
-		logger.Println(fmt.Errorf("error getting rows above max: %s", err))
+		logger.Errorf("error getting rows above max: %s", err)
 		return
 	}
 	numberRowsAboveMax := len(rowsAboveMax)
 
 	if numberRowsAboveMax == 0 {
-		logger.Println(fmt.Sprintf("Row count is less than or equal to max %d, no action required", serverConfig.S3Config.MaxRetentionRows))
+		logger.Infof("Row count is less than or equal to max %d, no action required", serverConfig.S3Config.MaxRetentionRows)
 		return
 	}
 
@@ -188,63 +192,63 @@ func runDataRetention(serverClients clients.ServerClients, serverConfig config.S
 
 	err = serverClients.AWS.DownloadOrCreateBackupFile(ctx, serverClients.AWS.RetentionTmpWritePath, serverClients.AWS.RetentionBackupFileKey)
 	if err != nil {
-		logger.Println(fmt.Errorf("downloading or creating backup file: %s", err))
+		logger.Errorf("downloading or creating backup file: %s", err)
 		return
 	}
 
 	append := true
 	err = serverClients.AWS.WriteBackupFile(rowsAboveMax, append, serverClients.AWS.RetentionTmpWritePath)
 	if err != nil {
-		logger.Println(fmt.Errorf("writing local tmp backup file: %s", err))
+		logger.Errorf("writing local tmp backup file: %s", err)
 		return
 	}
 
 	err = serverClients.AWS.UploadBackupFile(ctx, serverClients.AWS.RetentionTmpWritePath, serverClients.AWS.RetentionBackupFileKey)
 	if err != nil {
-		logger.Println(fmt.Errorf("uploading backup file to S3: %s", err))
+		logger.Errorf("uploading backup file to S3: %s", err)
 		return
 	}
 
 	rowsAffected, err := serverClients.Postgres.DeleteRows(rowsAboveMax)
 	if err != nil {
-		logger.Println(fmt.Errorf("deleting rows from postgres: %s", err))
+		logger.Errorf("deleting rows from postgres: %s", err)
 		return
 	}
 
 	numRowsAffected := int(rowsAffected)
 	if numRowsAffected != numberRowsAboveMax {
-		logger.Println(fmt.Errorf(fmt.Sprintf("Number of rows deleted '%d' did not match expected number '%d'. This could indicate a data loss situation", rowsAffected, numberRowsAboveMax)))
+		logger.Warnf("Number of rows deleted '%d' did not match expected number '%d'. This could indicate a data loss situation", rowsAffected, numberRowsAboveMax)
 		return
 	}
 
 	if numRowsAffected > 0 {
-		logger.Println("Number of rows deleted and stored in S3 backup:", numRowsAffected)
+		logger.Infof("Number of rows deleted and stored in S3 backup: %s", numRowsAffected)
 	}
 }
 
 func runFullBackup(serverClients clients.ServerClients, serverConfig config.ServerConfig) {
-	logger.Println("Running full database backup")
+	logger.Info("Running full database backup")
 	rows, err := serverClients.Postgres.GetAllRows()
 	if err != nil {
-		logger.Println(fmt.Errorf("getting all rows from db: %s", err))
+		logger.Errorf("getting all rows from db: %s", err)
 		return
 	}
 
 	append := false
 	err = serverClients.AWS.WriteBackupFile(rows, append, serverClients.AWS.FullBackupTmpWritePath)
 	if err != nil {
-		logger.Println(fmt.Errorf("writing backup tmp file: %s", err))
+		logger.Errorf("writing backup tmp file: %s", err)
 		return
 	}
 
 	ctx := context.Background()
 	err = serverClients.AWS.UploadBackupFile(ctx, serverClients.AWS.FullBackupTmpWritePath, serverClients.AWS.FullBackupFileKey)
 	if err != nil {
-		logger.Println(fmt.Errorf("uploading backup file to S3: %s", err))
+		logger.Errorf("uploading backup file to S3: %s", err)
 		return
 	}
 
-	logger.Println(fmt.Sprintf("Full backup to S3 success, number of rows backed up: %d", len(rows)))
+	logger.Infof("Full backup to S3 success, number of rows backed up: %d", len(rows))
 }
 
 func createClients(serverConfig config.ServerConfig) (clients.ServerClients, error) {
@@ -265,7 +269,12 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	domain := urlSplit[1]
 	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", serverConfig.MqttServerUser, serverConfig.MqttServerPassword, domain)
 
-	mqttClient := mqtt.NewMQTTClient(mqttAddr, logger)
+	// func(client mqtt.Client), connectionLostHandler func(client mqtt.Client, err error)
+	mqttClient := mqtt.NewMQTTClient(mqttAddr, func(client mqttC.Client) {
+		logger.Info("Connected to MQTT server")
+	}, func(client mqttC.Client, err error) {
+		logger.Fatalf("Connection to MQTT server lost: %v", err)
+	})
 
 	messenger := notification.NewMessenger(serverConfig.TwilioConfig)
 
@@ -285,45 +294,45 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 
 func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClients, serverConfig config.ServerConfig, webServer WebServer) {
 	if h.Type == config.HeartbeatTypeApp {
-		logger.Println(fmt.Sprintf("Heartbeat timeout occurred for %s", h.Name))
+		logger.Warnf("Heartbeat timeout occurred for %s", h.Name)
 		if !serverConfig.MockMode {
 			_, err := serverClients.Messenger.SendMessage(fmt.Sprintf("%s has lost connection", h.Name))
 			if err != nil {
-				logger.Println("Error sending app heartbeat timeout message:", err)
+				logger.Errorf("Error sending app heartbeat timeout message: %s", err)
 			}
 		}
 	} else if h.Type == config.HeartbeatTypeSensor {
 		messageString, err := serverClients.Redis.ReadState(h.Name, context.Background())
 		if err != nil {
-			logger.Println(fmt.Sprintf("Error handling timeout: reading redis state: %s Message string was: %s", err, messageString))
+			logger.Errorf("Error handling timeout: reading redis state: %s Message string was: %s", err, messageString)
 			return
 		}
 
 		lastStatus := config.SensorStatus{}
 		err = json.Unmarshal([]byte(messageString), &lastStatus)
 		if err != nil {
-			logger.Println("Error handling timeout: unmarshalling state", err)
+			logger.Errorf("Error handling timeout, unmarshalling state: %s", err)
 			return
 		}
 
-		logger.Println(fmt.Sprintf("Heartbeat timeout occurred for %s", lastStatus.Source))
+		logger.Warnf("Heartbeat timeout occurred for %s", lastStatus.Source)
 
 		lastStatus.Status = config.UNKNOWN
 		lastStatusJson, err := json.Marshal(lastStatus)
 		if err != nil {
-			logger.Println("Error handling timeout: marshalling state", err)
+			logger.Errorf("Error handling timeout: marshalling state: %s", err)
 			return
 		}
 		err = serverClients.Redis.WriteState(lastStatus.Source, string(lastStatusJson), context.Background())
 		if err != nil {
-			logger.Println(fmt.Sprintf("Error writing message state after heartbeat timeout. Message: %s", messageString))
+			logger.Errorf("Error writing message state after heartbeat timeout. Message: %s", messageString)
 			return
 		}
 
 		if !serverConfig.MockMode {
 			_, err = serverClients.Messenger.SendMessage(fmt.Sprintf("%s sensor has lost connection", lastStatus.Source))
 			if err != nil {
-				logger.Println("error sending heartbeat timeout message:", err)
+				logger.Errorf("error sending heartbeat timeout message: %s", err)
 			}
 		}
 
@@ -331,10 +340,10 @@ func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClie
 
 		writeErr := serverClients.Postgres.WriteSensorStatus(lastStatus)
 		if writeErr != nil {
-			logger.Println("Error writing sensor status to postgres:", writeErr)
+			logger.Errorf("Error writing sensor status to postgres: %s", writeErr)
 		}
 	} else {
-		logger.Println("Unknown heartbeat type receieved:", h)
+		logger.Errorf("Unknown heartbeat type receieved: %s", h)
 	}
 }
 
@@ -378,7 +387,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 	}
 
 	if (lastStatus.Status == config.CLOSED && currentStatus.Status == config.OPEN) || (lastStatus.Status == config.UNKNOWN && currentStatus.Status == config.OPEN) {
-		logger.Println(fmt.Sprintf("%s was just opened", currentStatus.Source))
+		logger.Infof("%s was just opened", currentStatus.Source)
 		if !serverConfig.MockMode && armed {
 			_, err := serverClients.Messenger.SendMessage(fmt.Sprintf("🚪 %s was just opened", currentStatus.Source))
 			if err != nil {
@@ -398,7 +407,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 			currentTimer.Stop()
 		}
 	} else {
-		logger.Println(fmt.Sprintf("Message status '%s' not recognized", currentStatus.Status))
+		logger.Errorf("Message status '%s' not recognized", currentStatus.Status)
 	}
 
 	err = serverClients.Redis.WriteState(currentStatus.Source, string(currentStatusJson), context.Background())
@@ -416,7 +425,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 
 func handleOpenTimeout(serverClients clients.ServerClients, s config.SensorStatus, armed, mockMode bool) {
 	message := fmt.Sprintf("🚨 %s opened longer than %s", s.Source, config.OpenTimeout)
-	logger.Println(message)
+	logger.Info(message)
 	if !mockMode && armed {
 		serverClients.Messenger.SendMessage(message)
 	}

@@ -109,7 +109,7 @@ func (s WebServer) reportHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	messages, numPages, err := s.serverClients.Postgres.GetSensorStatus(sensor, page)
 	if err != nil {
-		logger.Fatalln("Error getting messages", err)
+		logger.Errorf("Error getting messages: %s", err)
 		http.Error(w, "Error getting report", http.StatusBadRequest)
 		return
 	}
@@ -120,13 +120,13 @@ func (s WebServer) reportHandler(w http.ResponseWriter, req *http.Request) {
 func (s WebServer) newSocketConnection(c *gosocketio.Channel) {
 	sensorList, stateErr := s.serverClients.Redis.ReadAllState(context.Background())
 	if stateErr != nil {
-		logger.Println("new socket connection error: reading redis state:", stateErr)
+		logger.Errorf("new socket connection error: reading redis state: %s", stateErr)
 		return
 	}
 
 	armingState, armingStateErr := s.serverClients.Redis.ReadAllArming(context.Background())
 	if armingStateErr != nil {
-		logger.Println("new socket connection error: reading arming state from redis:", armingStateErr)
+		logger.Errorf("new socket connection error: reading arming state from redis: %s", armingStateErr)
 		return
 	}
 
@@ -168,14 +168,14 @@ func (s WebServer) sensorRestartHandler(w http.ResponseWriter, req *http.Request
 		http.Error(w, "Error publishing restart message", http.StatusBadRequest)
 		return
 	}
-	logger.Println(fmt.Sprintf("Publishing sensor restart message for %s", sensor.Source))
+	logger.Infof("Publishing sensor restart message for %s", sensor.Source)
 	fmt.Fprintf(w, "{\"status\":\"success\"}")
 }
 
 func (s WebServer) allSensorsHandler(w http.ResponseWriter, req *http.Request) {
 	sensors, err := s.serverClients.Redis.GetAllSensors(context.Background())
 	if err != nil {
-		logger.Fatalln("Error getting all keys", err)
+		logger.Errorf("Error getting all keys: %s", err)
 		http.Error(w, "Error getting sensors", http.StatusBadRequest)
 		return
 	}
