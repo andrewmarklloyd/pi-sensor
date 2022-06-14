@@ -429,7 +429,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 
 func handleOpenTimeout(serverClients clients.ServerClients, s config.SensorStatus, armed, mockMode bool) {
 	message := fmt.Sprintf("🚨 %s opened longer than %s", s.Source, config.OpenTimeout)
-	logger.Info(message)
+	logger.Warn(message)
 	if !mockMode && armed {
 		serverClients.Messenger.SendMessage(message)
 	}
