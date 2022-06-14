@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +37,10 @@ func runServer() {
 	logger = l.Sugar().Named("pi-sensor-server")
 	defer logger.Sync()
 	logger.Infof("Running server version: %s", version)
+
+	if os.Getenv("LOG_TEST") != "" {
+		logger.Errorf("LOG_TEST: %s", "this is an error test")
+	}
 
 	serverConfig := config.ServerConfig{
 		AppName:            viper.GetString("APP_NAME"),
@@ -269,7 +274,6 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	domain := urlSplit[1]
 	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", serverConfig.MqttServerUser, serverConfig.MqttServerPassword, domain)
 
-	// func(client mqtt.Client), connectionLostHandler func(client mqtt.Client, err error)
 	mqttClient := mqtt.NewMQTTClient(mqttAddr, func(client mqttC.Client) {
 		logger.Info("Connected to MQTT server")
 	}, func(client mqttC.Client, err error) {
