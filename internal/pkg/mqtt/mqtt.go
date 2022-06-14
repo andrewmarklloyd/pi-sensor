@@ -3,7 +3,6 @@ package mqtt
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
@@ -15,27 +14,21 @@ type fn func(string)
 
 type MqttClient struct {
 	client mqtt.Client
-	logger *log.Logger
 }
 
-func NewMQTTClient(addr string, logger *log.Logger) MqttClient {
+func NewMQTTClient(addr string, connectHandler func(client mqtt.Client), connectionLostHandler func(client mqtt.Client, err error)) MqttClient {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(addr)
 	var clientID string
 	u, _ := uuid.NewV4()
 	clientID = u.String()
 	opts.SetClientID(clientID)
-	opts.OnConnect = func(client mqtt.Client) {
-		logger.Println("Connected to MQTT server")
-	}
-	opts.OnConnectionLost = func(client mqtt.Client, err error) {
-		logger.Fatalf("Connection to MQTT server lost: %v", err)
-	}
+	opts.OnConnect = connectHandler
+	opts.OnConnectionLost = connectionLostHandler
 	client := mqtt.NewClient(opts)
 
 	return MqttClient{
 		client,
-		logger,
 	}
 }
 
