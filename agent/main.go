@@ -12,6 +12,7 @@ import (
 	"time"
 
 	mqttC "github.com/eclipse/paho.mqtt.golang"
+	"go.uber.org/zap"
 
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/gpio"
@@ -24,7 +25,6 @@ var (
 	agentPassword = flag.String("agentpassword", os.Getenv("CLOUDMQTT_AGENT_PASSWORD"), "The MQTT agent password to connect")
 	sensorSource  = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")
 	mockFlag      = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
-	logger        *log.Logger
 )
 
 const (
@@ -33,55 +33,65 @@ const (
 )
 
 func main() {
+	l, err := zap.NewProduction()
+	if err != nil {
+		log.Fatalln("Error creating logger:", err)
+	}
+	// need a temporary init structured logger before reading sensorSource
+	initLogger := l.Sugar().Named("pi-sensor-agent-init")
+	defer initLogger.Sync()
+
 	flag.Parse()
-	if *brokerurl == "" {
-		log.Fatalln("one broker is required")
+	if *sensorSource == "" {
+		initLogger.Fatal("SENSOR_SOURCE env var is required")
 	}
 
-	if *sensorSource == "" {
-		log.Fatalln("sensorSource is required")
+	logger := l.Sugar().Named(fmt.Sprintf("pi-sensor-agent-%s", *sensorSource))
+	defer logger.Sync()
+
+	if *brokerurl == "" {
+		logger.Fatal("CLOUDMQTT_URL env var is required")
 	}
 
 	if *agentUser == "" {
-		logger.Fatalln("CLOUDMQTT_AGENT_USER environment variable not found")
+		logger.Fatal("CLOUDMQTT_AGENT_USER environment variable not found")
 	}
 
 	if *agentPassword == "" {
-		logger.Fatalln("CLOUDMQTT_AGENT_PASSWORD environment variable not found")
+		logger.Fatal("CLOUDMQTT_AGENT_PASSWORD environment variable not found")
 	}
 
 	urlSplit := strings.Split(*brokerurl, "@")
 	if len(urlSplit) != 2 {
-		logger.Fatalln("unexpected CLOUDMQTT_URL parsing error")
+		logger.Fatal("unexpected CLOUDMQTT_URL parsing error")
 	}
 	domain := urlSplit[1]
 
 	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", *agentUser, *agentPassword, domain)
 
-	logger = log.New(os.Stdout, fmt.Sprintf("[Pi-Sensor Agent-%s] ", *sensorSource), log.LstdFlags)
 	version := os.Getenv("APP_VERSION")
 	if version == "" {
 		version = "unknown"
 	}
-	logger.Print("Initializing app, version:", version)
+	logger.Infof("Initializing app, version: %s", version)
 
 	mockMode, _ := strconv.ParseBool(*mockFlag)
 
 	defaultPin := 18
 	pinNum, err := strconv.Atoi(os.Getenv("GPIO_PIN"))
 	if err != nil {
-		logger.Printf("Failed to parse GPIO_PIN env var, using default %d", defaultPin)
+		logger.Infof("Failed to parse GPIO_PIN env var, using default %d", defaultPin)
 		pinNum = defaultPin
 	}
 
 	mqttClient := mqtt.NewMQTTClient(mqttAddr, func(client mqttC.Client) {
-		logger.Println("Connected to MQTT server")
+		logger.Info("Connected to MQTT server")
 	}, func(client mqttC.Client, err error) {
 		logger.Fatalf("Connection to MQTT server lost: %v", err)
 	})
 	err = mqttClient.Connect()
 	if err != nil {
-		logger.Fatalln("error connecting to mqtt:", err)
+		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
 	pinClient := gpio.NewPinClient(pinNum, mockMode)
 
@@ -89,7 +99,7 @@ func main() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		logger.Println("Cleaning up")
+		logger.Info("SIGTERM received, cleaning up")
 		mqttClient.Cleanup()
 		pinClient.Cleanup()
 		os.Exit(0)
@@ -106,21 +116,21 @@ func main() {
 		for range ticker.C {
 			err := mqttClient.PublishHeartbeat(h)
 			if err != nil {
-				logger.Println("error publishing heartbeat:", err)
+				logger.Errorf("error publishing heartbeat: %s", err)
 			}
 		}
 	}()
 
 	mqttClient.Subscribe(config.SensorRestartTopic, func(messageString string) {
 		if *sensorSource == messageString {
-			logger.Println("Received restart message, restarting app now")
+			logger.Info("Received restart message, restarting app now")
 			os.Exit(0)
 		}
 	})
 
 	lastStatus, err := getLastStatus(statusFile)
 	if err != nil {
-		logger.Println(fmt.Errorf("error reading status file: %s. Setting status to %s", err, config.UNKNOWN))
+		logger.Warnf("error reading status file: %s. Setting status to %s", err, config.UNKNOWN)
 		lastStatus = config.UNKNOWN
 	}
 
@@ -129,10 +139,10 @@ func main() {
 		currentStatus = pinClient.CurrentStatus()
 		err = writeStatus(statusFile, currentStatus)
 		if err != nil {
-			logger.Println("error writing status file:", err)
+			logger.Errorf("error writing status file: %s", err)
 		}
 		if currentStatus != lastStatus {
-			logger.Println(fmt.Sprintf("%s is %s", *sensorSource, currentStatus))
+			logger.Infof(fmt.Sprintf("%s is %s", *sensorSource, currentStatus))
 			lastStatus = currentStatus
 
 			err := mqttClient.PublishSensorStatus(config.SensorStatus{
@@ -141,7 +151,7 @@ func main() {
 				Version: version,
 			})
 			if err != nil {
-				logger.Println("Error publishing message to sensor status channel:", err)
+				logger.Errorf("Error publishing message to sensor status channel: %s", err)
 			}
 		}
 		time.Sleep(5 * time.Second)
