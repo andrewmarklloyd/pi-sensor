@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -37,10 +36,6 @@ func runServer() {
 	logger = l.Sugar().Named("pi-sensor-server")
 	defer logger.Sync()
 	logger.Infof("Running server version: %s", version)
-
-	if os.Getenv("LOG_TEST") != "" {
-		logger.Errorf("LOG_TEST: %s", "this is an error test")
-	}
 
 	serverConfig := config.ServerConfig{
 		AppName:            viper.GetString("APP_NAME"),
