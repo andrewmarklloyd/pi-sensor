@@ -48,6 +48,12 @@ type WebServer struct {
 	serverClients clients.ServerClients
 }
 
+type zapLog struct {
+	Level  string `json:"level"`
+	Logger string `json:"logger"`
+	Msg    string `json:"msg"`
+}
+
 func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClients) WebServer {
 
 	router := gmux.NewRouter().StrictSlash(true)
@@ -307,7 +313,40 @@ func agentLogsHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	forwarderLogger.Info(string(body))
+	var zLog zapLog
+	if err := json.Unmarshal(body, &zLog); err != nil {
+		logger.Errorf("unmarshalling log forwarded message into zap log message: %s, raw message json: %s", err, string(body))
+		// this is an error for pi-sensor, but not due to an error
+		// with pi-app-deployer so don't return an error
+		fmt.Fprintf(w, `{"error":""}`)
+		return
+	}
+
+	leveledLogFunction := getLogFunction(zLog)
+
+	leveledLogFunction(zLog.Msg,
+		"agentLogger", zLog.Logger,
+	)
 
 	fmt.Fprintf(w, `{"error":""}`)
+}
+
+// TODO: is it possible to use zap to dynamically
+// determine which log level function to use?
+func getLogFunction(z zapLog) func(msg string, keysAndValues ...interface{}) {
+	switch z.Level {
+	case "debug":
+		return forwarderLogger.Debugw
+	case "info":
+		return forwarderLogger.Infow
+	case "warn":
+		return forwarderLogger.Warnw
+	case "error":
+		return forwarderLogger.Errorw
+	case "panic":
+		return forwarderLogger.Panicw
+	case "fatal":
+		return forwarderLogger.Fatalw
+	}
+	return forwarderLogger.Infow
 }
