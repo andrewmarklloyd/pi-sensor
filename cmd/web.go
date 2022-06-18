@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -69,6 +70,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	sessionStore = sessions.NewCookieStore([]byte(serverConfig.GoogleConfig.SessionSecret), nil)
 	stateConfig := gologin.DebugOnlyCookieConfig
 	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
+	router.Handle("/api/agent-logs", http.HandlerFunc(agentLogsHandler)).Methods(post)
 	router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(w.sensorRestartHandler))).Methods(post)
 	router.Handle("/api/sensor/arming", requireLogin(http.HandlerFunc(w.sensorArmingHandler))).Methods(post)
 	router.Handle("/api/sensor/all", requireLogin(http.HandlerFunc(w.allSensorsHandler))).Methods(get)
@@ -289,4 +291,23 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	fmt.Fprintf(w, fmt.Sprintf(`{"version":"%s"}`, version))
+}
+
+func agentLogsHandler(w http.ResponseWriter, req *http.Request) {
+	allowedApiKey := os.Getenv("SERVER_API_KEY")
+	apiKey := req.Header.Get("api-key")
+	if apiKey == "" || apiKey != allowedApiKey {
+		http.Error(w, `{"error":"unauthenticated"}`, http.StatusUnauthorized)
+		return
+	}
+
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		http.Error(w, `{"error":"reading request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	forwarderLogger.Info(string(body))
+
+	fmt.Fprintf(w, `{"error":""}`)
 }
