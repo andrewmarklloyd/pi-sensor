@@ -3,10 +3,11 @@
     {
       "ID": "backup-noncurrent",
       "Filter": {
-        "Prefix": "backups/"
+        "Prefix": ""
       },
       "NoncurrentVersionExpiration": {
-        "NoncurrentDays": 14
+        "NoncurrentDays": 14,
+        "NewerNoncurrentVersions": 30
       },
       "Status": "Enabled"
     }
