@@ -42,8 +42,7 @@ class SiteWrapper extends React.Component {
         navProps={{ itemsObjects: navBarItems }}
         footerProps={{
           links: [
-            <a href="https://github.com/andrewmarklloyd/pi-sensor">Source Code</a>,
-            <a href="https://github.com/tabler/tabler-react">Built with Tabler React</a>
+            <a href="https://github.com/andrewmarklloyd/pi-sensor">Source Code</a>
           ],
           note:
             <a href={"https://github.com/andrewmarklloyd/pi-sensor/commit/"+process.env.REACT_APP_VERSION}>App Version {process.env.REACT_APP_VERSION}</a>
