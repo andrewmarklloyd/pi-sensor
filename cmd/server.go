@@ -226,7 +226,7 @@ func runDataRetention(serverClients clients.ServerClients, serverConfig config.S
 	}
 
 	if numRowsAffected > 0 {
-		logger.Infof("Number of rows deleted and stored in S3 backup: %s", numRowsAffected)
+		logger.Infof("Number of rows deleted and stored in S3 backup: %d", numRowsAffected)
 	}
 }
 
