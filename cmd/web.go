@@ -268,6 +268,7 @@ func unauthHandler(w http.ResponseWriter, req *http.Request) {
 func requireLogin(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		if !isAuthenticated(req) {
+			logger.Warnf("Unauthenticated request, host: %s, headers: %s", req.Host, req.Header)
 			http.Redirect(w, req, "/google/login", http.StatusFound)
 			return
 		}
