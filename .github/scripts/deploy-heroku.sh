@@ -50,4 +50,8 @@ health_check() {
 git diff
 SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
 app=${1}
+ALLOWED_API_KEYS=$(heroku config:get ALLOWED_API_KEYS -a ${app})
+IFS=' '
+read -a strarr <<< "$ALLOWED_API_KEYS"
+SERVER_API_KEY=${strarr[0]}
 deploy

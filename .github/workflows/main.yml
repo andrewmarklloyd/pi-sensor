@@ -35,7 +35,6 @@ jobs:
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           GITHUB_SHA:  ${{ github.sha }}
-          SERVER_API_KEY: ${{ secrets.SERVER_API_KEY_STAGING }}
         run: ./.github/scripts/deploy-heroku.sh pi-sensor-staging
       - name: Infrastructure Config Production
         env:
@@ -46,7 +45,6 @@ jobs:
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           GITHUB_SHA:  ${{ github.sha }}
-          SERVER_API_KEY: ${{ secrets.SERVER_API_KEY_PROD }}
         run: ./.github/scripts/deploy-heroku.sh pi-sensor
       - uses: ravsamhq/notify-slack-action@v1
         if: always()
