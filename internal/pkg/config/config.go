@@ -15,6 +15,7 @@ type ServerConfig struct {
 	TwilioConfig       TwilioConfig
 	S3Config           S3Config
 	Version            string
+	AllowedAPIKeys     []string
 }
 
 type GoogleConfig struct {

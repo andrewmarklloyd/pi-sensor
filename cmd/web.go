@@ -54,8 +54,10 @@ type zapLog struct {
 	Msg    string `json:"msg"`
 }
 
-func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClients) WebServer {
+var allowedAPIKeys []string
 
+func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClients) WebServer {
+	allowedAPIKeys = serverConfig.AllowedAPIKeys
 	router := gmux.NewRouter().StrictSlash(true)
 	socketServer := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
 
@@ -286,13 +288,9 @@ func isAuthenticated(req *http.Request) bool {
 }
 
 func healthHandler(w http.ResponseWriter, req *http.Request) {
-	allowedApiKey := os.Getenv("SERVER_API_KEY")
 	apiKey := req.Header.Get("api-key")
-	if apiKey == "" {
-		http.Error(w, `{"error":"unauthenticated"}`, http.StatusUnauthorized)
-		return
-	}
-	if apiKey != allowedApiKey {
+
+	if !validAPIKey(apiKey) {
 		http.Error(w, `{"error":"unauthenticated"}`, http.StatusUnauthorized)
 		return
 	}
@@ -301,9 +299,8 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func agentLogsHandler(w http.ResponseWriter, req *http.Request) {
-	allowedApiKey := os.Getenv("SERVER_API_KEY")
 	apiKey := req.Header.Get("api-key")
-	if apiKey == "" || apiKey != allowedApiKey {
+	if !validAPIKey(apiKey) {
 		http.Error(w, `{"error":"unauthenticated"}`, http.StatusUnauthorized)
 		return
 	}
@@ -350,4 +347,17 @@ func getLogFunction(z zapLog) func(msg string, keysAndValues ...interface{}) {
 		return forwarderLogger.Fatalw
 	}
 	return forwarderLogger.Infow
+}
+
+func validAPIKey(apiKey string) bool {
+	if apiKey == "" {
+		return false
+	}
+	allowed := false
+	for _, key := range allowedAPIKeys {
+		if key == apiKey {
+			allowed = true
+		}
+	}
+	return allowed
 }
