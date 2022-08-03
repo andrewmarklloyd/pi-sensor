@@ -51,6 +51,7 @@ func runServer() {
 		PostgresURL:        viper.GetString("DATABASE_URL"),
 		Port:               viper.GetString("PORT"),
 		MockMode:           viper.GetBool("MOCK_MODE"),
+		AllowedAPIKeys:     viper.GetStringSlice("ALLOWED_API_KEYS"),
 		GoogleConfig: config.GoogleConfig{
 			AuthorizedUsers: viper.GetString("AUTHORIZED_USERS"),
 			ClientId:        viper.GetString("GOOGLE_CLIENT_ID"),
