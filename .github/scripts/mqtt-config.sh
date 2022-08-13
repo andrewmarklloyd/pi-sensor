@@ -28,6 +28,7 @@ create_server_user() {
   post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_SERVER_USER}\",\"pattern\":\"sensor/status\",\"read\":true,\"write\":false}"
   post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_SERVER_USER}\",\"pattern\":\"sensor/heartbeat\",\"read\":true,\"write\":false}"
   post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_SERVER_USER}\",\"pattern\":\"sensor/restart\",\"read\":false,\"write\":true}"
+  post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_SERVER_USER}\",\"pattern\":\"ha/#\",\"read\":false,\"write\":true}"
 }
 
 create_app_user() {
@@ -36,16 +37,28 @@ create_app_user() {
   post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_APP_USER}\",\"pattern\":\"sensor/heartbeat\",\"read\":false,\"write\":true}"
 }
 
+create_ha_user() {
+  post user "{\"username\": \"${CLOUDMQTT_HA_USER}\",\"password\": \"${CLOUDMQTT_HA_PASSWORD}\"}"
+  post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_HA_USER}\",\"pattern\":\"ha/#\",\"read\":true,\"write\":false}"
+}
+
 config=$(get_config)
 CLOUDMQTT_APIKEY=$(echo ${config} | jq -r '.CLOUDMQTT_APIKEY')
+
 CLOUDMQTT_AGENT_USER=$(echo ${config} | jq -r '.CLOUDMQTT_AGENT_USER')
 CLOUDMQTT_AGENT_PASSWORD=$(echo ${config} | jq -r '.CLOUDMQTT_AGENT_PASSWORD')
+
 CLOUDMQTT_SERVER_USER=$(echo ${config} | jq -r '.CLOUDMQTT_SERVER_USER')
 CLOUDMQTT_SERVER_PASSWORD=$(echo ${config} | jq -r '.CLOUDMQTT_SERVER_PASSWORD')
+
 CLOUDMQTT_APP_USER=$(echo ${config} | jq -r '.CLOUDMQTT_APP_USER')
 CLOUDMQTT_APP_PASSWORD=$(echo ${config} | jq -r '.CLOUDMQTT_APP_PASSWORD')
+
+CLOUDMQTT_HA_USER=$(echo ${config} | jq -r '.CLOUDMQTT_HA_USER')
+CLOUDMQTT_HA_PASSWORD=$(echo ${config} | jq -r '.CLOUDMQTT_HA_PASSWORD')
 
 
 create_agent_user
 create_server_user
 create_app_user
+create_ha_user
