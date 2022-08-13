@@ -28,7 +28,7 @@ create_server_user() {
   post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_SERVER_USER}\",\"pattern\":\"sensor/status\",\"read\":true,\"write\":false}"
   post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_SERVER_USER}\",\"pattern\":\"sensor/heartbeat\",\"read\":true,\"write\":false}"
   post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_SERVER_USER}\",\"pattern\":\"sensor/restart\",\"read\":false,\"write\":true}"
-  post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_SERVER_USER}\",\"pattern\":\"ha/*\",\"read\":false,\"write\":true}"
+  post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_SERVER_USER}\",\"pattern\":\"ha/#\",\"read\":false,\"write\":true}"
 }
 
 create_app_user() {
@@ -39,7 +39,7 @@ create_app_user() {
 
 create_ha_user() {
   post user "{\"username\": \"${CLOUDMQTT_HA_USER}\",\"password\": \"${CLOUDMQTT_HA_PASSWORD}\"}"
-  post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_HA_USER}\",\"pattern\":\"ha/*\",\"read\":true,\"write\":false}"
+  post acl "{\"type\":\"topic\",\"username\":\"${CLOUDMQTT_HA_USER}\",\"pattern\":\"ha/#\",\"read\":true,\"write\":false}"
 }
 
 config=$(get_config)
