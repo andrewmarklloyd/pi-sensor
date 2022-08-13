@@ -80,3 +80,11 @@ func (c MqttClient) PublishSensorStatus(h config.SensorStatus) error {
 func (c MqttClient) PublishSensorRestart(sensorSource string) error {
 	return c.publish(config.SensorRestartTopic, sensorSource)
 }
+
+func (c MqttClient) PublishHASensorStatus(h config.SensorStatus) error {
+	j, err := json.Marshal(h)
+	if err != nil {
+		return fmt.Errorf("marshalling heartbeat: %s", err)
+	}
+	return c.publish(config.HASensorStatusTopic, string(j))
+}

@@ -393,6 +393,10 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 	if (lastStatus.Status == config.CLOSED && currentStatus.Status == config.OPEN) || (lastStatus.Status == config.UNKNOWN && currentStatus.Status == config.OPEN) {
 		logger.Infof("%s was just opened", currentStatus.Source)
 		if !serverConfig.MockMode && armed {
+			err = serverClients.Mqtt.PublishHASensorStatus(currentStatus)
+			if err != nil {
+				return fmt.Errorf("publishing ha sensor status: %w", err)
+			}
 			_, err := serverClients.Messenger.SendMessage(fmt.Sprintf("🚪 %s was just opened", currentStatus.Source))
 			if err != nil {
 				return fmt.Errorf("Error sending open message: %s", err)
