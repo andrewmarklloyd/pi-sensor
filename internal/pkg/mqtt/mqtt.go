@@ -72,7 +72,7 @@ func (c MqttClient) PublishHeartbeat(h config.Heartbeat) error {
 func (c MqttClient) PublishSensorStatus(h config.SensorStatus) error {
 	j, err := json.Marshal(h)
 	if err != nil {
-		return fmt.Errorf("marshalling heartbeat: %s", err)
+		return fmt.Errorf("marshalling sensor status: %s", err)
 	}
 	return c.publish(config.SensorStatusTopic, string(j))
 }
@@ -84,7 +84,7 @@ func (c MqttClient) PublishSensorRestart(sensorSource string) error {
 func (c MqttClient) PublishHASensorStatus(h config.SensorStatus) error {
 	j, err := json.Marshal(h)
 	if err != nil {
-		return fmt.Errorf("marshalling heartbeat: %s", err)
+		return fmt.Errorf("marshalling sensor status: %s", err)
 	}
 	return c.publish(config.HASensorStatusTopic, string(j))
 }
@@ -94,7 +94,7 @@ func (c MqttClient) PublishHASensorStatus(h config.SensorStatus) error {
 func (c MqttClient) PublishHAOpenWarn(h config.SensorStatus) error {
 	j, err := json.Marshal(h)
 	if err != nil {
-		return fmt.Errorf("marshalling heartbeat: %s", err)
+		return fmt.Errorf("marshalling sensor status: %s", err)
 	}
 	return c.publish(config.HASensorStatusOpenWarnTopic, string(j))
 }
