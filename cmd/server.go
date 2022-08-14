@@ -436,5 +436,9 @@ func handleOpenTimeout(serverClients clients.ServerClients, s config.SensorStatu
 	logger.Warn(message)
 	if !mockMode && armed {
 		serverClients.Messenger.SendMessage(message)
+		err := serverClients.Mqtt.PublishHAOpenWarn(s)
+		if err != nil {
+			logger.Errorf("publishing message: %w", err)
+		}
 	}
 }

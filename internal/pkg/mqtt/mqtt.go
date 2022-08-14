@@ -88,3 +88,13 @@ func (c MqttClient) PublishHASensorStatus(h config.SensorStatus) error {
 	}
 	return c.publish(config.HASensorStatusTopic, string(j))
 }
+
+// PublishHAOpenWarn sends message to topic indicating
+// a sensor's door has been open longer than a timeout
+func (c MqttClient) PublishHAOpenWarn(h config.SensorStatus) error {
+	j, err := json.Marshal(h)
+	if err != nil {
+		return fmt.Errorf("marshalling heartbeat: %s", err)
+	}
+	return c.publish(config.HASensorStatusOpenWarnTopic, string(j))
+}

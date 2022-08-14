@@ -3,10 +3,11 @@ package config
 import "time"
 
 const (
-	SensorStatusTopic    = "sensor/status"
-	SensorHeartbeatTopic = "sensor/heartbeat"
-	SensorRestartTopic   = "sensor/restart"
-	HASensorStatusTopic  = "ha/sensor/status"
+	SensorStatusTopic           = "sensor/status"
+	SensorHeartbeatTopic        = "sensor/heartbeat"
+	SensorRestartTopic          = "sensor/restart"
+	HASensorStatusTopic         = "ha/sensor/status"
+	HASensorStatusOpenWarnTopic = "ha/sensor/open/warn"
 
 	OPEN    = "OPEN"
 	CLOSED  = "CLOSED"
