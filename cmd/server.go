@@ -334,9 +334,9 @@ func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClie
 		}
 
 		if !serverConfig.MockMode {
-			_, err = serverClients.Messenger.SendMessage(fmt.Sprintf("%s sensor has lost connection", lastStatus.Source))
+			err := serverClients.Mqtt.PublishHASensorLostConnection(lastStatus.Source)
 			if err != nil {
-				logger.Errorf("error sending heartbeat timeout message: %s", err)
+				logger.Errorf("publishing lost connection message: %w", err)
 			}
 		}
 
@@ -435,10 +435,9 @@ func handleOpenTimeout(serverClients clients.ServerClients, s config.SensorStatu
 	message := fmt.Sprintf("🚨 %s opened longer than %s", s.Source, config.OpenTimeout)
 	logger.Warn(message)
 	if !mockMode && armed {
-		serverClients.Messenger.SendMessage(message)
 		err := serverClients.Mqtt.PublishHAOpenWarn(s)
 		if err != nil {
-			logger.Errorf("publishing message: %w", err)
+			logger.Errorf("publishing HA open warning message: %w", err)
 		}
 	}
 }

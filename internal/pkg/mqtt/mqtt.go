@@ -98,3 +98,9 @@ func (c MqttClient) PublishHAOpenWarn(h config.SensorStatus) error {
 	}
 	return c.publish(config.HASensorStatusOpenWarnTopic, string(j))
 }
+
+// PublishHASensorLostConnection sends message to topic indicating
+// a sensor's heartbeat timeout has occurred and has lost connection
+func (c MqttClient) PublishHASensorLostConnection(sensorSource string) error {
+	return c.publish(config.HASensorStatusOpenWarnTopic, sensorSource)
+}
