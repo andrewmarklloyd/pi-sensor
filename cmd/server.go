@@ -300,9 +300,9 @@ func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClie
 	if h.Type == config.HeartbeatTypeApp {
 		logger.Warnf("Heartbeat timeout occurred for %s", h.Name)
 		if !serverConfig.MockMode {
-			_, err := serverClients.Messenger.SendMessage(fmt.Sprintf("%s has lost connection", h.Name))
+			err := serverClients.Mqtt.PublishHASensorLostConnection(h.Name)
 			if err != nil {
-				logger.Errorf("Error sending app heartbeat timeout message: %s", err)
+				logger.Errorf("publishing lost connection message: %w", err)
 			}
 		}
 	} else if h.Type == config.HeartbeatTypeSensor {
@@ -396,10 +396,6 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 			err = serverClients.Mqtt.PublishHASensorStatus(currentStatus)
 			if err != nil {
 				return fmt.Errorf("publishing ha sensor status: %w", err)
-			}
-			_, err := serverClients.Messenger.SendMessage(fmt.Sprintf("🚪 %s was just opened", currentStatus.Source))
-			if err != nil {
-				return fmt.Errorf("Error sending open message: %s", err)
 			}
 		}
 	}
