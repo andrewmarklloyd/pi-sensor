@@ -25,16 +25,8 @@ aws_bucket_config() {
 
 aws_commands() {
     aws s3 ls ${BUCKETEER_BUCKET_NAME} --recursive --human-readable --summarize
-    cat /tmp/pi-sensor-staging | jq -c -s 'unique_by(.timestamp)[]' > /tmp/pi-sensor-staging-2
-    aws s3 cp /tmp/pi-sensor-staging-2 s3://${BUCKETEER_BUCKET_NAME}/backups/pi-sensor-staging
-}
-
-full_backup_s3() {
-  f="pi-sensor-$(date +%s).json"
-  rm -f /tmp/pi-sensor
-  go run main.go
-  mv /tmp/pi-sensor ${f}
-  aws s3 cp ${f} s3://${BUCKETEER_BUCKET_NAME}/backups/${f}
+    cat /tmp/backups/pi-sensor-full-backup.json | jq -c -s 'unique_by(.timestamp)[]' > /tmp/backups/pi-sensor-full-backup.json-2
+    aws s3 cp /tmp/backups/pi-sensor-full-backup.json-2 s3://${BUCKETEER_BUCKET_NAME}/backups/backups/pi-sensor-full-backup.json
 }
 
 restore_local_db() {
@@ -46,14 +38,14 @@ restore_local_db() {
 
     docker rm -f postgres
 
-    aws s3 cp s3://${BUCKETEER_BUCKET_NAME}/backups/pi-sensor-staging /tmp/pi-sensor-staging
+    aws s3 cp s3://${BUCKETEER_BUCKET_NAME}/backups/pi-sensor-full-backup.json /tmp/backups/pi-sensor-full-backup.json
 
     docker run -it --name postgres -v /tmp:/tmp -p 5432:5432 -e POSTGRES_PASSWORD=${PGPASSWORD} -d postgres
 
     sleep 5
 
     echo 'CREATE TABLE IF NOT EXISTS status(source text, status text, timestamp text, version text);' > /tmp/tmp.sql
-    jq -r -s ".[] | \"INSERT INTO status(source, status, timestamp, version) VALUES('\(.source)', '\(.status)', '\(.timestamp)', '\(.version)');\"" /tmp/pi-sensor-staging >> /tmp/tmp.sql
+    jq -r -s ".[] | \"INSERT INTO status(source, status, timestamp, version) VALUES('\(.source)', '\(.status)', '\(.timestamp)', '\(.version)');\"" /tmp/backups/pi-sensor-full-backup.json >> /tmp/tmp.sql
 
     psql -a -f /tmp/tmp.sql
 }
@@ -71,3 +63,6 @@ get_config() {
     app=${1}
     heroku config -a ${app} -j | jq -r 'to_entries[] | "export \(.key)=\(.value)"'
 }
+
+
+restore_local_db
