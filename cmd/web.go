@@ -156,10 +156,17 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 		http.Error(w, "Error parsing request", http.StatusBadRequest)
 		return
 	}
-	armedString, _ := s.serverClients.Redis.ReadArming(p.Source, context.Background())
+
 	armed := "false"
-	if armedString == "" || armedString == "false" {
-		armed = "true"
+	if p.Armed == "" {
+		// this is a toggle api call, switch value
+		armedString, _ := s.serverClients.Redis.ReadArming(p.Source, req.Context())
+		if armedString == "" || armedString == "false" {
+			armed = "true"
+		}
+	} else {
+		// armed is specified
+		armed = p.Armed
 	}
 
 	s.serverClients.Redis.WriteArming(p.Source, armed, context.Background())
@@ -284,6 +291,11 @@ func isAuthenticated(req *http.Request) bool {
 	if _, err := sessionStore.Get(req, sessionName); err == nil {
 		return true
 	}
+
+	if validAPIKey(req.Header.Get("api-key")) {
+		return true
+	}
+
 	return false
 }
 
