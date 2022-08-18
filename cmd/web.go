@@ -157,6 +157,25 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	if p.Source == "all" {
+		armingState, armingStateErr := s.serverClients.Redis.ReadAllArming(req.Context())
+		if armingStateErr != nil {
+			http.Error(w, "error getting all arming statuses", http.StatusBadRequest)
+			return
+		}
+
+		for k := range armingState {
+			err := s.serverClients.Redis.WriteArming(k, p.Armed, req.Context())
+			if err != nil {
+				http.Error(w, "error setting all arming statuses", http.StatusBadRequest)
+				return
+			}
+		}
+
+		fmt.Fprintf(w, fmt.Sprintf(`{"status":"success", "armed":"%s"}`, p.Armed))
+		return
+	}
+
 	armed := "false"
 	if p.Armed == "" {
 		// this is a toggle api call, switch value
@@ -169,7 +188,7 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 		armed = p.Armed
 	}
 
-	s.serverClients.Redis.WriteArming(p.Source, armed, context.Background())
+	s.serverClients.Redis.WriteArming(p.Source, armed, req.Context())
 	fmt.Fprintf(w, fmt.Sprintf(`{"status":"success", "armed":"%s"}`, armed))
 }
 
