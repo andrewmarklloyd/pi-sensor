@@ -157,6 +157,11 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	err = s.serverClients.Mqtt.PublishHASensorArming(p)
+	if err != nil {
+		logger.Errorf("error publishing ha sensor arming: %s", err)
+	}
+
 	if p.Source == "all" {
 		armingState, armingStateErr := s.serverClients.Redis.ReadAllArming(req.Context())
 		if armingStateErr != nil {
