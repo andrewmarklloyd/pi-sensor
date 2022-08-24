@@ -9,6 +9,7 @@ const (
 	HASensorStatusTopic         = "ha/sensor/status"
 	HASensorStatusOpenWarnTopic = "ha/sensor/open/warn"
 	HASensorLostConnectionTopic = "ha/sensor/connectionlost"
+	HASensorArmingTopic         = "ha/sensor/arming"
 
 	OPEN    = "OPEN"
 	CLOSED  = "CLOSED"

@@ -104,3 +104,11 @@ func (c MqttClient) PublishHAOpenWarn(h config.SensorStatus) error {
 func (c MqttClient) PublishHASensorLostConnection(sensorSource string) error {
 	return c.publish(config.HASensorLostConnectionTopic, sensorSource)
 }
+
+func (c MqttClient) PublishHASensorArming(p config.APIPayload) error {
+	j, err := json.Marshal(p)
+	if err != nil {
+		return fmt.Errorf("marshalling api payload: %s", err)
+	}
+	return c.publish(config.HASensorArmingTopic, string(j))
+}
