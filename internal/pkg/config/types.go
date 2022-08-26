@@ -7,6 +7,7 @@ const (
 	SensorHeartbeatTopic        = "sensor/heartbeat"
 	SensorRestartTopic          = "sensor/restart"
 	HASensorStatusTopic         = "ha/sensor/status"
+	HASensorNotifyTopic         = "ha/sensor/notify"
 	HASensorStatusOpenWarnTopic = "ha/sensor/open/warn"
 	HASensorLostConnectionTopic = "ha/sensor/connectionlost"
 	HASensorArmingTopic         = "ha/sensor/arming"
