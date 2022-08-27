@@ -157,11 +157,6 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	err = s.serverClients.Mqtt.PublishHASensorArming(p)
-	if err != nil {
-		logger.Errorf("error publishing ha sensor arming: %s", err)
-	}
-
 	if p.Source == "all" {
 		armingState, armingStateErr := s.serverClients.Redis.ReadAllArming(req.Context())
 		if armingStateErr != nil {
@@ -170,6 +165,14 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 		}
 
 		for k := range armingState {
+			err = s.serverClients.Mqtt.PublishHASensorArming(config.APIPayload{
+				Source: k,
+				Armed:  p.Armed,
+			})
+			if err != nil {
+				logger.Errorf("error publishing ha sensor arming: %s", err)
+			}
+
 			err := s.serverClients.Redis.WriteArming(k, p.Armed, req.Context())
 			if err != nil {
 				http.Error(w, "error setting all arming statuses", http.StatusBadRequest)
@@ -191,6 +194,14 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 	} else {
 		// armed is specified
 		armed = p.Armed
+	}
+
+	err = s.serverClients.Mqtt.PublishHASensorArming(config.APIPayload{
+		Source: p.Source,
+		Armed:  armed,
+	})
+	if err != nil {
+		logger.Errorf("error publishing ha sensor arming: %s", err)
 	}
 
 	s.serverClients.Redis.WriteArming(p.Source, armed, req.Context())
