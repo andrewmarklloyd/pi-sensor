@@ -1,7 +1,18 @@
 package main
 
-import "github.com/andrewmarklloyd/pi-sensor/cmd"
+import (
+	"fmt"
+	"time"
+)
 
 func main() {
-	cmd.Execute()
+	go forever()
+	select {} // block forever
+}
+
+func forever() {
+	for {
+		fmt.Println(time.Now().String())
+		time.Sleep(5 * time.Minute)
+	}
 }
