@@ -2,17 +2,15 @@ package main
 
 import (
 	"fmt"
-	"time"
+	"log"
+	"net/http"
 )
 
 func main() {
-	go forever()
-	select {} // block forever
-}
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("ca66c829-a2e1-4ecb-abf9-5f6e03dabd97")
+		fmt.Fprintf(w, "Hello")
+	})
 
-func forever() {
-	for {
-		fmt.Println(time.Now().String())
-		time.Sleep(5 * time.Minute)
-	}
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
