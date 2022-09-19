@@ -9,10 +9,9 @@ if ! command -v yq &> /dev/null; then
 fi
 
 if ! command -v doctl &> /dev/null; then
-  cd ~/
-  wget -q https://github.com/digitalocean/doctl/releases/download/v1.79.0/doctl-1.79.0-linux-amd64.tar.gz
-  tar xf ~/doctl-1.79.0-linux-amd64.tar.gz
-  mv ~/doctl /usr/local/bin
+  wget -q https://github.com/digitalocean/doctl/releases/download/v1.79.0/doctl-1.79.0-linux-amd64.tar.gz -P /tmp
+  tar xf /tmp/doctl-1.79.0-linux-amd64.tar.gz -C /tmp
+  mv /tmp/doctl /usr/local/bin
   doctl auth init --access-token ${DO_ACCESS_TOKEN}
 fi
 
@@ -24,6 +23,7 @@ deploy() {
   doctl apps spec get ${APP_ID} | yq ".services[0].image.tag = \"${SHORT_SHA}\"" - #| doctl apps update ${APP_ID} --spec -
 }
 
+git diff
 SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
 app=${1}
 deploy
