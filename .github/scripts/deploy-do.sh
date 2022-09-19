@@ -18,6 +18,9 @@ fi
 
 deploy() {
   echo "Deploying version ${SHORT_SHA}"
+  doctl registry login
+  docker build -t registry.digitalocean.com/pi-sensor/pi-sensor .
+  docker push registry.digitalocean.com/pi-sensor/pi-sensor
   doctl apps spec get ${APP_ID} | yq ".services[0].image.tag = \"${SHORT_SHA}\"" - #| doctl apps update ${APP_ID} --spec -
 }
 
