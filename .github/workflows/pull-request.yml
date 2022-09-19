@@ -22,5 +22,6 @@ jobs:
       - name: Deploy DO
         env:
           DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
-          GITHUB_SHA:  ${{ github.sha }}
+          GITHUB_SHA: ${{ github.sha }}
+          DO_APP_ID: ${{ secrets.DO_APP_ID }}
         run: ./.github/scripts/deploy-do.sh pi-sensor-staging
