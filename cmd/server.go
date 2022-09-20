@@ -47,7 +47,6 @@ func runServer() {
 		MqttServerUser:     viper.GetString("CLOUDMQTT_SERVER_USER"),
 		MqttServerPassword: viper.GetString("CLOUDMQTT_SERVER_PASSWORD"),
 		RedisURL:           viper.GetString("REDIS_URL"),
-		RedisTLSURL:        viper.GetString("REDIS_TLS_URL"),
 		PostgresURL:        viper.GetString("DATABASE_URL"),
 		Port:               viper.GetString("PORT"),
 		MockMode:           viper.GetBool("MOCK_MODE"),
@@ -257,7 +256,7 @@ func runFullBackup(serverClients clients.ServerClients, serverConfig config.Serv
 }
 
 func createClients(serverConfig config.ServerConfig) (clients.ServerClients, error) {
-	redisClient, err := redis.NewRedisClient(serverConfig.RedisTLSURL)
+	redisClient, err := redis.NewRedisClient(serverConfig.RedisURL)
 	if err != nil {
 		return clients.ServerClients{}, fmt.Errorf("Error creating redis client: %s", err)
 	}
