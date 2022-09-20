@@ -80,9 +80,9 @@ func runServer() {
 	}
 
 	err = serverClients.Mqtt.Connect()
-	// if err != nil {
-	// 	logger.Fatalf("error connecting to mqtt: %s", err)
-	// }
+	if err != nil {
+		logger.Fatalf("error connecting to mqtt: %s", err)
+	}
 
 	// info, err := serverClients.AWS.GetBucketInfo(context.Background())
 	// if err != nil {
