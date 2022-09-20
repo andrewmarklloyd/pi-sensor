@@ -5,17 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/aws"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
-	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
-	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/notification"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/postgres"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/redis"
-	mqttC "github.com/eclipse/paho.mqtt.golang"
 	"go.uber.org/zap"
 
 	"github.com/spf13/viper"
@@ -76,64 +71,65 @@ func runServer() {
 		},
 	}
 
+	fmt.Println(serverConfig.RedisTLSURL)
 	serverClients, err := createClients(serverConfig)
 	if err != nil {
 		logger.Fatalf("Error creating clients: %s", err)
 	}
 
 	err = serverClients.Mqtt.Connect()
-	if err != nil {
-		logger.Fatalf("error connecting to mqtt: %s", err)
-	}
+	// if err != nil {
+	// 	logger.Fatalf("error connecting to mqtt: %s", err)
+	// }
 
-	info, err := serverClients.AWS.GetBucketInfo(context.Background())
-	if err != nil {
-		logger.Fatalf("error getting bucket info: %s", err)
-	}
+	// info, err := serverClients.AWS.GetBucketInfo(context.Background())
+	// if err != nil {
+	// 	logger.Fatalf("error getting bucket info: %s", err)
+	// }
 
-	logger.Infof("AWS Bucket Info - Size: %d bytes, Versions: %d, DeleteMarkers: %d", info.Size, info.NumVersions, info.NumDeleteMarkers)
+	// logger.Infof("AWS Bucket Info - Size: %d bytes, Versions: %d, DeleteMarkers: %d", info.Size, info.NumVersions, info.NumDeleteMarkers)
 
-	webServer := newWebServer(serverConfig, serverClients)
+	// webServer := newWebServer(serverConfig, serverClients)
 
-	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	serverClients.Mqtt.Subscribe(config.SensorStatusTopic, func(message string) {
-		err := handleSensorStatusSubscribe(serverClients, webServer, serverConfig, message, delayTimerMap)
-		if err != nil {
-			logger.Errorf("handling sensor status message: %s", err)
-		}
-	})
+	// var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
+	// serverClients.Mqtt.Subscribe(config.SensorStatusTopic, func(message string) {
+	// 	err := handleSensorStatusSubscribe(serverClients, webServer, serverConfig, message, delayTimerMap)
+	// 	if err != nil {
+	// 		logger.Errorf("handling sensor status message: %s", err)
+	// 	}
+	// })
 
-	var heartbeatTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	serverClients.Mqtt.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
-		var h config.Heartbeat
-		err := json.Unmarshal([]byte(messageString), &h)
-		if err != nil {
-			logger.Errorf("error unmarshalling message from heartbeat channel: %s. Message received was: %s", err, messageString)
-			return
-		}
-		currentTimer := heartbeatTimerMap[h.Name]
-		if currentTimer != nil {
-			currentTimer.Stop()
-		}
+	// var heartbeatTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
+	// serverClients.Mqtt.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
+	// 	var h config.Heartbeat
+	// 	err := json.Unmarshal([]byte(messageString), &h)
+	// 	if err != nil {
+	// 		logger.Errorf("error unmarshalling message from heartbeat channel: %s. Message received was: %s", err, messageString)
+	// 		return
+	// 	}
+	// 	currentTimer := heartbeatTimerMap[h.Name]
+	// 	if currentTimer != nil {
+	// 		currentTimer.Stop()
+	// 	}
 
-		timer := time.AfterFunc(config.HeartbeatTimeout, func() { handleHeartbeatTimeout(h, serverClients, serverConfig, webServer) })
-		heartbeatTimerMap[h.Name] = timer
-	})
+	// 	timer := time.AfterFunc(config.HeartbeatTimeout, func() { handleHeartbeatTimeout(h, serverClients, serverConfig, webServer) })
+	// 	heartbeatTimerMap[h.Name] = timer
+	// })
 
-	if serverConfig.S3Config.RetentionEnabled {
-		runDataRetention(serverClients, serverConfig)
-	}
+	// if serverConfig.S3Config.RetentionEnabled {
+	// 	runDataRetention(serverClients, serverConfig)
+	// }
 
-	if serverConfig.S3Config.FullBackupEnabled {
-		runFullBackup(serverClients, serverConfig)
-	}
+	// if serverConfig.S3Config.FullBackupEnabled {
+	// 	runFullBackup(serverClients, serverConfig)
+	// }
 
-	configureCronJobs(serverClients, serverConfig)
+	// configureCronJobs(serverClients, serverConfig)
 
-	err = webServer.httpServer.ListenAndServe()
-	if err != nil {
-		logger.Fatalf("Error starting web server: %s", err)
-	}
+	// err = webServer.httpServer.ListenAndServe()
+	// if err != nil {
+	// 	logger.Fatalf("Error starting web server: %s", err)
+	// }
 }
 
 func configureCronJobs(serverClients clients.ServerClients, serverConfig config.ServerConfig) {
@@ -267,32 +263,32 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		return clients.ServerClients{}, fmt.Errorf("Error creating postgres client: %s", err)
 	}
 
-	urlSplit := strings.Split(serverConfig.MqttBrokerURL, "@")
-	if len(urlSplit) != 2 {
-		return clients.ServerClients{}, fmt.Errorf("unexpected CLOUDMQTT_URL parsing error")
-	}
-	domain := urlSplit[1]
-	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", serverConfig.MqttServerUser, serverConfig.MqttServerPassword, domain)
+	// urlSplit := strings.Split(serverConfig.MqttBrokerURL, "@")
+	// if len(urlSplit) != 2 {
+	// 	return clients.ServerClients{}, fmt.Errorf("unexpected CLOUDMQTT_URL parsing error")
+	// }
+	// domain := urlSplit[1]
+	// mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", serverConfig.MqttServerUser, serverConfig.MqttServerPassword, domain)
 
-	mqttClient := mqtt.NewMQTTClient(mqttAddr, func(client mqttC.Client) {
-		logger.Info("Connected to MQTT server")
-	}, func(client mqttC.Client, err error) {
-		logger.Fatalf("Connection to MQTT server lost: %v", err)
-	})
+	// mqttClient := mqtt.NewMQTTClient(mqttAddr, func(client mqttC.Client) {
+	// 	logger.Info("Connected to MQTT server")
+	// }, func(client mqttC.Client, err error) {
+	// 	logger.Fatalf("Connection to MQTT server lost: %v", err)
+	// })
 
-	messenger := notification.NewMessenger(serverConfig.TwilioConfig)
+	// messenger := notification.NewMessenger(serverConfig.TwilioConfig)
 
-	awsClient, err := aws.NewClient(serverConfig)
-	if err != nil {
-		return clients.ServerClients{}, fmt.Errorf("error creating AWS client: %s", err)
-	}
+	// awsClient, err := aws.NewClient(serverConfig)
+	// if err != nil {
+	// 	return clients.ServerClients{}, fmt.Errorf("error creating AWS client: %s", err)
+	// }
 
 	return clients.ServerClients{
-		Redis:     redisClient,
-		Postgres:  postgresClient,
-		Mqtt:      mqttClient,
-		Messenger: messenger,
-		AWS:       awsClient,
+		Redis:    redisClient,
+		Postgres: postgresClient,
+		// Mqtt:      mqttClient,
+		// Messenger: messenger,
+		// AWS:       awsClient,
 	}, nil
 }
 
