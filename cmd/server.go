@@ -74,10 +74,6 @@ func runServer() {
 		},
 	}
 
-	s := serverConfig.PostgresURL
-
-	logger.Infof("url: %s", s[:len(s)-3])
-
 	serverClients, err := createClients(serverConfig)
 	if err != nil {
 		logger.Fatalf("Error creating clients: %s", err)
@@ -95,47 +91,47 @@ func runServer() {
 
 	logger.Infof("AWS Bucket Info - Size: %d bytes, Versions: %d, DeleteMarkers: %d", info.Size, info.NumVersions, info.NumDeleteMarkers)
 
-	// webServer := newWebServer(serverConfig, serverClients)
+	webServer := newWebServer(serverConfig, serverClients)
 
-	// var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	// serverClients.Mqtt.Subscribe(config.SensorStatusTopic, func(message string) {
-	// 	err := handleSensorStatusSubscribe(serverClients, webServer, serverConfig, message, delayTimerMap)
-	// 	if err != nil {
-	// 		logger.Errorf("handling sensor status message: %s", err)
-	// 	}
-	// })
+	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
+	serverClients.Mqtt.Subscribe(config.SensorStatusTopic, func(message string) {
+		err := handleSensorStatusSubscribe(serverClients, webServer, serverConfig, message, delayTimerMap)
+		if err != nil {
+			logger.Errorf("handling sensor status message: %s", err)
+		}
+	})
 
-	// var heartbeatTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	// serverClients.Mqtt.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
-	// 	var h config.Heartbeat
-	// 	err := json.Unmarshal([]byte(messageString), &h)
-	// 	if err != nil {
-	// 		logger.Errorf("error unmarshalling message from heartbeat channel: %s. Message received was: %s", err, messageString)
-	// 		return
-	// 	}
-	// 	currentTimer := heartbeatTimerMap[h.Name]
-	// 	if currentTimer != nil {
-	// 		currentTimer.Stop()
-	// 	}
+	var heartbeatTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
+	serverClients.Mqtt.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
+		var h config.Heartbeat
+		err := json.Unmarshal([]byte(messageString), &h)
+		if err != nil {
+			logger.Errorf("error unmarshalling message from heartbeat channel: %s. Message received was: %s", err, messageString)
+			return
+		}
+		currentTimer := heartbeatTimerMap[h.Name]
+		if currentTimer != nil {
+			currentTimer.Stop()
+		}
 
-	// 	timer := time.AfterFunc(config.HeartbeatTimeout, func() { handleHeartbeatTimeout(h, serverClients, serverConfig, webServer) })
-	// 	heartbeatTimerMap[h.Name] = timer
-	// })
+		timer := time.AfterFunc(config.HeartbeatTimeout, func() { handleHeartbeatTimeout(h, serverClients, serverConfig, webServer) })
+		heartbeatTimerMap[h.Name] = timer
+	})
 
-	// if serverConfig.S3Config.RetentionEnabled {
-	// 	runDataRetention(serverClients, serverConfig)
-	// }
+	if serverConfig.S3Config.RetentionEnabled {
+		runDataRetention(serverClients, serverConfig)
+	}
 
-	// if serverConfig.S3Config.FullBackupEnabled {
-	// 	runFullBackup(serverClients, serverConfig)
-	// }
+	if serverConfig.S3Config.FullBackupEnabled {
+		runFullBackup(serverClients, serverConfig)
+	}
 
-	// configureCronJobs(serverClients, serverConfig)
+	configureCronJobs(serverClients, serverConfig)
 
-	// err = webServer.httpServer.ListenAndServe()
-	// if err != nil {
-	// 	logger.Fatalf("Error starting web server: %s", err)
-	// }
+	err = webServer.httpServer.ListenAndServe()
+	if err != nil {
+		logger.Fatalf("Error starting web server: %s", err)
+	}
 }
 
 func configureCronJobs(serverClients clients.ServerClients, serverConfig config.ServerConfig) {
