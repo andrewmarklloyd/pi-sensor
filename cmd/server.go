@@ -74,6 +74,10 @@ func runServer() {
 		},
 	}
 
+	s := serverConfig.PostgresURL
+
+	logger.Infof("url: %s", s[:len(s)-3])
+
 	serverClients, err := createClients(serverConfig)
 	if err != nil {
 		logger.Fatalf("Error creating clients: %s", err)
