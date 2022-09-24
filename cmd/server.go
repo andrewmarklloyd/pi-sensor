@@ -64,9 +64,9 @@ func runServer() {
 			From:       viper.GetString("TWILIO_FROM"),
 		},
 		S3Config: config.S3Config{
-			AccessKeyID:       viper.GetString("BUCKETEER_AWS_ACCESS_KEY_ID"),
-			SecretAccessKey:   viper.GetString("BUCKETEER_AWS_SECRET_ACCESS_KEY"),
-			Region:            viper.GetString("BUCKETEER_AWS_REGION"),
+			AccessKeyID:       viper.GetString("SPACES_AWS_ACCESS_KEY_ID"),
+			SecretAccessKey:   viper.GetString("SPACES_AWS_SECRET_ACCESS_KEY"),
+			Region:            viper.GetString("SPACES_AWS_REGION"),
 			Bucket:            viper.GetString("BUCKETEER_BUCKET_NAME"),
 			RetentionEnabled:  viper.GetBool("DB_RETENTION_ENABLED"),
 			MaxRetentionRows:  parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
@@ -84,12 +84,12 @@ func runServer() {
 		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
 
-	// info, err := serverClients.AWS.GetBucketInfo(context.Background())
-	// if err != nil {
-	// 	logger.Fatalf("error getting bucket info: %s", err)
-	// }
+	info, err := serverClients.AWS.GetBucketInfo(context.Background())
+	if err != nil {
+		logger.Fatalf("error getting bucket info: %s", err)
+	}
 
-	// logger.Infof("AWS Bucket Info - Size: %d bytes, Versions: %d, DeleteMarkers: %d", info.Size, info.NumVersions, info.NumDeleteMarkers)
+	logger.Infof("AWS Bucket Info - Size: %d bytes, Versions: %d, DeleteMarkers: %d", info.Size, info.NumVersions, info.NumDeleteMarkers)
 
 	// webServer := newWebServer(serverConfig, serverClients)
 
