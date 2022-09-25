@@ -127,7 +127,7 @@ func runServer() {
 		runFullBackup(serverClients, serverConfig)
 	}
 
-	configureCronJobs(serverClients, serverConfig)
+	// configureCronJobs(serverClients, serverConfig)
 
 	err = webServer.httpServer.ListenAndServe()
 	if err != nil {
