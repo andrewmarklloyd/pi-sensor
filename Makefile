@@ -10,7 +10,7 @@ build:
 
 build-frontend:
 	echo "removed temporarily"
-	# REACT_APP_VERSION=$(GIT_TREE_STATE) ./.github/scripts/build-front.sh
+	REACT_APP_VERSION=$(GIT_TREE_STATE) ./.github/scripts/build-front.sh
 
 build-ci: build build-frontend
 	cp ./build/* .
