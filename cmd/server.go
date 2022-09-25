@@ -67,6 +67,7 @@ func runServer() {
 			AccessKeyID:       viper.GetString("SPACES_AWS_ACCESS_KEY_ID"),
 			SecretAccessKey:   viper.GetString("SPACES_AWS_SECRET_ACCESS_KEY"),
 			Region:            viper.GetString("SPACES_AWS_REGION"),
+			URL:               viper.GetString("SPACES_URL"),
 			Bucket:            viper.GetString("SPACES_BUCKET_NAME"),
 			RetentionEnabled:  viper.GetBool("DB_RETENTION_ENABLED"),
 			MaxRetentionRows:  parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
