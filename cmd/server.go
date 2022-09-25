@@ -85,6 +85,7 @@ func runServer() {
 		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
 
+	logger.Infof("Using bucket:", serverConfig.S3Config.Bucket)
 	info, err := serverClients.AWS.GetBucketInfo(context.Background())
 	if err != nil {
 		logger.Fatalf("error getting bucket info: %s", err)

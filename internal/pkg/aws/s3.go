@@ -162,7 +162,7 @@ func (c *Client) GetBucketInfo(ctx context.Context) (BucketInfo, error) {
 
 	versionOut, err := c.S3.ListObjectVersions(ctx, input)
 	if err != nil {
-		return BucketInfo{}, err
+		return BucketInfo{}, fmt.Errorf("listing object versions: %w", err)
 	}
 
 	objectOut, err := c.S3.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
