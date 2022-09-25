@@ -12,16 +12,16 @@ if ! command -v doctl &> /dev/null; then
   wget -q https://github.com/digitalocean/doctl/releases/download/v1.79.0/doctl-1.79.0-linux-amd64.tar.gz -P /tmp
   tar xf /tmp/doctl-1.79.0-linux-amd64.tar.gz -C /tmp
   mv /tmp/doctl /usr/local/bin
-  doctl auth init --access-token ${DO_ACCESS_TOKEN}
+  # doctl auth init --access-token ${DO_ACCESS_TOKEN}
 fi
 
 deploy() {
   echo "Deploying version ${SHORT_SHA}"
-  doctl registry login
+  doctl --access-token ${DO_ACCESS_TOKEN} registry login
   image="registry.digitalocean.com/pi-sensor/pi-sensor:${SHORT_SHA}"
   docker build -t ${image} .
   docker push ${image}
-  doctl apps spec get ${DO_APP_ID} | yq ".services[0].image.tag = \"${SHORT_SHA}\"" - | doctl apps update ${DO_APP_ID} --wait --spec -
+  doctl --access-token ${DO_ACCESS_TOKEN} apps spec get ${DO_APP_ID} | yq ".services[0].image.tag = \"${SHORT_SHA}\"" - | doctl --access-token ${DO_ACCESS_TOKEN} apps update ${DO_APP_ID} --wait --spec -
 }
 
 git diff
