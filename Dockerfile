@@ -1,7 +1,7 @@
 FROM alpine
 
 COPY build/pi-sensor-server /app/
-# COPY frontend/build /app/frontend/build
+COPY frontend/build /app/frontend/build
 
 WORKDIR /app
 

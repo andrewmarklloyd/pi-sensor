@@ -9,7 +9,6 @@ build:
 	GOOS=linux GOARCH=arm GOARM=5 go build -o build/door-light door_light/*.go
 
 build-frontend:
-	echo "removed temporarily"
 	REACT_APP_VERSION=$(GIT_TREE_STATE) ./.github/scripts/build-front.sh
 
 build-ci: build build-frontend
