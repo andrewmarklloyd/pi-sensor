@@ -64,5 +64,3 @@ get_config() {
     heroku config -a ${app} -j | jq -r 'to_entries[] | "export \(.key)=\(.value)"'
 }
 
-
-restore_local_db
