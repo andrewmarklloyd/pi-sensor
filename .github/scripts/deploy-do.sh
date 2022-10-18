@@ -9,14 +9,14 @@ if ! command -v yq &> /dev/null; then
 fi
 
 if ! command -v doctl &> /dev/null; then
-  wget -q https://github.com/digitalocean/doctl/releases/download/v1.79.0/doctl-1.79.0-linux-amd64.tar.gz -P /tmp
+  wget -q https://github.com/digitalocean/doctl/releases/download/v1.83.0/doctl-1.83.0-linux-amd64.tar.gz -P /tmp
   tar xf /tmp/doctl-1.79.0-linux-amd64.tar.gz -C /tmp
   mv /tmp/doctl /usr/local/bin
 fi
 
 deploy() {
   echo "Deploying version ${SHORT_SHA}"
-  doctl --access-token ${DO_ACCESS_TOKEN} registry login --expiry-seconds 120 --context github-ci
+  doctl --access-token ${DO_ACCESS_TOKEN} registry login --expiry-seconds 300 --context github-ci
   image="registry.digitalocean.com/pi-sensor/pi-sensor:${SHORT_SHA}"
   docker build -t ${image} .
   docker push ${image}
