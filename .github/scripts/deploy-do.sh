@@ -16,7 +16,7 @@ fi
 
 deploy() {
   echo "Deploying version ${SHORT_SHA}"
-  doctl --access-token ${DO_ACCESS_TOKEN} registry login --expiry-seconds 300 --context github-ci
+  doctl --access-token ${DO_ACCESS_TOKEN} registry login --expiry-seconds 300
   image="registry.digitalocean.com/pi-sensor/pi-sensor:${SHORT_SHA}"
   docker build -t ${image} .
   docker push ${image}
