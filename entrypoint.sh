@@ -28,7 +28,7 @@ configure() {
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer ${DO_ACCESS_TOKEN}" \
         -d "${newFirewall}" \
-        "https://api.digitalocean.com/v2/firewalls/${id}"
+        "https://api.digitalocean.com/v2/firewalls/${id}" >/dev/null
 }
 
 
