@@ -21,7 +21,10 @@ configure() {
     firewalls=$(list_firewalls)
     id=$(echo ${firewalls} | jq -r ".firewalls[] | select(.name == \"${FIREWALL_NAME}\").id")
     firewall=$(get_firewall ${id})
-    updatedRules=$(echo ${firewall} | jq --arg ip ${IP} '.firewall.inbound_rules[] | select(.ports == "8080").sources.addresses[0] = $ip' | jq -s)
+
+    existing=$(echo ${firewall} | jq --arg ip ${IP} '.firewall.inbound_rules[] | select(.ports == "8080")')
+    tmp=$(echo ${existing} | jq "del(.sources.addresses[] | select(. != \"${STATIC_INBOUND_IP}\"))")
+    updatedRules=$(echo $tmp | jq ".sources.addresses += [\"${IP}\"]" | jq -s)
     newFirewall=$(echo ${firewall} | jq --arg name "${FIREWALL_NAME}" --argjson rules "${updatedRules}" '.firewall.inbound_rules=$rules | .firewall')
     
     curl -s -X PUT \
