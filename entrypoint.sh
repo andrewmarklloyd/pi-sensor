@@ -24,7 +24,7 @@ configure() {
     updatedRules=$(echo ${firewall} | jq --arg ip ${IP} '.firewall.inbound_rules[] | select(.ports == "8080").sources.addresses[0] = $ip' | jq -s)
     newFirewall=$(echo ${firewall} | jq --arg name "${FIREWALL_NAME}" --argjson rules "${updatedRules}" '.firewall.inbound_rules=$rules | .firewall')
     
-    curl -X PUT \
+    curl -s -X PUT \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer ${DO_ACCESS_TOKEN}" \
         -d "${newFirewall}" \
