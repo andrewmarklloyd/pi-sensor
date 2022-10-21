@@ -83,6 +83,9 @@ func runServer() {
 	}
 
 	client, err := connect.NewClientFromEnvironment()
+	if err != nil {
+		logger.Fatalf("creating onepassword connect server client: %s", err)
+	}
 	vaults, err := client.GetVaults()
 	if err != nil {
 		log.Fatal(err)

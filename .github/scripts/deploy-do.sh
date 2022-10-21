@@ -18,6 +18,7 @@ deploy() {
   echo "Deploying version ${SHORT_SHA}"
   doctl --access-token ${DO_ACCESS_TOKEN} registry login --expiry-seconds 300
   image="registry.digitalocean.com/pi-sensor/pi-sensor:${SHORT_SHA}"
+  echo ${OPCONNECT_CERT} > opconnect.crt
   docker build -t ${image} .
   docker push ${image}
   doctl --access-token ${DO_ACCESS_TOKEN} apps spec get ${DO_APP_ID} | yq ".services[0].image.tag = \"${SHORT_SHA}\"" - | doctl --access-token ${DO_ACCESS_TOKEN} apps update ${DO_APP_ID} --wait --spec -
