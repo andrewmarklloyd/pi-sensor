@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/1Password/connect-sdk-go/connect"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/aws"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
@@ -78,6 +80,16 @@ func runServer() {
 	serverClients, err := createClients(serverConfig)
 	if err != nil {
 		logger.Fatalf("Error creating clients: %s", err)
+	}
+
+	client, err := connect.NewClientFromEnvironment()
+	vaults, err := client.GetVaults()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, v := range vaults {
+		fmt.Println(v.Description)
 	}
 
 	err = serverClients.Mqtt.Connect()

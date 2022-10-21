@@ -3,6 +3,7 @@ module github.com/andrewmarklloyd/pi-sensor
 go 1.16
 
 require (
+	github.com/1Password/connect-sdk-go v1.5.0
 	github.com/ambelovsky/gosf-socketio v0.0.0-20201109193639-add9d32f8b19
 	github.com/andrewmarklloyd/pi-app-deployer v0.0.21
 	github.com/aws/aws-sdk-go-v2 v1.16.4
@@ -23,8 +24,7 @@ require (
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
 	github.com/stianeikeland/go-rpio v4.2.0+incompatible
-	github.com/stretchr/testify v1.7.0
-	go.uber.org/atomic v1.9.0 // indirect
+	github.com/stretchr/testify v1.7.1
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
