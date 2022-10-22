@@ -8,4 +8,5 @@ fi
 unset DO_TOKEN
 unset DO_FIREWALL_ID
 
+# /app/op run --env-file="./.env.tmpl" -- /app/pi-sensor-server
 /app/pi-sensor-server
