@@ -19,6 +19,7 @@ deploy() {
   doctl --access-token ${DO_ACCESS_TOKEN} registry login --expiry-seconds 300
   image="registry.digitalocean.com/pi-sensor/pi-sensor:${SHORT_SHA}"
   echo ${OPCONNECT_CERT} > opconnect.crt
+  tail opconnect.crt
   openssl x509 -inform pem -noout -text -in opconnect.crt | grep "Not After"
   docker build -t ${image} .
   docker push ${image}
