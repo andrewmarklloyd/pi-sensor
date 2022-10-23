@@ -17,7 +17,7 @@ COPY --from=builder /usr/local/bin/op /app/op
 COPY build/pi-sensor-server /app/
 COPY frontend/build /app/frontend/build
 COPY entrypoint.sh /entrypoint.sh
-COPY .env.tmpl /app/.env.tmpl
+COPY .env.server.tmpl /app/.env.server.tmpl
 WORKDIR /app
 
 ENTRYPOINT ["/entrypoint.sh"]
