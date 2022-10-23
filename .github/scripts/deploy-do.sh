@@ -9,8 +9,8 @@ if ! command -v yq &> /dev/null; then
 fi
 
 if ! command -v doctl &> /dev/null; then
-  wget -q https://github.com/digitalocean/doctl/releases/download/v1.83.0/doctl-1.83.0-linux-amd64.tar.gz -P /tmp
-  tar xf /tmp/doctl-1.83.0-linux-amd64.tar.gz -C /tmp
+  wget -q https://github.com/digitalocean/doctl/releases/download/v1.84.1/doctl-1.84.1-linux-amd64.tar.gz -P /tmp
+  tar xf /tmp/doctl-1.84.1-linux-amd64.tar.gz -C /tmp
   mv /tmp/doctl /usr/local/bin
 fi
 
