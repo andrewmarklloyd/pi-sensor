@@ -26,4 +26,4 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
           DO_APP_ID: ${{ secrets.DO_APP_ID }}
           OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
-        run: ./.github/scripts/deploy-do.sh pi-sensor-staging
+        run: ./.github/scripts/deploy-do.sh

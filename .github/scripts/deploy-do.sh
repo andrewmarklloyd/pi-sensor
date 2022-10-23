@@ -26,5 +26,4 @@ deploy() {
 
 git diff
 SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
-app=${1}
 deploy
