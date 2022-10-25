@@ -32,11 +32,11 @@ const (
 
 func runServer() {
 	l, _ := zap.NewProduction()
-	logger = l.Sugar().Named("pi-sensor-server")
+	logger = l.Sugar().Named("pi_sensor_server")
 	defer logger.Sync()
 	logger.Infof("Running server version: %s", version)
 
-	forwarderLogger = l.Sugar().Named("pi-sensor-agent")
+	forwarderLogger = l.Sugar().Named("pi_sensor_agent")
 	defer forwarderLogger.Sync()
 
 	serverConfig := config.ServerConfig{
