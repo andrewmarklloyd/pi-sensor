@@ -12,11 +12,10 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '1.16.0'
-# temp disable for faster test deploys
-      # - name: Check
-      #   run: |
-      #     make vet
-      #     make test
+      - name: Check
+        run: |
+          make vet
+          make test
       - name: Run build
         run: |
           make build-ci
