@@ -46,6 +46,13 @@ jobs:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           GITHUB_SHA:  ${{ github.sha }}
         run: ./.github/scripts/deploy-heroku.sh pi-sensor
+      - name: Deploy DO
+        env:
+          DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
+          GITHUB_SHA: ${{ github.sha }}
+          DO_APP_ID: ${{ secrets.DO_APP_ID }}
+          OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
+        run: ./.github/scripts/deploy-do.sh
       - uses: ravsamhq/notify-slack-action@v1
         if: always()
         with:
