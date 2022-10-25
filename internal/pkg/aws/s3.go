@@ -8,11 +8,11 @@ import (
 	"os"
 
 	sConfig "github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go/aws"
 )
 
 const (
@@ -44,6 +44,15 @@ func NewClient(serverConfig sConfig.ServerConfig) (Client, error) {
 	}
 
 	cfg.Region = serverConfig.S3Config.Region
+
+	if os.Getenv("RUNTIME") == "D_O" {
+		cfg.EndpointResolverWithOptions = aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+			return aws.Endpoint{
+				URL:           serverConfig.S3Config.URL,
+				SigningRegion: serverConfig.S3Config.Region,
+			}, nil
+		})
+	}
 
 	client := s3.NewFromConfig(cfg)
 
@@ -155,7 +164,7 @@ func (c *Client) GetBucketInfo(ctx context.Context) (BucketInfo, error) {
 
 	versionOut, err := c.S3.ListObjectVersions(ctx, input)
 	if err != nil {
-		return BucketInfo{}, err
+		return BucketInfo{}, fmt.Errorf("listing object versions: %w", err)
 	}
 
 	objectOut, err := c.S3.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{

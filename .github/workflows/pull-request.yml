@@ -12,6 +12,11 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '1.16.0'
+      # TODO: deploy agent using ssh to pi
+      # - name: Tailscale
+      #   uses: tailscale/github-action@v1
+      #   with:
+      #     authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
       - name: Check
         run: |
           make vet
@@ -19,11 +24,13 @@ jobs:
       - name: Run build
         run: |
           make build-ci
-      - name: Infrastructure Config
+      - name: Deploy DO
         env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: |
-          HEROKU_APP=pi-sensor-staging ./.github/scripts/infra-config.sh
+          DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
+          GITHUB_SHA: ${{ github.sha }}
+          DO_APP_ID: ${{ secrets.DO_APP_ID }}
+          OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
+        run: ./.github/scripts/deploy-do.sh
       - name: Deploy Heroku Staging
         env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}

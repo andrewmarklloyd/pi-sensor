@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -12,13 +13,11 @@ import (
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
-	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/notification"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/postgres"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/redis"
 	mqttC "github.com/eclipse/paho.mqtt.golang"
-	"go.uber.org/zap"
-
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 var (
@@ -34,11 +33,11 @@ const (
 
 func runServer() {
 	l, _ := zap.NewProduction()
-	logger = l.Sugar().Named("pi-sensor-server")
+	logger = l.Sugar().Named("pi_sensor_server")
 	defer logger.Sync()
 	logger.Infof("Running server version: %s", version)
 
-	forwarderLogger = l.Sugar().Named("pi-sensor-agent")
+	forwarderLogger = l.Sugar().Named("pi_sensor_agent")
 	defer forwarderLogger.Sync()
 
 	serverConfig := config.ServerConfig{
@@ -65,7 +64,22 @@ func runServer() {
 			To:         viper.GetString("TWILIO_TO"),
 			From:       viper.GetString("TWILIO_FROM"),
 		},
-		S3Config: config.S3Config{
+	}
+
+	if os.Getenv("RUNTIME") == "D_O" {
+		serverConfig.S3Config = config.S3Config{
+			AccessKeyID:       viper.GetString("SPACES_AWS_ACCESS_KEY_ID"),
+			SecretAccessKey:   viper.GetString("SPACES_AWS_SECRET_ACCESS_KEY"),
+			Region:            viper.GetString("SPACES_AWS_REGION"),
+			URL:               viper.GetString("SPACES_URL"),
+			Bucket:            viper.GetString("SPACES_BUCKET_NAME"),
+			RetentionEnabled:  viper.GetBool("DB_RETENTION_ENABLED"),
+			MaxRetentionRows:  parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
+			FullBackupEnabled: viper.GetBool("DB_FULL_BACKUP_ENABLED"),
+		}
+
+	} else {
+		serverConfig.S3Config = config.S3Config{
 			AccessKeyID:       viper.GetString("BUCKETEER_AWS_ACCESS_KEY_ID"),
 			SecretAccessKey:   viper.GetString("BUCKETEER_AWS_SECRET_ACCESS_KEY"),
 			Region:            viper.GetString("BUCKETEER_AWS_REGION"),
@@ -73,7 +87,7 @@ func runServer() {
 			RetentionEnabled:  viper.GetBool("DB_RETENTION_ENABLED"),
 			MaxRetentionRows:  parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
 			FullBackupEnabled: viper.GetBool("DB_FULL_BACKUP_ENABLED"),
-		},
+		}
 	}
 
 	serverClients, err := createClients(serverConfig)
@@ -128,7 +142,9 @@ func runServer() {
 		runFullBackup(serverClients, serverConfig)
 	}
 
-	configureCronJobs(serverClients, serverConfig)
+	if os.Getenv("RUNTIME") != "D_O" {
+		configureCronJobs(serverClients, serverConfig)
+	}
 
 	err = webServer.httpServer.ListenAndServe()
 	if err != nil {
@@ -280,19 +296,16 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		logger.Fatalf("Connection to MQTT server lost: %v", err)
 	})
 
-	messenger := notification.NewMessenger(serverConfig.TwilioConfig)
-
 	awsClient, err := aws.NewClient(serverConfig)
 	if err != nil {
 		return clients.ServerClients{}, fmt.Errorf("error creating AWS client: %s", err)
 	}
 
 	return clients.ServerClients{
-		Redis:     redisClient,
-		Postgres:  postgresClient,
-		Mqtt:      mqttClient,
-		Messenger: messenger,
-		AWS:       awsClient,
+		Redis:    redisClient,
+		Postgres: postgresClient,
+		Mqtt:     mqttClient,
+		AWS:      awsClient,
 	}, nil
 }
 
