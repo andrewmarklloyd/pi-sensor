@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -63,7 +64,10 @@ func runServer() {
 			To:         viper.GetString("TWILIO_TO"),
 			From:       viper.GetString("TWILIO_FROM"),
 		},
-		S3Config: config.S3Config{
+	}
+
+	if os.Getenv("RUNTIME") == "D_O" {
+		serverConfig.S3Config = config.S3Config{
 			AccessKeyID:       viper.GetString("SPACES_AWS_ACCESS_KEY_ID"),
 			SecretAccessKey:   viper.GetString("SPACES_AWS_SECRET_ACCESS_KEY"),
 			Region:            viper.GetString("SPACES_AWS_REGION"),
@@ -72,7 +76,18 @@ func runServer() {
 			RetentionEnabled:  viper.GetBool("DB_RETENTION_ENABLED"),
 			MaxRetentionRows:  parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
 			FullBackupEnabled: viper.GetBool("DB_FULL_BACKUP_ENABLED"),
-		},
+		}
+
+	} else {
+		serverConfig.S3Config = config.S3Config{
+			AccessKeyID:       viper.GetString("BUCKETEER_AWS_ACCESS_KEY_ID"),
+			SecretAccessKey:   viper.GetString("BUCKETEER_AWS_SECRET_ACCESS_KEY"),
+			Region:            viper.GetString("BUCKETEER_AWS_REGION"),
+			Bucket:            viper.GetString("BUCKETEER_BUCKET_NAME"),
+			RetentionEnabled:  viper.GetBool("DB_RETENTION_ENABLED"),
+			MaxRetentionRows:  parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
+			FullBackupEnabled: viper.GetBool("DB_FULL_BACKUP_ENABLED"),
+		}
 	}
 
 	serverClients, err := createClients(serverConfig)
@@ -127,7 +142,9 @@ func runServer() {
 		runFullBackup(serverClients, serverConfig)
 	}
 
-	// configureCronJobs(serverClients, serverConfig)
+	if os.Getenv("RUNTIME") != "D_O" {
+		configureCronJobs(serverClients, serverConfig)
+	}
 
 	err = webServer.httpServer.ListenAndServe()
 	if err != nil {
