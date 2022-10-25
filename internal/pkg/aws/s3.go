@@ -45,12 +45,14 @@ func NewClient(serverConfig sConfig.ServerConfig) (Client, error) {
 
 	cfg.Region = serverConfig.S3Config.Region
 
-	cfg.EndpointResolverWithOptions = aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-		return aws.Endpoint{
-			URL:           serverConfig.S3Config.URL,
-			SigningRegion: serverConfig.S3Config.Region,
-		}, nil
-	})
+	if os.Getenv("RUNTIME") == "D_O" {
+		cfg.EndpointResolverWithOptions = aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+			return aws.Endpoint{
+				URL:           serverConfig.S3Config.URL,
+				SigningRegion: serverConfig.S3Config.Region,
+			}, nil
+		})
+	}
 
 	client := s3.NewFromConfig(cfg)
 
