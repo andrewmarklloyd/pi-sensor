@@ -12,27 +12,30 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '1.16.0'
-      # TODO: deploy agent using ssh to pi
-      # - name: Tailscale
-      #   uses: tailscale/github-action@v1
-      #   with:
-      #     authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-      - name: Check
-        run: |
-          make vet
-          make test
-      - name: Run build
-        run: |
-          make build-ci
-      - name: Deploy DO
+      - name: Tailscale
+        uses: tailscale/github-action@v1
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+      - name: test deploy agent
         env:
-          DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
-          GITHUB_SHA: ${{ github.sha }}
-          DO_APP_ID: ${{ secrets.DO_APP_ID }}
-          OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
-        run: ./.github/scripts/deploy-do.sh
-      - name: Deploy Heroku Staging
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          GITHUB_SHA:  ${{ github.sha }}
-        run: ./.github/scripts/deploy-heroku.sh pi-sensor-staging
+          OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
+        run: ./.github/scripts/deploy-agent.sh
+      # - name: Check
+      #   run: |
+      #     make vet
+      #     make test
+      # - name: Run build
+      #   run: |
+      #     make build-ci
+      # - name: Deploy DO
+      #   env:
+      #     DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
+      #     GITHUB_SHA: ${{ github.sha }}
+      #     DO_APP_ID: ${{ secrets.DO_APP_ID }}
+      #     OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
+      #   run: ./.github/scripts/deploy-do.sh
+      # - name: Deploy Heroku Staging
+      #   env:
+      #     HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+      #     GITHUB_SHA:  ${{ github.sha }}
+      #   run: ./.github/scripts/deploy-heroku.sh pi-sensor-staging
