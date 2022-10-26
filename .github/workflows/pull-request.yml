@@ -12,13 +12,20 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '1.16.0'
-      - name: Tailscale
+      - name: Start tailscale
         uses: tailscale/github-action@v1
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+      - name: Load ssh key
+        id: op-load-ssh-key
+        uses: 1password/load-secrets-action@v1
+        env:
+          OP_CONNECT_HOST: ${{ secrets.OP_CONNECT_HOST }}
+          OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
+          AGENT_SSH_KEY: "op://github-ci/pi-sensor-agent-ssh-key/private key"
       - name: test deploy agent
         env:
-          OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
+          AGENT_SSH_KEY: {{ steps.op-load-ssh-key.outputs.AGENT_SSH_KEY }}
         run: ./.github/scripts/deploy-agent.sh
       # - name: Check
       #   run: |
