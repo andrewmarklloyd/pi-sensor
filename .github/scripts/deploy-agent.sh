@@ -10,5 +10,5 @@ rm op.zip
 mkdir -p ~/.ssh/
 /usr/local/bin/op read op://github-ci/pi-sensor-agent-ssh-key/private\ key > ~/.ssh/id
 chmod 600 ~/.ssh/id
-ssh -i ~/.ssh/id pi@${AGENT_HOST} exit
+ssh -o StrictHostKeyChecking=no -i ~/.ssh/id pi@${AGENT_HOST} uptime
 echo $?
