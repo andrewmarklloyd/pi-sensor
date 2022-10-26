@@ -36,6 +36,7 @@ jobs:
       - name: test deploy agent
         env:
           AGENT_SSH_KEY: ${{ env.SECRET }}
+          AGENT_HOST: ${{ secrets.AGENT_HOST }}
         run: ./.github/scripts/deploy-agent.sh
       # - name: Check
       #   run: |
