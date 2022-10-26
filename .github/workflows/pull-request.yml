@@ -27,15 +27,13 @@ jobs:
       - name: Load ssh key
         id: op-load-ssh-key
         uses: 1password/load-secrets-action@v1
-        with:
-          export-env: true
         env:
           OP_CONNECT_HOST: ${{ secrets.OP_CONNECT_HOST }}
           OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
           SECRET: "op://github-ci/pi-sensor-agent-ssh-key/private key"
       - name: test deploy agent
         env:
-          AGENT_SSH_KEY: ${{ env.SECRET }}
+          AGENT_SSH_KEY: ${{ steps.op-load-ssh-key.outputs.SECRET }}
           AGENT_HOST: ${{ secrets.AGENT_HOST }}
         run: ./.github/scripts/deploy-agent.sh
       # - name: Check
