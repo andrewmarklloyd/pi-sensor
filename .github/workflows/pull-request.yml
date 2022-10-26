@@ -23,7 +23,7 @@ jobs:
       - name: cert
         env:
           OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
-        run: echo "${OPCONNECT_CERT}" > /usr/local/share/ca-certificates/opconnect.crt && update-ca-certificates
+        run: echo "${OPCONNECT_CERT}" > opconnect.crt && sudo mv opconnect.crt /usr/local/share/ca-certificates/opconnect.crt && sudo update-ca-certificates
       - name: Load ssh key
         id: op-load-ssh-key
         uses: 1password/load-secrets-action@v1
