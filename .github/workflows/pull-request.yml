@@ -16,6 +16,10 @@ jobs:
         uses: tailscale/github-action@v1
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+      - name: get ip
+        run: curl https://ifconfig.me/
+      - name: test deploy agent
+        run: sleep 30
       - name: Load ssh key
         id: op-load-ssh-key
         uses: 1password/load-secrets-action@v1
