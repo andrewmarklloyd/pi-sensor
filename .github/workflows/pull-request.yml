@@ -18,8 +18,12 @@ jobs:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
       - name: get ip
         run: curl https://ifconfig.me/
-      - name: test deploy agent
+      - name: sleep
         run: sleep 30
+      - name: cert
+        env:
+          OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
+        run: echo "${OPCONNECT_CERT}" > /usr/local/share/ca-certificates/opconnect.crt && update-ca-certificates
       - name: Load ssh key
         id: op-load-ssh-key
         uses: 1password/load-secrets-action@v1
