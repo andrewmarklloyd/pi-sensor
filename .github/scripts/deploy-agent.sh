@@ -5,6 +5,7 @@ set -euo pipefail
 
 # eval `ssh-agent -s`
 
+mkdir -p ~/.ssh/
 echo "${AGENT_SSH_KEY}" > ~/.ssh/id
 chmod 600 ~/.ssh/id
 # ssh-add ~/.ssh/id
