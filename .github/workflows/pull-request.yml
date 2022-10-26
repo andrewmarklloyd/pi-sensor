@@ -25,7 +25,7 @@ jobs:
           AGENT_SSH_KEY: "op://github-ci/pi-sensor-agent-ssh-key/private key"
       - name: test deploy agent
         env:
-          AGENT_SSH_KEY: {{ steps.op-load-ssh-key.outputs.AGENT_SSH_KEY }}
+          AGENT_SSH_KEY: ${{ steps.op-load-ssh-key.outputs.AGENT_SSH_KEY }}
         run: ./.github/scripts/deploy-agent.sh
       # - name: Check
       #   run: |
