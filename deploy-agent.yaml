@@ -1,5 +1,5 @@
 - name: Deploy Agents
-  # hosts: agents
+  hosts: all
   remote_user: pi
   become: true
   tasks:
