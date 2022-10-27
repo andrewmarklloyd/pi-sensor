@@ -7,8 +7,7 @@ curl -sSfo op.zip https://cache.agilebits.com/dist/1P/op2/pkg/v2.7.1/op_linux_am
 unzip -od /usr/local/bin/ op.zip
 rm op.zip
 
-mkdir -p ~/.ssh/
-/usr/local/bin/op read op://github-ci/pi-sensor-agent-ssh-key/private\ key > ~/.ssh/id
-chmod 600 ~/.ssh/id
-ssh -o StrictHostKeyChecking=no -i ~/.ssh/id pi@${AGENT_HOST} uptime
-echo $?
+/usr/local/bin/op document get pi-sensor-agent-ssh-key-id_ed25519 > id_ed25519
+chmod 600 id_ed25519
+ssh -o StrictHostKeyChecking=no -i id_ed25519 pi@${AGENT_HOST} uptime
+rm id_ed25519
