@@ -35,13 +35,7 @@ jobs:
           key: ${{ secrets.AGENT_SSH_KEY }}
           inventory: |
             [all]
-            ${{ secrets.AGENT_HOST }}
-          # # Optional, additional flags to pass to ansible-playbook
-          # options: |
-          #   --inventory .hosts
-          #   --limit group1
-          #   --extra-vars hello=there
-          #   --verbose
+            ${{ secrets.AGENT_HOSTS }}
       # - name: Deploy DO
       #   env:
       #     DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
