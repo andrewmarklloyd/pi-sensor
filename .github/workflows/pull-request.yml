@@ -16,19 +16,9 @@ jobs:
         uses: tailscale/github-action@v1
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-      - name: get ip
-        run: curl https://ifconfig.me/
-      - name: sleep
-        run: sleep 30
-      - name: cert
-        env:
-          OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
-        run: echo "${OPCONNECT_CERT}" > opconnect.crt && sudo mv opconnect.crt /usr/local/share/ca-certificates/opconnect.crt && sudo update-ca-certificates
       - name: test deploy agent
         env:
-          OP_CONNECT_HOST: ${{ secrets.OP_CONNECT_HOST }}
-          OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
-          AGENT_SSH_KEY: ${{ steps.op-load-ssh-key.outputs.SECRET }}
+          AGENT_SSH_KEY: ${{ secrets.AGENT_SSH_KEY }}
           AGENT_HOST: ${{ secrets.AGENT_HOST }}
         run: ./.github/scripts/deploy-agent.sh
       # - name: Check
