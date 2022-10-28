@@ -27,7 +27,7 @@
   - name: Copy agent systemd unit file
     ansible.builtin.copy:
       src: ./agent/deployment/systemd-unit.service
-      dest: /etc/systemd/system/test-pi-sensor-agent.service
+      dest: /etc/systemd/system/pi-sensor-agent-v2.service
       owner: root
       group: root
       force: yes
