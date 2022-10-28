@@ -1,0 +1,19 @@
+[Unit]
+Description=pi-sensor-agent
+After=systemd-journald.service network.target
+Requires=systemd-journald.service
+StartLimitInterval=0
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Environment="SENSOR_SOURCE={{ .SENSOR_SOURCE }}"
+EnvironmentFile=/usr/local/src/pi-sensor-agent/.op-env
+ExecStart=op run --env-file=".env-file.tmpl" -- /usr/local/src/pi-sensor-agent/pi-sensor-agent
+WorkingDirectory=/usr/local/src/pi-sensor-agent
+StandardOutput=inherit
+StandardError=inherit
+Restart=on-failure
+RestartSec=5
+User=pi
