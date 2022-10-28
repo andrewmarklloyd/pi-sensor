@@ -17,7 +17,7 @@
       owner: root
       group: root
     no_log: True
-  - name: Write service env-file template
+  - name: Write op cli env-file template
     ansible.builtin.copy:
       src: ./agent/deployment/env-file.tmpl
       dest: /usr/local/src/pi-sensor-agent/.env-file.tmpl
@@ -39,5 +39,3 @@
       owner: pi
       group: pi
       force: yes
-# daemon reload
-# systemctl restart
