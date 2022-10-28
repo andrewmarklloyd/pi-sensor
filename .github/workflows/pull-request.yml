@@ -12,39 +12,22 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '1.16.0'
-      # - name: Check
-      #   run: |
-      #     make vet
-      #     make test
+      - name: Check
+        run: |
+          make vet
+          make test
       - name: Run build
         run: |
           make build-ci
-      - name: Start tailscale
-        uses: tailscale/github-action@v1
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-      # - name: add agent ssh key
-      #   env:
-      #     AGENT_SSH_KEY: ${{ secrets.AGENT_SSH_KEY }}
-      #     AGENT_HOST: ${{ secrets.AGENT_HOST }}
-      #   run: ./.github/scripts/deploy-agent.sh
-      - name: Run playbook
-        uses: dawidd6/action-ansible-playbook@v2
-        with:
-          playbook: deploy-agent.yaml
-          key: ${{ secrets.AGENT_SSH_KEY }}
-          inventory: |
-            [all]
-            ${{ secrets.AGENT_HOSTS }}
-      # - name: Deploy DO
-      #   env:
-      #     DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
-      #     GITHUB_SHA: ${{ github.sha }}
-      #     DO_APP_ID: ${{ secrets.DO_APP_ID }}
-      #     OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
-      #   run: ./.github/scripts/deploy-do.sh
-      # - name: Deploy Heroku Staging
-      #   env:
-      #     HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-      #     GITHUB_SHA:  ${{ github.sha }}
-      #   run: ./.github/scripts/deploy-heroku.sh pi-sensor-staging
+      - name: Deploy DO
+        env:
+          DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
+          GITHUB_SHA: ${{ github.sha }}
+          DO_APP_ID: ${{ secrets.DO_APP_ID }}
+          OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
+        run: ./.github/scripts/deploy-do.sh
+      - name: Deploy Heroku Staging
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+          GITHUB_SHA:  ${{ github.sha }}
+        run: ./.github/scripts/deploy-heroku.sh pi-sensor-staging

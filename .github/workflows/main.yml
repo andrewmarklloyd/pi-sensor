@@ -53,6 +53,18 @@ jobs:
           DO_APP_ID: ${{ secrets.DO_APP_ID }}
           OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
         run: ./.github/scripts/deploy-do.sh
+      - name: Start tailscale
+        uses: tailscale/github-action@v1
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+      - name: Deploy agents
+        uses: dawidd6/action-ansible-playbook@v2
+        with:
+          playbook: deploy-agent.yaml
+          key: ${{ secrets.AGENT_SSH_KEY }}
+          inventory: |
+            [all]
+            ${{ secrets.AGENT_HOSTS }}
       - uses: ravsamhq/notify-slack-action@v1
         if: always()
         with:
