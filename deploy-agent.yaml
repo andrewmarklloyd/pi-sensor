@@ -1,0 +1,17 @@
+- name: Deploy Agents
+  hosts: all
+  remote_user: pi
+  become: true
+  tasks:
+  - name: Make directory
+    file:
+      path: /tmp/testing
+      state: directory
+  - name: Copy agent binary
+    ansible.builtin.copy:
+      src: ./build/pi-sensor-agent
+      dest: /tmp/pi-sensor-agent
+      mode: '0755'
+      owner: root
+      group: root
+      force: yes
