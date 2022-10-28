@@ -2,18 +2,22 @@
   hosts: all
   remote_user: pi
   become: true
+  vars:
+    OP_CONNECT_TOKEN: "testing"
+    OP_CONNECT_HOST: "testing"
+    # {{ lookup('ansible.builtin.env', 'HOME') }}
   tasks:
   - name: Make directory
     file:
       path: /usr/local/src/pi-sensor-agent/
       state: directory
   - name: Write 1password env file
-    ansible.builtin.copy:
-      src: ./agent/deployment/op-env.tmpl
+    ansible.builtin.template:
+      src: ./agent/deployment/op-env.j2
       dest: /usr/local/src/pi-sensor-agent/.op-env
       owner: root
       group: root
-      force: yes
+    no_log: True
   - name: Write service env-file template
     ansible.builtin.copy:
       src: ./agent/deployment/env-file.tmpl
