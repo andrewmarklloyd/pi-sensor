@@ -3,9 +3,8 @@
   remote_user: pi
   become: true
   vars:
-    OP_CONNECT_TOKEN: "testing"
-    OP_CONNECT_HOST: "testing"
-    # {{ lookup('ansible.builtin.env', 'HOME') }}
+    OP_CONNECT_TOKEN: "{{ lookup('ansible.builtin.env', 'OP_CONNECT_TOKEN') }}"
+    OP_CONNECT_HOST: "{{ lookup('ansible.builtin.env', 'OP_CONNECT_HOST') }}"
   tasks:
   - name: Make directory
     file:
