@@ -1,0 +1,33 @@
+- name: Deploy Agents
+  hosts: all
+  remote_user: pi
+  become: true
+  tasks:
+  - name: Make directory
+    file:
+      path: /usr/local/src/pi-sensor-agent/
+      state: directory
+  - name: Write op env-file template
+    ansible.builtin.copy:
+      src: ./agent/deployment/env-file.tmpl
+      dest: /usr/local/src/pi-sensor-agent/.env-file.tmpl
+      owner: root
+      group: root
+      force: yes
+  - name: Copy agent systemd unit file
+    ansible.builtin.copy:
+      src: ./agent/deployment/systemd-unit.service
+      dest: /etc/systemd/system/test-pi-sensor-agent.service
+      owner: root
+      group: root
+      force: yes
+  - name: Copy agent binary
+    ansible.builtin.copy:
+      src: ./build/pi-sensor-agent
+      dest: /usr/local/src/pi-sensor-agent/pi-sensor-agent
+      mode: '0755'
+      owner: pi
+      group: pi
+      force: yes
+# daemon reload
+# systemctl restart
