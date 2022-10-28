@@ -7,7 +7,14 @@
     file:
       path: /usr/local/src/pi-sensor-agent/
       state: directory
-  - name: Write op env-file template
+  - name: Write 1password env file
+    ansible.builtin.copy:
+      src: ./agent/deployment/op-env.tmpl
+      dest: /usr/local/src/pi-sensor-agent/.op-env
+      owner: root
+      group: root
+      force: yes
+  - name: Write service env-file template
     ansible.builtin.copy:
       src: ./agent/deployment/env-file.tmpl
       dest: /usr/local/src/pi-sensor-agent/.env-file.tmpl

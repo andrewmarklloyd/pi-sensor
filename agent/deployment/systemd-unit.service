@@ -9,7 +9,8 @@ WantedBy=multi-user.target
 
 [Service]
 Environment="SENSOR_SOURCE={{ .SENSOR_SOURCE }}"
-ExecStart=op run --env-file=".env-file.tmpl" -- pi-sensor-agent
+EnvironmentFile=/usr/local/src/pi-sensor-agent/.op-env
+ExecStart=op run --env-file=".env-file.tmpl" -- /usr/local/src/pi-sensor-agent/pi-sensor-agent
 WorkingDirectory=/usr/local/src/pi-sensor-agent
 StandardOutput=inherit
 StandardError=inherit
