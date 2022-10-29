@@ -5,7 +5,7 @@ GIT_TREE_STATE=$(shell (git status --porcelain | grep -q .) && echo $(GIT_REV)-d
 
 build:
 	CGO_ENABLED=0 GOARCH=amd64 go build -ldflags="-X 'github.com/andrewmarklloyd/pi-sensor/cmd.version=$(GIT_TREE_STATE)'" -o build/pi-sensor-server main.go
-	GOOS=linux GOARCH=arm GOARM=5 go build -ldflags="-X 'github.com/andrewmarklloyd/pi-sensor/agent.version=$(GIT_TREE_STATE)'" -o build/pi-sensor-agent agent/main.go
+	GOOS=linux GOARCH=arm GOARM=5 go build -ldflags="-X 'main.version=$(GIT_TREE_STATE)'" -o build/pi-sensor-agent agent/main.go
 	GOOS=linux GOARCH=arm GOARM=5 go build -o build/door-light door_light/*.go
 
 build-frontend:
