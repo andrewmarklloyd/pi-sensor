@@ -25,6 +25,7 @@ var (
 	agentPassword = flag.String("agentpassword", os.Getenv("CLOUDMQTT_AGENT_PASSWORD"), "The MQTT agent password to connect")
 	sensorSource  = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")
 	mockFlag      = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
+	version       = "unknown"
 )
 
 const (
@@ -33,6 +34,7 @@ const (
 )
 
 func main() {
+	fmt.Println("****", version)
 	l, err := zap.NewProduction()
 	if err != nil {
 		log.Fatalln("Error creating logger:", err)
@@ -48,6 +50,8 @@ func main() {
 
 	logger := l.Sugar().Named(fmt.Sprintf("pi-sensor-agent-%s", *sensorSource))
 	defer logger.Sync()
+
+	logger.Infof("Initializing app, version: %s", version)
 
 	if *brokerurl == "" {
 		logger.Fatal("CLOUDMQTT_URL env var is required")
@@ -68,12 +72,6 @@ func main() {
 	domain := urlSplit[1]
 
 	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", *agentUser, *agentPassword, domain)
-
-	version := os.Getenv("APP_VERSION")
-	if version == "" {
-		version = "unknown"
-	}
-	logger.Infof("Initializing app, version: %s", version)
 
 	mockMode, _ := strconv.ParseBool(*mockFlag)
 
