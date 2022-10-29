@@ -66,8 +66,7 @@ jobs:
           playbook: deploy-agent.yaml
           key: ${{ secrets.AGENT_SSH_KEY }}
           inventory: |
-            [all]
-            ${{ secrets.AGENT_HOSTS }}
+            ${{ secrets.AGENT_INVENTORY }}
       - uses: ravsamhq/notify-slack-action@v1
         if: always()
         with:
