@@ -34,7 +34,6 @@ const (
 )
 
 func main() {
-	fmt.Println("****", version)
 	l, err := zap.NewProduction()
 	if err != nil {
 		log.Fatalln("Error creating logger:", err)
