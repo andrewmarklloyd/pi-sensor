@@ -47,7 +47,7 @@ func main() {
 		initLogger.Fatal("SENSOR_SOURCE env var is required")
 	}
 
-	logger := l.Sugar().Named(fmt.Sprintf("pi-sensor-agent-%s", *sensorSource))
+	logger := l.Sugar().Named(fmt.Sprintf("pi_sensor_agent-%s", *sensorSource))
 	defer logger.Sync()
 
 	logger.Infof("Initializing app, version: %s", version)

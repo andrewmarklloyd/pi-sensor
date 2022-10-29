@@ -10,6 +10,14 @@
     file:
       path: /usr/local/src/pi-sensor-agent/
       state: directory
+  - name: Copy log-forwader binary
+    ansible.builtin.copy:
+      src: ./build/log-forwarder
+      dest: /usr/local/src/pi-sensor-agent/log-forwarder
+      mode: '0755'
+      owner: root
+      group: root
+      force: yes
   - name: Write 1password env file
     ansible.builtin.template:
       src: ./agent/deployment/op-env.j2
@@ -42,5 +50,8 @@
   - name: Restart systemd unit
     become: true
     systemd:
+      daemon_reload: yes
+      enable: yes
+      force: yes
       name: pi-sensor-agent-v2
       state: restarted
