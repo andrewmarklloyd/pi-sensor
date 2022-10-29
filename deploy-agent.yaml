@@ -2,6 +2,7 @@
   hosts: all
   remote_user: pi
   become: true
+  # todo: fail when these env vars are unset
   vars:
     OP_CONNECT_TOKEN: "{{ lookup('ansible.builtin.env', 'OP_CONNECT_TOKEN') }}"
     OP_CONNECT_HOST: "{{ lookup('ansible.builtin.env', 'OP_CONNECT_HOST') }}"
@@ -10,6 +11,13 @@
     file:
       path: /usr/local/src/pi-sensor-agent/
       state: directory
+  - name: Write 1password env file
+    ansible.builtin.template:
+      src: ./agent/deployment/op-env.j2
+      dest: /usr/local/src/pi-sensor-agent/.op-env
+      owner: root
+      group: root
+    no_log: True
   - name: Copy log-forwader binary
     ansible.builtin.copy:
       src: ./build/agent-log-forwarder
@@ -18,13 +26,28 @@
       owner: root
       group: root
       force: yes
-  - name: Write 1password env file
+  - name: Write forwarder op cli env-file template
+    ansible.builtin.copy:
+      src: ./log-forwarder/deployment/env-file.tmpl
+      dest: /usr/local/src/pi-sensor-agent/.forwarder-env-file.tmpl
+      owner: root
+      group: root
+      force: yes
+  - name: Copy forwarder systemd unit file
     ansible.builtin.template:
-      src: ./agent/deployment/op-env.j2
-      dest: /usr/local/src/pi-sensor-agent/.op-env
+      src: ./log-forwarder/deployment/systemd-unit.service.j2
+      dest: /etc/systemd/system/agent-log-forwarder.service
       owner: root
       group: root
     no_log: True
+  - name: Start forwarder systemd unit
+    become: true
+    systemd:
+      daemon_reload: yes
+      enabled: yes
+      force: yes
+      name: agent-log-forwarder
+      state: started
   - name: Write op cli env-file template
     ansible.builtin.copy:
       src: ./agent/deployment/env-file.tmpl
@@ -51,7 +74,7 @@
     become: true
     systemd:
       daemon_reload: yes
-      enable: yes
+      enabled: yes
       force: yes
       name: pi-sensor-agent-v2
       state: restarted

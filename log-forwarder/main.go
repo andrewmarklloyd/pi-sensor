@@ -34,6 +34,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Println("Starting agent log forwarder")
+
 	logChannel := make(chan syslog)
 	go tailSystemdLogs(logChannel)
 	for log := range logChannel {
