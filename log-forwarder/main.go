@@ -12,10 +12,6 @@ import (
 	"strings"
 )
 
-type logMessage struct {
-	Message string `json:"message"`
-}
-
 type syslog struct {
 	Identifier string `json:"SYSLOG_IDENTIFIER"`
 	Message    string `json:"MESSAGE"`
