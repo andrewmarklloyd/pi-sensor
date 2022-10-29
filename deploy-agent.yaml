@@ -12,8 +12,8 @@
       state: directory
   - name: Copy log-forwader binary
     ansible.builtin.copy:
-      src: ./build/log-forwarder
-      dest: /usr/local/src/pi-sensor-agent/log-forwarder
+      src: ./build/agent-log-forwarder
+      dest: /usr/local/src/pi-sensor-agent/agent-log-forwarder
       mode: '0755'
       owner: root
       group: root
