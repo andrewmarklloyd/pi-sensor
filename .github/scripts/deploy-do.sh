@@ -25,7 +25,7 @@ deploy() {
 }
 
 cleanup_tags() {
-  max=15
+  max=10
   tags=$(doctl --access-token ${DO_ACCESS_TOKEN} registry repository list-tags pi-sensor --no-header)
   num=$(echo "${tags}" | wc -l)
   if [ "${num}" -gt "${max}" ]; then
