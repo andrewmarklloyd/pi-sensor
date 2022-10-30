@@ -24,6 +24,19 @@ deploy() {
   doctl --access-token ${DO_ACCESS_TOKEN} apps spec get ${DO_APP_ID} | yq ".services[0].image.tag = \"${SHORT_SHA}\"" - | doctl --access-token ${DO_ACCESS_TOKEN} apps update ${DO_APP_ID} --wait --spec -
 }
 
+cleanup_tags() {
+  max=15
+  tags=$(doctl --access-token ${DO_ACCESS_TOKEN} registry repository list-tags pi-sensor --no-header)
+  num=$(echo "${tags}" | wc -l)
+  if [ "${num}" -gt "${max}" ]; then
+    diff=$((${num}-${max}))
+    echo "deleting oldest ${diff} tags from the container registry"
+    toDelete=$(echo "${tags}" | tail -${diff} | awk '{print $1}')
+    doctl --access-token ${DO_ACCESS_TOKEN} registry repository delete-tag pi-sensor --force ${toDelete}
+  fi
+}
+
 git diff
 SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
 deploy
+cleanup_tags
