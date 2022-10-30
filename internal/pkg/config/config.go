@@ -12,7 +12,6 @@ type ServerConfig struct {
 	Port               string
 	MockMode           bool
 	GoogleConfig       GoogleConfig
-	TwilioConfig       TwilioConfig
 	S3Config           S3Config
 	Version            string
 	AllowedAPIKeys     []string
@@ -24,13 +23,6 @@ type GoogleConfig struct {
 	ClientSecret    string
 	RedirectURL     string
 	SessionSecret   string
-}
-
-type TwilioConfig struct {
-	AccountSID string
-	AuthToken  string
-	To         string
-	From       string
 }
 
 type S3Config struct {

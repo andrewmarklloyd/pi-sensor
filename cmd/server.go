@@ -58,12 +58,6 @@ func runServer() {
 			RedirectURL:     viper.GetString("REDIRECT_URL"),
 			SessionSecret:   viper.GetString("SESSION_SECRET"),
 		},
-		TwilioConfig: config.TwilioConfig{
-			AccountSID: viper.GetString("TWILIO_ACCOUNT_SID"),
-			AuthToken:  viper.GetString("TWILIO_AUTH_TOKEN"),
-			To:         viper.GetString("TWILIO_TO"),
-			From:       viper.GetString("TWILIO_FROM"),
-		},
 	}
 
 	if os.Getenv("RUNTIME") == "D_O" {
@@ -153,15 +147,6 @@ func runServer() {
 }
 
 func configureCronJobs(serverClients clients.ServerClients, serverConfig config.ServerConfig) {
-	ticker := time.NewTicker(6 * time.Hour)
-	go func() {
-		for range ticker.C {
-			if err := serverClients.Messenger.CheckBalance(); err != nil {
-				logger.Errorf("checking twilio balance: %s", err)
-			}
-		}
-	}()
-
 	if serverConfig.S3Config.RetentionEnabled {
 		dataTicker := time.NewTicker(dataRetentionCronFrequency)
 		go func() {
