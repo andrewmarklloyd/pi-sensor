@@ -136,9 +136,7 @@ func runServer() {
 		runFullBackup(serverClients, serverConfig)
 	}
 
-	if os.Getenv("RUNTIME") != "D_O" {
-		configureCronJobs(serverClients, serverConfig)
-	}
+	configureCronJobs(serverClients, serverConfig)
 
 	err = webServer.httpServer.ListenAndServe()
 	if err != nil {
