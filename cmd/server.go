@@ -315,7 +315,7 @@ func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClie
 			return
 		}
 
-		logger.Warnf("Heartbeat timeout occurred for %s", lastStatus.Source)
+		logger.Errorf("Heartbeat timeout occurred for %s", lastStatus.Source)
 
 		lastStatus.Status = config.UNKNOWN
 		lastStatusJson, err := json.Marshal(lastStatus)
