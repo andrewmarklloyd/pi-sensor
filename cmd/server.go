@@ -128,15 +128,13 @@ func runServer() {
 		heartbeatTimerMap[h.Name] = timer
 	})
 
+	if serverConfig.S3Config.FullBackupEnabled {
+		runFullBackup(serverClients, serverConfig)
+	}
+
 	if serverConfig.S3Config.RetentionEnabled {
 		go func() {
 			runDataRetention(serverClients, serverConfig)
-		}()
-	}
-
-	if serverConfig.S3Config.FullBackupEnabled {
-		go func() {
-			runFullBackup(serverClients, serverConfig)
 		}()
 	}
 
