@@ -25,14 +25,19 @@ deploy() {
 }
 
 cleanup_tags() {
-  max=10
-  tags=$(doctl --access-token ${DO_ACCESS_TOKEN} registry repository list-tags pi-sensor --no-header)
-  num=$(echo "${tags}" | wc -l)
-  if [ "${num}" -gt "${max}" ]; then
-    diff=$((${num}-${max}))
+  maxTags=10
+  tags=$(doctl --access-token ${DO_ACCESS_TOKEN} registry repo list-tags pi-sensor -o json)
+  num=$(echo ${tags} | jq 'length')
+  if [ "${num}" -gt "${maxTags}" ]; then
+    diff=$((${num}-${maxTags}))
     echo "deleting oldest ${diff} tags from the container registry"
-    toDelete=$(echo "${tags}" | tail -${diff} | awk '{print $1}')
-    doctl --access-token ${DO_ACCESS_TOKEN} registry repository delete-tag pi-sensor --force ${toDelete}
+    toDelete=$(echo "${tags}" | jq -r '.[].tag' | tail -${diff})
+    doctl --access-token ${DO_ACCESS_TOKEN} registry repo delete-tag pi-sensor --force ${toDelete}
+  fi
+
+  untaggedManifests=$(doctl --access-token ${DO_ACCESS_TOKEN} registry repo list-manifests pi-sensor -o json | jq -r '.[] | select(.tags | length==0) | .digest')
+  if [ ! -z ${untaggedManifests} ]; then
+    doctl --access-token ${DO_ACCESS_TOKEN} registry repo delete-manifest pi-sensor ${untaggedManifests} --force
   fi
 }
 
