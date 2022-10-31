@@ -133,9 +133,7 @@ func runServer() {
 	}
 
 	if serverConfig.S3Config.RetentionEnabled {
-		go func() {
-			runDataRetention(serverClients, serverConfig)
-		}()
+		runDataRetention(serverClients, serverConfig)
 	}
 
 	configureCronJobs(serverClients, serverConfig)
