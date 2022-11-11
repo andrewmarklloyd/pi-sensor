@@ -19,13 +19,6 @@ jobs:
       - name: Run build
         run: |
           make build-ci
-      - uses: actions/upload-artifact@v2
-        with:
-          name: app_${{ github.sha }}
-          path: |
-            door-light
-            pi-sensor-agent
-            .pi-app-deployer.yaml
       - name: Deploy DO
         env:
           DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}

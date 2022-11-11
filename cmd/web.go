@@ -364,7 +364,7 @@ func agentLogsHandler(w http.ResponseWriter, req *http.Request) {
 	if err := json.Unmarshal(body, &zLog); err != nil {
 		logger.Errorf("unmarshalling log forwarded message into zap log message: %s, raw message json: %s", err, string(body))
 		// this is an error for pi-sensor, but not due to an error
-		// with pi-app-deployer so don't return an error
+		// with log-forwarder so don't return an error
 		fmt.Fprintf(w, `{"error":""}`)
 		return
 	}
