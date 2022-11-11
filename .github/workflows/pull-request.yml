@@ -19,8 +19,3 @@ jobs:
       - name: Run build
         run: |
           make build-ci
-      - name: Deploy Heroku Staging
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-          GITHUB_SHA:  ${{ github.sha }}
-        run: ./.github/scripts/deploy-heroku.sh pi-sensor-staging
