@@ -16,7 +16,7 @@ jobs:
         run: |
           echo "${OPCONNECT_CERT}" > opconnect.crt
           sudo mv ./opconnect.crt /usr/local/share/ca-certificates/opconnect.crt
-          update-ca-certificates
+          sudo update-ca-certificates
         env:
           OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
       - name: Update firewall
