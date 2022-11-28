@@ -15,7 +15,7 @@ jobs:
       - name: Update firewall
         run: |
           go install github.com/andrewmarklloyd/do-app-firewall-entrypoint@latest
-          /go/bin/do-app-firewall-entrypoint
+          which do-app-firewall-entrypoint
       - name: Load secret
         id: op-load-secret
         uses: 1password/load-secrets-action@v1
