@@ -1,5 +1,6 @@
 #!/bin/sh
 
+set -e
 
 if [ ${RUNTIME} == "D_O" ]; then
     /app/do-app-firewall-entrypoint

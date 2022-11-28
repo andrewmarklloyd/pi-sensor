@@ -19,27 +19,37 @@ jobs:
       - name: Run build
         run: |
           make build-ci
-      - name: Deploy DO
+      - name: Load secret
+        id: op-load-secret
+        uses: 1password/load-secrets-action@v1
         env:
-          DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
-          GITHUB_SHA: ${{ github.sha }}
-          DO_APP_ID: ${{ secrets.DO_APP_ID }}
-          OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
-        run: ./.github/scripts/deploy-do.sh
-      - name: Start tailscale
-        uses: tailscale/github-action@v1
-        with:
-          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
-      - name: Deploy agents
-        uses: dawidd6/action-ansible-playbook@v2
-        env:
-          OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
           OP_CONNECT_HOST: ${{ secrets.OP_CONNECT_HOST }}
-        with:
-          playbook: deploy-agent.yaml
-          key: ${{ secrets.AGENT_SSH_KEY }}
-          inventory: |
-            ${{ secrets.AGENT_INVENTORY }}
+          OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
+          SECRET: op://github-ci/config/hello
+      - name: Print masked secret
+        run: echo "Secret: ${{ steps.op-load-secret.outputs.SECRET }}"
+# comment out until agents are back online
+      # - name: Deploy DO
+      #   env:
+      #     DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
+      #     GITHUB_SHA: ${{ github.sha }}
+      #     DO_APP_ID: ${{ secrets.DO_APP_ID }}
+      #     OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
+      #   run: ./.github/scripts/deploy-do.sh
+      # - name: Start tailscale
+      #   uses: tailscale/github-action@v1
+      #   with:
+      #     authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+      # - name: Deploy agents
+      #   uses: dawidd6/action-ansible-playbook@v2
+      #   env:
+      #     OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
+      #     OP_CONNECT_HOST: ${{ secrets.OP_CONNECT_HOST }}
+      #   with:
+      #     playbook: deploy-agent.yaml
+      #     key: ${{ secrets.AGENT_SSH_KEY }}
+      #     inventory: |
+      #       ${{ secrets.AGENT_INVENTORY }}
       - uses: ravsamhq/notify-slack-action@v1
         if: always()
         with:
