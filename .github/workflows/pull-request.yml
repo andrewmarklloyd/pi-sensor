@@ -30,7 +30,7 @@ jobs:
           DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
       - name: Load secret
         id: op-load-secret
-        uses: 1password/load-secrets-action@v1
+        uses: 1password/load-secrets-action@v1.1.0
         env:
           OP_CONNECT_HOST: ${{ secrets.OP_CONNECT_HOST }}
           OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
