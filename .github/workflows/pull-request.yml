@@ -12,6 +12,13 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '1.19.0'
+      - name: Add OP connect cert
+        run: |
+          echo "${OPCONNECT_CERT}" > opconnect.crt
+          mv ./opconnect.crt /usr/local/share/ca-certificates/opconnect.crt
+          update-ca-certificates
+        env:
+          OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
       - name: Update firewall
         run: |
           go install github.com/andrewmarklloyd/do-app-firewall-entrypoint@latest
