@@ -11,14 +11,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.16.0'
-      - name: Check
-        run: |
-          make vet
-          make test
-      - name: Run build
-        run: |
-          make build-ci
+          go-version: '1.19.0'
       - name: Update firewall
         run: |
           go install github.com/andrewmarklloyd/do-app-firewall-entrypoint@latest
@@ -31,3 +24,10 @@ jobs:
           SECRET: op://github-ci/config/hello
       # - name: Print masked secret
       #   run: echo "Secret: ${{ steps.op-load-secret.outputs.SECRET }}"
+      - name: Check
+        run: |
+          make vet
+          make test
+      - name: Run build
+        run: |
+          make build-ci
