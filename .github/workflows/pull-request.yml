@@ -21,7 +21,7 @@ jobs:
           make build-ci
       - name: Update firewall
         run: |
-          /Users/andrewlloyd/go/bin/do-app-firewall-entrypoint
+          go install github.com/andrewmarklloyd/do-app-firewall-entrypoint@latest
       - name: Load secret
         id: op-load-secret
         uses: 1password/load-secrets-action@v1
