@@ -35,8 +35,8 @@ jobs:
           OP_CONNECT_HOST: ${{ secrets.OP_CONNECT_HOST }}
           OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
           SECRET: op://github-ci/config/hello
-      # - name: Print masked secret
-      #   run: echo "Secret: ${{ steps.op-load-secret.outputs.SECRET }}"
+      - name: Print masked secret
+        run: echo "Secret: ${{ steps.op-load-secret.outputs.SECRET }}"
       - name: Check
         run: |
           make vet
