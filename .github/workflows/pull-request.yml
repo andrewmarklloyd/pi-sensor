@@ -15,7 +15,12 @@ jobs:
       - name: Update firewall
         run: |
           go install github.com/andrewmarklloyd/do-app-firewall-entrypoint@latest
-          which do-app-firewall-entrypoint
+          do-app-firewall-entrypoint
+        env:
+          STATIC_INBOUND_IP: ${{ secrets.STATIC_INBOUND_IP }}
+          FIREWALL_NAME: ${{ secrets.FIREWALL_NAME }}
+          FIREWALL_PORT: ${{ secrets.FIREWALL_PORT }}
+          DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
       - name: Load secret
         id: op-load-secret
         uses: 1password/load-secrets-action@v1
