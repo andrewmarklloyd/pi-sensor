@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/ambelovsky/gosf-socketio v0.0.0-20201109193639-add9d32f8b19
+	github.com/andrewmarklloyd/do-app-firewall-entrypoint v0.0.0-20221128043141-02f34963c33c
 	github.com/aws/aws-sdk-go-v2 v1.16.4
 	github.com/aws/aws-sdk-go-v2/config v1.15.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.12.2
@@ -27,8 +28,7 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
-	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
-	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
+	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	golang.org/x/tools v0.1.10 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

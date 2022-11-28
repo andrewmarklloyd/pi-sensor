@@ -19,3 +19,15 @@ jobs:
       - name: Run build
         run: |
           make build-ci
+      - name: Update firewall
+        run: |
+          /Users/andrewlloyd/go/bin/do-app-firewall-entrypoint
+      - name: Load secret
+        id: op-load-secret
+        uses: 1password/load-secrets-action@v1
+        env:
+          OP_CONNECT_HOST: ${{ secrets.OP_CONNECT_HOST }}
+          OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
+          SECRET: op://github-ci/config/hello
+      - name: Print masked secret
+        run: echo "Secret: ${{ steps.op-load-secret.outputs.SECRET }}"
