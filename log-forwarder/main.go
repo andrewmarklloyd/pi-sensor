@@ -37,7 +37,7 @@ func main() {
 	fmt.Println("Starting agent log forwarder")
 
 	logChannel := make(chan syslog)
-	go tailSystemdLogs(logChannel)
+	go tailSystemdLogs(logChannel, []string{"pi-sensor-agent-v2"})
 	for log := range logChannel {
 		if log.Error != nil {
 			fmt.Println(fmt.Sprintf("error receiving logs from journalctl channel: %s", log.Error))
@@ -51,8 +51,14 @@ func main() {
 	}
 }
 
-func tailSystemdLogs(ch chan syslog) error {
-	cmd := exec.Command("journalctl", "-u", "pi-sensor-agent-v2", "-f", "-n 0", "--output", "json")
+func tailSystemdLogs(ch chan syslog, systemdUnits []string) error {
+	argsSlice := []string{}
+	for _, s := range systemdUnits {
+		argsSlice = append(argsSlice, "-u")
+		argsSlice = append(argsSlice, s)
+	}
+	argsSlice = append(argsSlice, "-f", "-n 0", "--output", "json")
+	cmd := exec.Command("journalctl", argsSlice...)
 	cmdReader, err := cmd.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("creating command stdout pipe: %s", err)
