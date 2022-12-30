@@ -1,0 +1,6 @@
+all:
+  hosts:
+    garage:
+      sensor_source: garage
+    # diningroom:
+    #   sensor_source: sliding-door

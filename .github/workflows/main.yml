@@ -38,8 +38,8 @@ jobs:
         with:
           playbook: deploy-agent.yaml
           key: ${{ secrets.AGENT_SSH_KEY }}
-          inventory: |
-            ${{ secrets.AGENT_INVENTORY }}
+          options: |
+            --inventory inventory.yaml
       - uses: ravsamhq/notify-slack-action@v1
         if: always()
         with:
