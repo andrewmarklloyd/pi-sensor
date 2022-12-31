@@ -1,7 +1,11 @@
 all:
   hosts:
     garage:
-      sensor_source: garage
-      forwarder_systemd_units: "pi-sensor-agent-v2"
+      agents:
+        - sensor_source: garage
+          gpio_pin: 18
+        # - sensor_source: garage-2
+        #   gpio_pin: 17
+      forwarder_systemd_units: "pi-sensor-agent-garage"
     # diningroom:
     #   sensor_source: sliding-door
