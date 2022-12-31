@@ -33,11 +33,21 @@ func main() {
 		fmt.Println("LOG_API_KEY env var must be set")
 		os.Exit(1)
 	}
+	systemdUnits := os.Getenv("SYSTEMD_UNITS")
+	if systemdUnits == "" {
+		fmt.Println("SYSTEMD_UNITS env var must be set")
+		os.Exit(1)
+	}
+	unitsSplit := strings.Split(systemdUnits, ",")
+	units := []string{}
+	for _, s := range unitsSplit {
+		units = append(units, strings.Trim(s, " "))
+	}
 
 	fmt.Println("Starting agent log forwarder")
 
 	logChannel := make(chan syslog)
-	go tailSystemdLogs(logChannel, []string{"pi-sensor-agent-v2"})
+	go tailSystemdLogs(logChannel, units)
 	for log := range logChannel {
 		if log.Error != nil {
 			fmt.Println(fmt.Sprintf("error receiving logs from journalctl channel: %s", log.Error))
