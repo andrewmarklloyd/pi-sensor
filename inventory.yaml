@@ -2,5 +2,6 @@ all:
   hosts:
     garage:
       sensor_source: garage
+      forwarder_systemd_units: "pi-sensor-agent-v2"
     # diningroom:
     #   sensor_source: sliding-door
