@@ -27,7 +27,7 @@
       group: root
       force: yes
   - name: Write forwarder op cli env-file template
-    ansible.builtin.copy:
+    ansible.builtin.template:
       src: ./log-forwarder/deployment/env-file.tmpl
       dest: /usr/local/src/pi-sensor-agent/.forwarder-env-file.tmpl
       owner: root
@@ -49,7 +49,7 @@
       name: agent-log-forwarder
       state: started
   - name: Write op cli env-file template
-    ansible.builtin.copy:
+    ansible.builtin.template:
       src: ./agent/deployment/env-file.tmpl
       dest: /usr/local/src/pi-sensor-agent/.env-file.tmpl
       owner: root

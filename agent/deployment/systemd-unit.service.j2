@@ -8,7 +8,6 @@ StartLimitInterval=0
 WantedBy=multi-user.target
 
 [Service]
-Environment="SENSOR_SOURCE={{ sensor_source }}"
 EnvironmentFile=/usr/local/src/pi-sensor-agent/.op-env
 ExecStart=op run --env-file=".env-file.tmpl" -- /usr/local/src/pi-sensor-agent/pi-sensor-agent
 WorkingDirectory=/usr/local/src/pi-sensor-agent
