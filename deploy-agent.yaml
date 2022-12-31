@@ -58,10 +58,11 @@
   - name: Copy agent systemd unit file
     ansible.builtin.template:
       src: ./agent/deployment/systemd-unit.service.j2
-      dest: /etc/systemd/system/pi-sensor-agent-v2.service
+      dest: /etc/systemd/system/pi-sensor-agent-{{ item.sensor_source }}.service
       owner: root
       group: root
-    no_log: True
+    with_items:
+      - "{{ agents }}"
   - name: Copy agent binary
     ansible.builtin.copy:
       src: ./build/pi-sensor-agent
@@ -76,5 +77,7 @@
       daemon_reload: yes
       enabled: yes
       force: yes
-      name: pi-sensor-agent-v2
+      name: pi-sensor-agent-{{ item.sensor_source }}
       state: restarted
+    with_items:
+      - "{{ agents }}"
