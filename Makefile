@@ -14,7 +14,7 @@ build-frontend:
 
 build-ci: build build-frontend
 	cp ./build/* .
-	git diff --exit-code
+	git diff ':!frontend/package-lock.json' --exit-code
 
 build-dev:
 	CGO_ENABLED=0 GOOS=linux go build -ldflags="-X 'main.version=`git rev-parse HEAD`'" -o build/pi-sensor-server server/*.go
