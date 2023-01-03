@@ -15,6 +15,6 @@ ExecStart=op run --env-file=".env-file.tmpl" -- /usr/local/src/pi-sensor-agent/p
 WorkingDirectory=/usr/local/src/pi-sensor-agent
 StandardOutput=inherit
 StandardError=inherit
-Restart=on-failure
+Restart=always
 RestartSec=5
 User=pi

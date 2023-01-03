@@ -13,6 +13,6 @@ ExecStart=op run --env-file=".forwarder-env-file.tmpl" -- /usr/local/src/pi-sens
 WorkingDirectory=/usr/local/src/pi-sensor-agent
 StandardOutput=inherit
 StandardError=inherit
-Restart=on-failure
+Restart=always
 RestartSec=5
 User=pi
