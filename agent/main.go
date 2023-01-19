@@ -94,7 +94,7 @@ func main() {
 	}
 	pinClient := gpio.NewPinClient(pinNum, mockMode)
 
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
@@ -134,7 +134,7 @@ func main() {
 	}
 
 	var currentStatus string
-	for true {
+	for {
 		currentStatus = pinClient.CurrentStatus()
 		err = writeStatus(statusFile, currentStatus)
 		if err != nil {
