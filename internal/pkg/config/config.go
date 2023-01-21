@@ -15,6 +15,7 @@ type ServerConfig struct {
 	S3Config           S3Config
 	Version            string
 	AllowedAPIKeys     []string
+	DatadogConfig      DatadogConfig
 }
 
 type GoogleConfig struct {
@@ -34,4 +35,10 @@ type S3Config struct {
 	MaxRetentionRows  int
 	RetentionEnabled  bool
 	FullBackupEnabled bool
+}
+
+type DatadogConfig struct {
+	APIKey     string
+	APPKey     string
+	OPTokenExp string
 }
