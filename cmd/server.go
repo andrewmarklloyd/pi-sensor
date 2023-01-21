@@ -12,6 +12,7 @@ import (
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/aws"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/datadog"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/postgres"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/redis"
@@ -29,6 +30,7 @@ var (
 const (
 	dataRetentionCronFrequency = 12 * time.Hour
 	fullBackupCronFrequency    = 6 * time.Hour
+	tokenExpMetricFreq         = 1 * time.Hour
 )
 
 func runServer() {
@@ -57,6 +59,11 @@ func runServer() {
 			ClientSecret:    viper.GetString("GOOGLE_CLIENT_SECRET"),
 			RedirectURL:     viper.GetString("REDIRECT_URL"),
 			SessionSecret:   viper.GetString("SESSION_SECRET"),
+		},
+		DatadogConfig: config.DatadogConfig{
+			APIKey:     viper.GetString("DD_API_KEY"),
+			APPKey:     viper.GetString("DD_APP_KEY"),
+			OPTokenExp: viper.GetString("OP_TOKEN_EXP"),
 		},
 	}
 
@@ -162,6 +169,20 @@ func configureCronJobs(serverClients clients.ServerClients, serverConfig config.
 			}
 		}()
 	}
+
+	// todo: set as env var
+	tokenExpMetricEnabled := true
+	if tokenExpMetricEnabled {
+		t := time.NewTicker(tokenExpMetricFreq)
+		go func() {
+			for range t.C {
+				err := serverClients.DDClient.PublishTokenDaysLeft(context.Background(), serverConfig.DatadogConfig.OPTokenExp, "pi-sensor-server")
+				if err != nil {
+					logger.Errorf("error publishing token days left: %w", err)
+				}
+			}
+		}()
+	}
 }
 
 // using viper.Getint is unsafe because if the env
@@ -258,12 +279,12 @@ func runFullBackup(serverClients clients.ServerClients, serverConfig config.Serv
 func createClients(serverConfig config.ServerConfig) (clients.ServerClients, error) {
 	redisClient, err := redis.NewRedisClient(serverConfig.RedisTLSURL)
 	if err != nil {
-		return clients.ServerClients{}, fmt.Errorf("Error creating redis client: %s", err)
+		return clients.ServerClients{}, fmt.Errorf("creating redis client: %s", err)
 	}
 
 	postgresClient, err := postgres.NewPostgresClient(serverConfig.PostgresURL)
 	if err != nil {
-		return clients.ServerClients{}, fmt.Errorf("Error creating postgres client: %s", err)
+		return clients.ServerClients{}, fmt.Errorf("creating postgres client: %s", err)
 	}
 
 	urlSplit := strings.Split(serverConfig.MqttBrokerURL, "@")
@@ -283,12 +304,14 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	if err != nil {
 		return clients.ServerClients{}, fmt.Errorf("error creating AWS client: %s", err)
 	}
+	ddClient := datadog.NewDatadogClient()
 
 	return clients.ServerClients{
 		Redis:    redisClient,
 		Postgres: postgresClient,
 		Mqtt:     mqttClient,
 		AWS:      awsClient,
+		DDClient: ddClient,
 	}, nil
 }
 
@@ -417,7 +440,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 
 	err = serverClients.Redis.WriteState(currentStatus.Source, string(currentStatusJson), context.Background())
 	if err != nil {
-		return fmt.Errorf("Error writing state to Redis: %s", err)
+		return fmt.Errorf("writing state to Redis: %s", err)
 	}
 
 	webServer.SendMessage(config.SensorStatusTopic, currentStatus)
