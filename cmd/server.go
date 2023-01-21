@@ -60,10 +60,9 @@ func runServer() {
 			SessionSecret:   viper.GetString("SESSION_SECRET"),
 		},
 		DatadogConfig: config.DatadogConfig{
-			APIKey:           viper.GetString("DD_API_KEY"),
-			APPKey:           viper.GetString("DD_APP_KEY"),
-			OPTokenExpServer: viper.GetString("OP_TOKEN_EXP_SERVER"),
-			OPTokenExpAgent:  viper.GetString("OP_TOKEN_EXP_AGENT"),
+			APIKey:         viper.GetString("DD_API_KEY"),
+			APPKey:         viper.GetString("DD_APP_KEY"),
+			TokensMetadata: buildTokenMetadata(),
 		},
 		S3Config: config.S3Config{
 			AccessKeyID:       viper.GetString("SPACES_AWS_ACCESS_KEY_ID"),
@@ -162,13 +161,11 @@ func configureCronJobs(serverClients clients.ServerClients, serverConfig config.
 		t := time.NewTicker(tokenExpMetricFreq)
 		go func() {
 			for range t.C {
-				err := serverClients.DDClient.PublishTokenDaysLeft(context.Background(), serverConfig.DatadogConfig.OPTokenExpServer, "pi-sensor-server")
-				if err != nil {
-					logger.Errorf("error publishing token days left: %w", err)
-				}
-				err = serverClients.DDClient.PublishTokenDaysLeft(context.Background(), serverConfig.DatadogConfig.OPTokenExpAgent, "pi-sensor-agent")
-				if err != nil {
-					logger.Errorf("error publishing token days left: %w", err)
+				for _, token := range serverConfig.DatadogConfig.TokensMetadata {
+					err := serverClients.DDClient.PublishTokenDaysLeft(context.Background(), token)
+					if err != nil {
+						logger.Errorf("error publishing token '%s' days left: %s", token.Name, err)
+					}
 				}
 			}
 		}()
@@ -449,5 +446,30 @@ func handleOpenTimeout(serverClients clients.ServerClients, s config.SensorStatu
 		if err != nil {
 			logger.Errorf("publishing HA open warning message: %w", err)
 		}
+	}
+}
+
+func buildTokenMetadata() []config.TokenMetadata {
+	return []config.TokenMetadata{
+		{
+			Name:       "pi-sensor-server",
+			Owner:      "opconnect",
+			Expiration: viper.GetString("OP_TOKEN_EXP_SERVER"),
+		},
+		{
+			Name:       "pi-sensor-agent",
+			Owner:      "opconnect",
+			Expiration: viper.GetString("OP_TOKEN_EXP_AGENT"),
+		},
+		{
+			Name:       "pi-sensor-firewall-updater",
+			Owner:      "digitalocean",
+			Expiration: viper.GetString("DO_TOKEN_EXP_FIREWALL_UPDATER"),
+		},
+		{
+			Name:       "github-ci",
+			Owner:      "digitalocean",
+			Expiration: viper.GetString("DO_TOKEN_EXP_GITHUB_CI"),
+		},
 	}
 }

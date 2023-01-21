@@ -38,8 +38,13 @@ type S3Config struct {
 }
 
 type DatadogConfig struct {
-	APIKey           string
-	APPKey           string
-	OPTokenExpServer string
-	OPTokenExpAgent  string
+	APIKey         string
+	APPKey         string
+	TokensMetadata []TokenMetadata
+}
+
+type TokenMetadata struct {
+	Name       string
+	Owner      string
+	Expiration string
 }
