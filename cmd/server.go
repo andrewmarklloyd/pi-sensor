@@ -29,7 +29,7 @@ var (
 const (
 	dataRetentionCronFrequency = 12 * time.Hour
 	fullBackupCronFrequency    = 6 * time.Hour
-	tokenExpMetricFreq         = 1 * time.Hour
+	tokenExpMetricFreq         = 30 * time.Minute
 )
 
 func runServer() {
