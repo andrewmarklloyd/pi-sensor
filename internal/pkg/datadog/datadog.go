@@ -7,6 +7,7 @@ import (
 
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadog"
 	"github.com/DataDog/datadog-api-client-go/v2/api/datadogV2"
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 )
 
 type Client struct {
@@ -27,8 +28,8 @@ func NewDatadogClient(apiKey, appKey string) Client {
 	}
 }
 
-func (c *Client) PublishTokenDaysLeft(ctx context.Context, tokenExp, tokenName string) error {
-	expTime, err := time.Parse(time.RFC3339, tokenExp)
+func (c *Client) PublishTokenDaysLeft(ctx context.Context, tokenMetadata config.TokenMetadata) error {
+	expTime, err := time.Parse(time.RFC3339, tokenMetadata.Expiration)
 	if err != nil {
 		return fmt.Errorf("parsing time from token expiration: %w", err)
 	}
@@ -60,11 +61,11 @@ func (c *Client) PublishTokenDaysLeft(ctx context.Context, tokenExp, tokenName s
 				Resources: []datadogV2.MetricResource{
 					{
 						Type: datadog.PtrString("tokenname"),
-						Name: datadog.PtrString(tokenName),
+						Name: datadog.PtrString(tokenMetadata.Name),
 					},
 					{
 						Type: datadog.PtrString("owner"),
-						Name: datadog.PtrString("opconnect"),
+						Name: datadog.PtrString(tokenMetadata.Owner),
 					},
 				},
 			},
