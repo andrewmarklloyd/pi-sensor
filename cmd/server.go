@@ -199,7 +199,7 @@ func runDataRetention(serverClients clients.ServerClients, serverConfig config.S
 	numberRowsAboveMax := len(rowsAboveMax)
 
 	if numberRowsAboveMax == 0 {
-		logger.Infof("Row count is less than or equal to max %d, no action required", serverConfig.S3Config.MaxRetentionRows)
+		logger.Info("Row count is less than or equal to max, no action required")
 		return
 	}
 
