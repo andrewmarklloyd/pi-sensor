@@ -304,7 +304,7 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	if err != nil {
 		return clients.ServerClients{}, fmt.Errorf("error creating AWS client: %s", err)
 	}
-	ddClient := datadog.NewDatadogClient()
+	ddClient := datadog.NewDatadogClient(serverConfig.DatadogConfig.APIKey, serverConfig.DatadogConfig.APPKey)
 
 	return clients.ServerClients{
 		Redis:    redisClient,

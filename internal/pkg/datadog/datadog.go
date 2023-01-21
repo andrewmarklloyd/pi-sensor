@@ -10,17 +10,20 @@ import (
 )
 
 type Client struct {
-	api        *datadogV2.MetricsApi
-	OPTokenExp time.Time
+	api    *datadogV2.MetricsApi
+	apiKey string
+	appKey string
 }
 
-func NewDatadogClient() Client {
+func NewDatadogClient(apiKey, appKey string) Client {
 	configuration := datadog.NewConfiguration()
 	apiClient := datadog.NewAPIClient(configuration)
 	api := datadogV2.NewMetricsApi(apiClient)
 
 	return Client{
-		api: api,
+		api:    api,
+		apiKey: apiKey,
+		appKey: appKey,
 	}
 }
 
@@ -29,6 +32,19 @@ func (c *Client) PublishTokenDaysLeft(ctx context.Context, tokenExp, tokenName s
 	if err != nil {
 		return fmt.Errorf("parsing time from token expiration: %w", err)
 	}
+
+	valueCtx := context.WithValue(
+		ctx,
+		datadog.ContextAPIKeys,
+		map[string]datadog.APIKey{
+			"apiKeyAuth": {
+				Key: c.apiKey,
+			},
+			"appKeyAuth": {
+				Key: c.appKey,
+			},
+		},
+	)
 
 	body := datadogV2.MetricPayload{
 		Series: []datadogV2.MetricSeries{
@@ -55,9 +71,9 @@ func (c *Client) PublishTokenDaysLeft(ctx context.Context, tokenExp, tokenName s
 		},
 	}
 
-	_, _, err = c.api.SubmitMetrics(ctx, body, *datadogV2.NewSubmitMetricsOptionalParameters())
+	_, _, err = c.api.SubmitMetrics(valueCtx, body, *datadogV2.NewSubmitMetricsOptionalParameters())
 	if err != nil {
-		return fmt.Errorf("submitting metrics: %w", err)
+		return fmt.Errorf("submitting metrics: %s", err)
 	}
 
 	return nil
