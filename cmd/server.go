@@ -471,5 +471,10 @@ func buildTokenMetadata() []config.TokenMetadata {
 			Owner:      "digitalocean",
 			Expiration: viper.GetString("DO_TOKEN_EXP_GITHUB_CI"),
 		},
+		{
+			Name:       "github-ci",
+			Owner:      "tailscale",
+			Expiration: viper.GetString("TS_TOKEN_EXP_GITHUB_CI"),
+		},
 	}
 }
