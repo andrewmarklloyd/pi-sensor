@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -30,7 +29,7 @@ var (
 const (
 	dataRetentionCronFrequency = 12 * time.Hour
 	fullBackupCronFrequency    = 6 * time.Hour
-	tokenExpMetricFreq         = 1 * time.Hour
+	tokenExpMetricFreq         = 30 * time.Minute
 )
 
 func runServer() {
@@ -61,14 +60,12 @@ func runServer() {
 			SessionSecret:   viper.GetString("SESSION_SECRET"),
 		},
 		DatadogConfig: config.DatadogConfig{
-			APIKey:     viper.GetString("DD_API_KEY"),
-			APPKey:     viper.GetString("DD_APP_KEY"),
-			OPTokenExp: viper.GetString("OP_TOKEN_EXP"),
+			APIKey:           viper.GetString("DD_API_KEY"),
+			APPKey:           viper.GetString("DD_APP_KEY"),
+			OPTokenExpServer: viper.GetString("OP_TOKEN_EXP_SERVER"),
+			OPTokenExpAgent:  viper.GetString("OP_TOKEN_EXP_AGENT"),
 		},
-	}
-
-	if os.Getenv("RUNTIME") == "D_O" {
-		serverConfig.S3Config = config.S3Config{
+		S3Config: config.S3Config{
 			AccessKeyID:       viper.GetString("SPACES_AWS_ACCESS_KEY_ID"),
 			SecretAccessKey:   viper.GetString("SPACES_AWS_SECRET_ACCESS_KEY"),
 			Region:            viper.GetString("SPACES_AWS_REGION"),
@@ -77,18 +74,7 @@ func runServer() {
 			RetentionEnabled:  viper.GetBool("DB_RETENTION_ENABLED"),
 			MaxRetentionRows:  parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
 			FullBackupEnabled: viper.GetBool("DB_FULL_BACKUP_ENABLED"),
-		}
-
-	} else {
-		serverConfig.S3Config = config.S3Config{
-			AccessKeyID:       viper.GetString("BUCKETEER_AWS_ACCESS_KEY_ID"),
-			SecretAccessKey:   viper.GetString("BUCKETEER_AWS_SECRET_ACCESS_KEY"),
-			Region:            viper.GetString("BUCKETEER_AWS_REGION"),
-			Bucket:            viper.GetString("BUCKETEER_BUCKET_NAME"),
-			RetentionEnabled:  viper.GetBool("DB_RETENTION_ENABLED"),
-			MaxRetentionRows:  parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
-			FullBackupEnabled: viper.GetBool("DB_FULL_BACKUP_ENABLED"),
-		}
+		},
 	}
 
 	serverClients, err := createClients(serverConfig)
@@ -176,7 +162,11 @@ func configureCronJobs(serverClients clients.ServerClients, serverConfig config.
 		t := time.NewTicker(tokenExpMetricFreq)
 		go func() {
 			for range t.C {
-				err := serverClients.DDClient.PublishTokenDaysLeft(context.Background(), serverConfig.DatadogConfig.OPTokenExp, "pi-sensor-server")
+				err := serverClients.DDClient.PublishTokenDaysLeft(context.Background(), serverConfig.DatadogConfig.OPTokenExpServer, "pi-sensor-server")
+				if err != nil {
+					logger.Errorf("error publishing token days left: %w", err)
+				}
+				err = serverClients.DDClient.PublishTokenDaysLeft(context.Background(), serverConfig.DatadogConfig.OPTokenExpAgent, "pi-sensor-agent")
 				if err != nil {
 					logger.Errorf("error publishing token days left: %w", err)
 				}

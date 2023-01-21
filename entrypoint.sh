@@ -1,9 +1,7 @@
 #!/bin/sh
 
 
-if [ ${RUNTIME} == "D_O" ]; then
-    /app/do-app-firewall-entrypoint
-fi
+/app/do-app-firewall-entrypoint
 
 unset DO_ACCESS_TOKEN
 unset DO_FIREWALL_ID
