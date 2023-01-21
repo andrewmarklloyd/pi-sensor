@@ -36,7 +36,7 @@ cleanup_tags() {
   fi
 
   untaggedManifests=$(doctl --access-token ${DO_ACCESS_TOKEN} registry repo list-manifests pi-sensor -o json | jq -r '.[] | select(.tags | length==0) | .digest')
-  if [ ! -z ${untaggedManifests} ]; then
+  if [[ ! -z ${untaggedManifests} ]]; then
     num=$(echo "${untaggedManifests}" | wc -l)
     echo "deleting ${num} untagged manifests from the container registry"
     doctl --access-token ${DO_ACCESS_TOKEN} registry repo delete-manifest pi-sensor ${untaggedManifests} --force
