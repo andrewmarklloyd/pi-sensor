@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Pi Sensor",
+  "name": "Pi Sensor",
   "icons": [
     {
       "src": "favicon.ico",
