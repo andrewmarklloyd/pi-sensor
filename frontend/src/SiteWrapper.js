@@ -20,6 +20,12 @@ const navBarItems = [
     useExact: true,
   },
   {
+    value: "Subscribe",
+    to: "/subscribe",
+    icon: "",
+    useExact: true,
+  },
+  {
     value: "Logout",
     to: "/logout",
     icon: "log-out",
