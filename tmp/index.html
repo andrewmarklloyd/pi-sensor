@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Webpush Golang Example</title>
+</head>
+<body>
+  <button onclick="notifyMe()">Enable Notifications</button>
+  <script>
+    function notifyMe() {
+      // https://developer.mozilla.org/en-US/docs/Web/API/PushManager
+      // https://felixgerschau.com/web-push-notifications-tutorial/
+      // https://developer.mozilla.org/en-US/docs/Web/API/Notification/requestPermission
+      if (!("Notification" in window)) {
+        alert("This browser does not support desktop notification");
+        return
+      }
+      
+      if (Notification.permission === "granted") {
+        console.log("Notifications already enabled")
+        // const notification = new Notification("Notifications already enabled");
+        return
+      }
+      
+      if (Notification.permission !== "denied") {
+        console.log("Requesting permission")
+        Notification.requestPermission().then((permission) => {
+          // seems a bug because it always returns denied?
+          // or could be it's not https?
+          console.log("after requesting permission: ", permission)
+          localStorage.setItem('permission', 'granted')
+          
+          if (permission === "granted") {
+            localStorage.setItem('permission', 'granted')
+          }
+          location.reload()
+        });
+      } else {
+        console.log('else permission: ', Notification.permission)
+      }
+    }
+
+    function subscribe() {
+      console.log("subscribe function running")
+      navigator.serviceWorker.ready
+        .then(function(registration) {
+          const vapidPublicKey = '';
+
+          return registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+          });
+        })
+        .then(function(subscription) {
+          console.log(JSON.stringify(subscription))
+        })
+        .catch(err => console.error(err));
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding)
+        .replace(/\-/g, '+')
+        .replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+      if (localStorage.getItem('permission') === 'granted') {
+        navigator.serviceWorker.ready
+        .then(function(registration) {
+          if (!registration.pushManager) {
+            console.log("pushManager not available via web standard")
+            return "disabled"
+          } else {
+            return registration.pushManager.getSubscription();
+          }
+        })
+        .then(function(subscription) {
+          if (subscription !== "disabled") {
+            if (!subscription) {
+              console.log("calling subscribe")
+              subscribe()
+            }
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
