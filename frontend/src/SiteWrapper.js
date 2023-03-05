@@ -20,8 +20,8 @@ const navBarItems = [
     useExact: true,
   },
   {
-    value: "Subscribe",
-    to: "/subscribe",
+    value: "Notifications",
+    to: "/notifications",
     icon: "",
     useExact: true,
   },
