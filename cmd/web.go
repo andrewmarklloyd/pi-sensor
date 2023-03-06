@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -25,11 +25,6 @@ import (
 )
 
 const (
-	// Maximum message size allowed from peer.
-	maxMessageSize = 8192
-	// Time allowed to read the next pong message from the peer.
-	pongWait = 60 * time.Second
-
 	channelName          = "sensor"
 	sessionName          = "pi-sensor"
 	sessionUserKey       = "9024685F-97A4-441E-90D3-F0F11AA7A602"
@@ -125,7 +120,7 @@ func (s WebServer) reportHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	json, _ := json.Marshal(messages)
-	fmt.Fprintf(w, fmt.Sprintf(`{"messages":%s,"numPages":%d}`, string(json), numPages))
+	fmt.Fprintf(w, `{"messages":%s,"numPages":%d}`, string(json), numPages)
 }
 
 func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request) {
@@ -192,7 +187,7 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 			}
 		}
 
-		fmt.Fprintf(w, fmt.Sprintf(`{"status":"success", "armed":"%s"}`, p.Armed))
+		fmt.Fprintf(w, `{"status":"success", "armed":"%s"}`, p.Armed)
 		return
 	}
 
@@ -217,7 +212,7 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 	}
 
 	s.serverClients.Redis.WriteArming(p.Source, armed, req.Context())
-	fmt.Fprintf(w, fmt.Sprintf(`{"status":"success", "armed":"%s"}`, armed))
+	fmt.Fprintf(w, `{"status":"success", "armed":"%s"}`, armed)
 }
 
 func (s WebServer) sensorRestartHandler(w http.ResponseWriter, req *http.Request) {
@@ -244,7 +239,7 @@ func (s WebServer) allSensorsHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	json, _ := json.Marshal(sensors)
-	fmt.Fprintf(w, fmt.Sprintf(`{"sensors":%s}`, string(json)))
+	fmt.Fprintf(w, `{"sensors":%s}`, string(json))
 }
 
 func (s WebServer) SendMessage(channel string, status config.SensorStatus) {
@@ -356,7 +351,7 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, fmt.Sprintf(`{"version":"%s"}`, version))
+	fmt.Fprintf(w, `{"version":"%s"}`, version)
 }
 
 func agentLogsHandler(w http.ResponseWriter, req *http.Request) {
@@ -366,7 +361,7 @@ func agentLogsHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		http.Error(w, `{"error":"reading request body"}`, http.StatusBadRequest)
 		return

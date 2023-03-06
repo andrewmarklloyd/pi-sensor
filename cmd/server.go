@@ -86,13 +86,6 @@ func runServer() {
 		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
 
-	info, err := serverClients.AWS.GetBucketInfo(context.Background())
-	if err != nil {
-		logger.Fatalf("error getting bucket info: %s", err)
-	}
-
-	logger.Infof("AWS Bucket Info - Size: %d bytes, Versions: %d, DeleteMarkers: %d", info.Size, info.NumVersions, info.NumDeleteMarkers)
-
 	webServer := newWebServer(serverConfig, serverClients)
 
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
@@ -276,7 +269,7 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 
 	urlSplit := strings.Split(serverConfig.MqttBrokerURL, "@")
 	if len(urlSplit) != 2 {
-		return clients.ServerClients{}, fmt.Errorf("unexpected CLOUDMQTT_URL parsing error")
+		return clients.ServerClients{}, fmt.Errorf("unexpected CLOUDMQTT_URL parsing error, expected length of split after '@' to be 2")
 	}
 	domain := urlSplit[1]
 	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", serverConfig.MqttServerUser, serverConfig.MqttServerPassword, domain)
