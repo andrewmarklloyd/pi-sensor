@@ -83,6 +83,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	router.Handle("/api/sensor/arming", requireLogin(http.HandlerFunc(w.sensorArmingHandler))).Methods(post)
 	router.Handle("/api/sensor/all", requireLogin(http.HandlerFunc(w.allSensorsHandler))).Methods(get)
 	router.Handle("/api/report", requireLogin(http.HandlerFunc(w.reportHandler))).Methods(get)
+	router.Handle("/api/subscription", requireLogin(http.HandlerFunc(w.subscriptionHandler))).Methods(post)
 	router.Handle("/google/login", google.StateHandler(stateConfig, google.LoginHandler(oauth2Config, nil)))
 	router.Handle("/google/callback", google.StateHandler(stateConfig, google.CallbackHandler(oauth2Config, issueSession(serverConfig), nil)))
 	router.HandleFunc("/logout", logoutHandler)
@@ -125,6 +126,17 @@ func (s WebServer) reportHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	json, _ := json.Marshal(messages)
 	fmt.Fprintf(w, fmt.Sprintf(`{"messages":%s,"numPages":%d}`, string(json), numPages))
+}
+
+func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request) {
+	var p config.SubscriptionPayload
+	err := json.NewDecoder(req.Body).Decode(&p)
+	if err != nil {
+		http.Error(w, "Error parsing request", http.StatusBadRequest)
+		return
+	}
+
+	fmt.Fprintf(w, `{"status":"success"}`)
 }
 
 func (s WebServer) newSocketConnection(c *gosocketio.Channel) {
