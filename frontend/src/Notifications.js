@@ -64,10 +64,27 @@ function subscribe() {
               }
             })
             .then(function(subscription) {
-              // todo: send to backend to save subscription
-              console.log(JSON.stringify(subscription))
+              fetch("/api/subscription", {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                referrerPolicy: 'no-referrer',
+                body: JSON.stringify(subscription)
+              })
+              .then(r => r.json())
+              .then(j => {
+                if (j.status !== 'success') {
+                  alert("error subscribing to notifications: " + j.error)
+                } else {
+                  alert("successfully subscribed to notifications")
+                }
+              })
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+              alert("error subscribing to notifications")
+            });
         } else {
           console.log("serviceWorker object not found in navigator")
         }

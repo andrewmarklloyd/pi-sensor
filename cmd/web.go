@@ -127,11 +127,14 @@ func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request)
 	var p config.SubscriptionPayload
 	err := json.NewDecoder(req.Body).Decode(&p)
 	if err != nil {
-		http.Error(w, "Error parsing request", http.StatusBadRequest)
+		logger.Errorf("Error parsing subscription payload: %s", err)
+		http.Error(w, `{"error":"Error parsing request","status":"failed"}`, http.StatusBadRequest)
 		return
 	}
 
-	fmt.Fprintf(w, `{"status":"success"}`)
+	// todo: store the subscription securely
+
+	fmt.Fprintf(w, `{"error":"","status":"success"}`)
 }
 
 func (s WebServer) newSocketConnection(c *gosocketio.Channel) {
