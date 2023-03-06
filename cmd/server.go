@@ -384,6 +384,9 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 	}
 
 	armedString, err := serverClients.Redis.ReadArming(currentStatus.Source, context.Background())
+	if err != nil {
+		return fmt.Errorf("reading arming from redis: %w", err)
+	}
 	armed := true
 	if armedString == "" || armedString == "false" {
 		armed = false
