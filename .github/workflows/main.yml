@@ -19,6 +19,8 @@ jobs:
       - name: Run build
         run: |
           make build-ci
+        env:
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
       - name: Deploy DO
         env:
           DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
