@@ -74,6 +74,10 @@ func runServer() {
 			MaxRetentionRows:  parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
 			FullBackupEnabled: viper.GetBool("DB_FULL_BACKUP_ENABLED"),
 		},
+		WebPushConfig: config.WebPushConfig{
+			VAPIDPublicKey:  viper.GetString("VAPID_PUBLIC_KEY"),
+			VAPIDPrivateKey: viper.GetString("VAPID_PRIVATE_KEY"),
+		},
 	}
 
 	serverClients, err := createClients(serverConfig)

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/SherClockHolmes/webpush-go"
 	gosocketio "github.com/ambelovsky/gosf-socketio"
 	"github.com/ambelovsky/gosf-socketio/transport"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
@@ -38,9 +39,11 @@ const (
 var sessionStore *sessions.CookieStore
 
 type WebServer struct {
-	httpServer    *http.Server
-	socketServer  *gosocketio.Server
-	serverClients clients.ServerClients
+	httpServer      *http.Server
+	socketServer    *gosocketio.Server
+	serverClients   clients.ServerClients
+	vapidPublicKey  string
+	vapidPrivateKey string
 }
 
 type zapLog struct {
@@ -57,8 +60,10 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	socketServer := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
 
 	w := WebServer{
-		serverClients: clients,
-		socketServer:  socketServer,
+		serverClients:   clients,
+		socketServer:    socketServer,
+		vapidPublicKey:  serverConfig.WebPushConfig.VAPIDPublicKey,
+		vapidPrivateKey: serverConfig.WebPushConfig.VAPIDPrivateKey,
 	}
 	socketServer.On(gosocketio.OnConnection, w.newSocketConnection)
 
@@ -124,8 +129,8 @@ func (s WebServer) reportHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request) {
-	var p config.SubscriptionPayload
-	err := json.NewDecoder(req.Body).Decode(&p)
+	var sub webpush.Subscription
+	err := json.NewDecoder(req.Body).Decode(&sub)
 	if err != nil {
 		logger.Errorf("Error parsing subscription payload: %s", err)
 		http.Error(w, `{"error":"Error parsing request","status":"failed"}`, http.StatusBadRequest)
@@ -133,6 +138,32 @@ func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request)
 	}
 
 	// todo: store the subscription securely
+
+	sess, err := sessionStore.Get(req, sessionName)
+	if err != nil {
+		logger.Errorf("getting session information")
+		http.Error(w, `{"error":"Error getting session information","status":"failed"}`, http.StatusBadRequest)
+		return
+	}
+	email, ok := sess.Values["user-email"]
+	if !ok {
+		logger.Errorf("getting session email")
+		http.Error(w, `{"error":"Error getting session email","status":"failed"}`, http.StatusBadRequest)
+		return
+	}
+
+	resp, err := webpush.SendNotification([]byte("Thanks for subscribing!"), &sub, &webpush.Options{
+		Subscriber:      email.(string),
+		VAPIDPublicKey:  s.vapidPublicKey,
+		VAPIDPrivateKey: s.vapidPrivateKey,
+		TTL:             30,
+	})
+	if err != nil {
+		logger.Errorf("sending initial web push notification: %w", err)
+		http.Error(w, `{"error":"Error sending initial web push notification","status":"failed"}`, http.StatusBadRequest)
+	}
+
+	defer resp.Body.Close()
 
 	fmt.Fprintf(w, `{"error":"","status":"success"}`)
 }
@@ -303,6 +334,7 @@ func issueSession(serverConfig config.ServerConfig) http.Handler {
 		}
 		session := sessionStore.New(sessionName)
 		session.Values[sessionUserKey] = googleUser.Id
+		session.Values["user-email"] = googleUser.Email
 		session.Save(w)
 		http.Redirect(w, req, "/", http.StatusFound)
 	}
