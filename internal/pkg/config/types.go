@@ -45,12 +45,3 @@ type APIPayload struct {
 	Source string `json:"source"`
 	Armed  string `json:"armed"` // TODO: use bool. Need to handle zero value
 }
-
-type SubscriptionPayload struct {
-	Endpoint       string `json:"endpoint"`
-	ExpirationTime string `json:"expirationTime"`
-	Keys           struct {
-		P256Dh string `json:"p256dh"`
-		Auth   string `json:"auth"`
-	} `json:"keys"`
-}
