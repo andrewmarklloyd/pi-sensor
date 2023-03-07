@@ -8,6 +8,8 @@ build:
 	GOOS=linux GOARCH=arm GOARM=5 go build -ldflags="-X 'main.version=$(GIT_TREE_STATE)'" -o build/pi-sensor-agent agent/main.go
 	GOOS=linux GOARCH=arm GOARM=5 go build -o build/agent-log-forwarder log-forwarder/main.go
 
+
+build-frontend: export REACT_APP_VAPID_PUBLIC_KEY := $(shell echo ${VAPID_PUBLIC_KEY})
 build-frontend:
 	REACT_APP_VERSION=$(GIT_TREE_STATE) ./.github/scripts/build-front.sh
 

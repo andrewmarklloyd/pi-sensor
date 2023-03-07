@@ -74,6 +74,10 @@ func runServer() {
 			MaxRetentionRows:  parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
 			FullBackupEnabled: viper.GetBool("DB_FULL_BACKUP_ENABLED"),
 		},
+		WebPushConfig: config.WebPushConfig{
+			VAPIDPublicKey:  viper.GetString("VAPID_PUBLIC_KEY"),
+			VAPIDPrivateKey: viper.GetString("VAPID_PRIVATE_KEY"),
+		},
 	}
 
 	serverClients, err := createClients(serverConfig)
@@ -85,13 +89,6 @@ func runServer() {
 	if err != nil {
 		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
-
-	info, err := serverClients.AWS.GetBucketInfo(context.Background())
-	if err != nil {
-		logger.Fatalf("error getting bucket info: %s", err)
-	}
-
-	logger.Infof("AWS Bucket Info - Size: %d bytes, Versions: %d, DeleteMarkers: %d", info.Size, info.NumVersions, info.NumDeleteMarkers)
 
 	webServer := newWebServer(serverConfig, serverClients)
 
@@ -276,7 +273,7 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 
 	urlSplit := strings.Split(serverConfig.MqttBrokerURL, "@")
 	if len(urlSplit) != 2 {
-		return clients.ServerClients{}, fmt.Errorf("unexpected CLOUDMQTT_URL parsing error")
+		return clients.ServerClients{}, fmt.Errorf("unexpected CLOUDMQTT_URL parsing error, expected length of split after '@' to be 2")
 	}
 	domain := urlSplit[1]
 	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", serverConfig.MqttServerUser, serverConfig.MqttServerPassword, domain)
@@ -391,6 +388,9 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 	}
 
 	armedString, err := serverClients.Redis.ReadArming(currentStatus.Source, context.Background())
+	if err != nil {
+		return fmt.Errorf("reading arming from redis: %w", err)
+	}
 	armed := true
 	if armedString == "" || armedString == "false" {
 		armed = false

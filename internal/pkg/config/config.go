@@ -16,6 +16,7 @@ type ServerConfig struct {
 	Version            string
 	AllowedAPIKeys     []string
 	DatadogConfig      DatadogConfig
+	WebPushConfig      WebPushConfig
 }
 
 type GoogleConfig struct {
@@ -47,4 +48,9 @@ type TokenMetadata struct {
 	Name       string
 	Owner      string
 	Expiration string
+}
+
+type WebPushConfig struct {
+	VAPIDPublicKey  string
+	VAPIDPrivateKey string
 }
