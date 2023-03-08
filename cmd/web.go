@@ -137,8 +137,6 @@ func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	// todo: store the subscription securely
-
 	sess, err := sessionStore.Get(req, sessionName)
 	if err != nil {
 		logger.Errorf("getting session information")
@@ -149,6 +147,34 @@ func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request)
 	if !ok {
 		logger.Errorf("getting session email")
 		http.Error(w, `{"error":"Error getting session email","status":"failed"}`, http.StatusBadRequest)
+		return
+	}
+
+	subBytes, err := io.ReadAll(req.Body)
+	if err != nil {
+		logger.Errorf("reading subscription request body: %s", err)
+		http.Error(w, `{"error":"Error saving subscription","status":"failed"}`, http.StatusBadRequest)
+		return
+	}
+
+	encrypted, err := s.serverClients.CryptoUtil.Encrypt(subBytes)
+	if err != nil {
+		logger.Errorf("encrypting subscription: %s", err)
+		http.Error(w, `{"error":"Error saving subscription","status":"failed"}`, http.StatusBadRequest)
+		return
+	}
+
+	emailStr, ok := email.(string)
+	if !ok {
+		logger.Errorf("converting subscription email to string: %s", email)
+		http.Error(w, `{"error":"Error saving subscription","status":"failed"}`, http.StatusBadRequest)
+		return
+	}
+
+	err = s.serverClients.Redis.WriteSubscription(emailStr, string(encrypted), req.Context())
+	if err != nil {
+		logger.Errorf("writing subscription to redis: %s", err)
+		http.Error(w, `{"error":"Error saving subscription","status":"failed"}`, http.StatusBadRequest)
 		return
 	}
 

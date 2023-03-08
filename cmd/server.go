@@ -11,6 +11,7 @@ import (
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/aws"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/crypto"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/datadog"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/postgres"
@@ -78,6 +79,7 @@ func runServer() {
 			VAPIDPublicKey:  viper.GetString("VAPID_PUBLIC_KEY"),
 			VAPIDPrivateKey: viper.GetString("VAPID_PRIVATE_KEY"),
 		},
+		EncryptionKey: viper.GetString("ENCRYPTION_KEY"),
 	}
 
 	serverClients, err := createClients(serverConfig)
@@ -290,12 +292,18 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	}
 	ddClient := datadog.NewDatadogClient(serverConfig.DatadogConfig.APIKey, serverConfig.DatadogConfig.APPKey)
 
+	cryptoUtil, err := crypto.NewUtil(serverConfig.EncryptionKey)
+	if err != nil {
+		return clients.ServerClients{}, fmt.Errorf("error creating crypto client: %s", err)
+	}
+
 	return clients.ServerClients{
-		Redis:    redisClient,
-		Postgres: postgresClient,
-		Mqtt:     mqttClient,
-		AWS:      awsClient,
-		DDClient: ddClient,
+		Redis:      redisClient,
+		Postgres:   postgresClient,
+		Mqtt:       mqttClient,
+		AWS:        awsClient,
+		DDClient:   ddClient,
+		CryptoUtil: cryptoUtil,
 	}, nil
 }
 

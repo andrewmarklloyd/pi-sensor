@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	statePrefix     = "state/"
-	heartbeatPrefix = "heartbeat/"
-	armingPrefix    = "arming/"
+	statePrefix        = "state/"
+	heartbeatPrefix    = "heartbeat/"
+	armingPrefix       = "arming/"
+	subscriptionPrefix = "subscription/"
 )
 
 type Client struct {
@@ -121,4 +122,13 @@ func (c *Client) ReadArming(key string, ctx context.Context) (string, error) {
 	}
 
 	return val, nil
+}
+
+func (c *Client) WriteSubscription(key, subscription string, ctx context.Context) error {
+	d := c.client.Set(ctx, fmt.Sprintf("%s%s", subscriptionPrefix, key), subscription, 0)
+	err := d.Err()
+	if err != nil {
+		return err
+	}
+	return nil
 }
