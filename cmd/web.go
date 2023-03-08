@@ -150,14 +150,14 @@ func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	subBytes, err := io.ReadAll(req.Body)
+	subMarshalled, err := json.Marshal(sub)
 	if err != nil {
-		logger.Errorf("reading subscription request body: %s", err)
+		logger.Errorf("marshalling subscription request body: %s", err)
 		http.Error(w, `{"error":"Error saving subscription","status":"failed"}`, http.StatusBadRequest)
 		return
 	}
 
-	encrypted, err := s.serverClients.CryptoUtil.Encrypt(subBytes)
+	encrypted, err := s.serverClients.CryptoUtil.Encrypt(subMarshalled)
 	if err != nil {
 		logger.Errorf("encrypting subscription: %s", err)
 		http.Error(w, `{"error":"Error saving subscription","status":"failed"}`, http.StatusBadRequest)
