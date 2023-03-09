@@ -3,7 +3,6 @@
 
 docker-compose up -d
 
-export REDIS_TLS_URL=redis://127.0.0.1:6379
 export REDIS_URL=redis://127.0.0.1:6379
 export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable
 export CLOUDMQTT_URL=mqtt://user:pass@127.0.0.1:1883
