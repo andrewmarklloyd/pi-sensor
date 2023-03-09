@@ -17,6 +17,7 @@ type ServerConfig struct {
 	AllowedAPIKeys     []string
 	DatadogConfig      DatadogConfig
 	WebPushConfig      WebPushConfig
+	EncryptionKey      string
 }
 
 type GoogleConfig struct {

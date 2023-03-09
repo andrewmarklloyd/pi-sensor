@@ -33,6 +33,7 @@ function subscribe() {
 
   if (Notification.permission === "granted") {
     console.log("Notifications already enabled")
+    // todo: always send to server
     return
   }
 

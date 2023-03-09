@@ -12,24 +12,29 @@ import (
 )
 
 const (
-	statePrefix     = "state/"
-	heartbeatPrefix = "heartbeat/"
-	armingPrefix    = "arming/"
+	statePrefix        = "state/"
+	heartbeatPrefix    = "heartbeat/"
+	armingPrefix       = "arming/"
+	subscriptionPrefix = "subscription/"
 )
 
 type Client struct {
 	client redis.Client
 }
 
-func NewRedisClient(redisURL string) (Client, error) {
+func NewRedisClient(redisURL string, tlsEnabled bool) (Client, error) {
 	redisClient := Client{}
 	options, err := redis.ParseURL(redisURL)
 	if err != nil {
 		return redisClient, err
 	}
-	options.TLSConfig = &tls.Config{
-		InsecureSkipVerify: true,
+	if tlsEnabled {
+		// todo: do we actually need this?
+		options.TLSConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
 	}
+
 	redisClient.client = *redis.NewClient(options)
 
 	return redisClient, nil
@@ -121,4 +126,28 @@ func (c *Client) ReadArming(key string, ctx context.Context) (string, error) {
 	}
 
 	return val, nil
+}
+
+func (c *Client) WriteSubscription(key, subscription string, ctx context.Context) error {
+	d := c.client.Set(ctx, fmt.Sprintf("%s%s", subscriptionPrefix, key), subscription, 0)
+	err := d.Err()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Client) ReadAllSubscription(ctx context.Context) (map[string]string, error) {
+	subs := make(map[string]string)
+	keys := c.client.Keys(ctx, fmt.Sprintf("%s*", subscriptionPrefix)).Val()
+	for _, k := range keys {
+		val, err := c.client.Get(ctx, k).Result()
+		if err != nil {
+			return subs, err
+		}
+
+		subs[strings.Replace(k, subscriptionPrefix, "", -1)] = val
+	}
+
+	return subs, nil
 }

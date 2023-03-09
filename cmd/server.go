@@ -8,9 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/SherClockHolmes/webpush-go"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/aws"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/crypto"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/datadog"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/postgres"
@@ -78,6 +80,7 @@ func runServer() {
 			VAPIDPublicKey:  viper.GetString("VAPID_PUBLIC_KEY"),
 			VAPIDPrivateKey: viper.GetString("VAPID_PRIVATE_KEY"),
 		},
+		EncryptionKey: viper.GetString("ENCRYPTION_KEY"),
 	}
 
 	serverClients, err := createClients(serverConfig)
@@ -261,7 +264,15 @@ func runFullBackup(serverClients clients.ServerClients, serverConfig config.Serv
 }
 
 func createClients(serverConfig config.ServerConfig) (clients.ServerClients, error) {
-	redisClient, err := redis.NewRedisClient(serverConfig.RedisTLSURL)
+	var redisClient redis.Client
+	var err error
+
+	if serverConfig.RedisTLSURL != "" {
+		redisClient, err = redis.NewRedisClient(serverConfig.RedisTLSURL, true)
+	} else {
+		redisClient, err = redis.NewRedisClient(serverConfig.RedisURL, false)
+	}
+
 	if err != nil {
 		return clients.ServerClients{}, fmt.Errorf("creating redis client: %s", err)
 	}
@@ -290,12 +301,18 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	}
 	ddClient := datadog.NewDatadogClient(serverConfig.DatadogConfig.APIKey, serverConfig.DatadogConfig.APPKey)
 
+	cryptoUtil, err := crypto.NewUtil(serverConfig.EncryptionKey)
+	if err != nil {
+		return clients.ServerClients{}, fmt.Errorf("error creating crypto client: %s", err)
+	}
+
 	return clients.ServerClients{
-		Redis:    redisClient,
-		Postgres: postgresClient,
-		Mqtt:     mqttClient,
-		AWS:      awsClient,
-		DDClient: ddClient,
+		Redis:      redisClient,
+		Postgres:   postgresClient,
+		Mqtt:       mqttClient,
+		AWS:        awsClient,
+		DDClient:   ddClient,
+		CryptoUtil: cryptoUtil,
 	}, nil
 }
 
@@ -404,6 +421,17 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 	if (lastStatus.Status == config.CLOSED && currentStatus.Status == config.OPEN) || (lastStatus.Status == config.UNKNOWN && currentStatus.Status == config.OPEN) {
 		logger.Infof("%s was just opened", currentStatus.Source)
 		if !serverConfig.MockMode && armed {
+			subs, err := serverClients.Redis.ReadAllSubscription(context.Background())
+			if err != nil {
+				return fmt.Errorf("reading all subscriptions: %w", err)
+			}
+
+			message := fmt.Sprintf("%s was just opened", currentStatus.Source)
+			err = sendPushNotification(serverClients, serverConfig, subs, message)
+			if err != nil {
+				return fmt.Errorf("sending push notifications: %w", err)
+			}
+
 			err = serverClients.Mqtt.PublishHASensorNotify(currentStatus)
 			if err != nil {
 				return fmt.Errorf("publishing ha sensor notify: %w", err)
@@ -477,4 +505,30 @@ func buildTokenMetadata() []config.TokenMetadata {
 			Expiration: viper.GetString("TS_TOKEN_EXP_GITHUB_CI"),
 		},
 	}
+}
+
+func sendPushNotification(serverClients clients.ServerClients, serverConfig config.ServerConfig, subscriptions map[string]string, message string) error {
+	for email, sub := range subscriptions {
+		decrypted, err := serverClients.CryptoUtil.Decrypt([]byte(sub))
+		if err != nil {
+			return fmt.Errorf("decrypting subscription: %w", err)
+		}
+
+		var sub webpush.Subscription
+		err = json.Unmarshal(decrypted, &sub)
+		if err != nil {
+			return fmt.Errorf("parsing subscription payload: %s", err)
+		}
+
+		_, err = webpush.SendNotification([]byte(message), &sub, &webpush.Options{
+			Subscriber:      email,
+			VAPIDPublicKey:  serverConfig.WebPushConfig.VAPIDPublicKey,
+			VAPIDPrivateKey: serverConfig.WebPushConfig.VAPIDPrivateKey,
+			TTL:             30,
+		})
+		if err != nil {
+			return fmt.Errorf("sending push notification: %s", err)
+		}
+	}
+	return nil
 }
