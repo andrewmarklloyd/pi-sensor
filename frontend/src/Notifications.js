@@ -37,6 +37,12 @@ class NotificationsPage extends Component {
 }
 
 function subscribe() {
+  if (!("Notification" in window) || !('serviceWorker' in navigator)) {
+    // todo: failsafe workaround
+    alert("This browser or device does not support notifications")
+    return
+  }
+
   if (Notification.permission === "granted") {
     createOrUpdateSubscription()
     return
