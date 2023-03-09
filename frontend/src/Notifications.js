@@ -3,6 +3,7 @@ import React, { Component } from "react";
 import {
   Page,
   Button,
+  Card,
 } from "tabler-react";
 
 import SiteWrapper from "./SiteWrapper";
@@ -14,15 +15,21 @@ class NotificationsPage extends Component {
     super(props)
     vapidPublicKey = process.env.REACT_APP_VAPID_PUBLIC_KEY
 
+    this.state = { disabled: false }
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
+    }
+
+    if (!("Notification" in window) || !('serviceWorker' in navigator)) {
+      this.setState({ disabled: true })
     }
   }
   render() {
     return (
       <SiteWrapper>
         <Page.Content>
-        <Button color="secondary" onClick={() => subscribe()}>Subscribe</Button>
+        { this.state.disabled ? <Card.Title>This browser or device does not support notifications</Card.Title> : null }
+        <Button disabled={this.state.disabled} color="secondary" onClick={() => subscribe()}>Subscribe</Button>
         </Page.Content>
       </SiteWrapper>
     );
@@ -30,11 +37,6 @@ class NotificationsPage extends Component {
 }
 
 function subscribe() {
-  if (!("Notification" in window) || !('serviceWorker' in navigator)) {
-    alert("This browser does not support desktop notification")
-    return
-  }
-
   if (Notification.permission === "granted") {
     createOrUpdateSubscription()
     return
