@@ -14,8 +14,10 @@ class NotificationsPage extends Component {
   constructor(props) {
     super(props)
     vapidPublicKey = process.env.REACT_APP_VAPID_PUBLIC_KEY
-
     this.state = { disabled: false }
+  }
+
+  componentDidMount() {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
     }
@@ -24,6 +26,7 @@ class NotificationsPage extends Component {
       this.setState({ disabled: true })
     }
   }
+
   render() {
     return (
       <SiteWrapper>
