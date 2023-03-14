@@ -22,7 +22,7 @@ const navBarItems = [
   {
     value: "Notifications",
     to: "/notifications",
-    icon: "",
+    icon: "bell",
     useExact: true,
   },
   {
