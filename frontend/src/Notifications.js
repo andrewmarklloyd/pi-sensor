@@ -19,10 +19,6 @@ class NotificationsPage extends Component {
 
   componentDidMount() {
     this.setState({ disabled: true })
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-    }
-
     if (("Notification" in window) && ('serviceWorker' in navigator)) {
       this.setState({disabled: false})
     }

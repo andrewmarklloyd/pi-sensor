@@ -43,7 +43,7 @@ cleanup_tags() {
   fi
 }
 
-git diff ':!frontend/package-lock.json'
+git diff ':!frontend/package-lock.json' ':!frontend/public/index.html' ':!frontend/public/*service-worker*'
 SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
 deploy
 cleanup_tags
