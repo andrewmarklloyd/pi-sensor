@@ -18,6 +18,7 @@
       owner: root
       group: root
     no_log: True
+    register: onepass_env
 
   - name: Copy log-forwader binary
     ansible.builtin.copy:
@@ -87,4 +88,4 @@
       state: restarted
     with_items:
       - "{{ agents }}"
-    when: agent_binary.changed | bool or agent_systemd.changed | bool
+    when: agent_binary.changed | bool or agent_systemd.changed | bool or onepass_env.changed | bool
