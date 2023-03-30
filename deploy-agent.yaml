@@ -51,7 +51,7 @@
       force: yes
       name: agent-log-forwarder
       state: restarted
-    when: forwarder_binary.changed | bool or forwarder_systemd.changed | bool
+    when: forwarder_binary.changed | bool or forwarder_systemd.changed | bool or onepass_env.changed | bool
 
   - name: Write agent op cli env-file template
     ansible.builtin.template:
