@@ -16,5 +16,8 @@ export GOOGLE_CLIENT_SECRET=$(op read op://pi-sensor-server/config/GOOGLE_CLIENT
 export REDIRECT_URL=http://localhost:8080/google/callback
 export AUTHORIZED_USERS=$(op read op://pi-sensor-server/config/AUTHORIZED_USERS)
 
-make build-frontend
+cd frontend/
+npm install
+npm run build
+cd ../
 go run main.go
