@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -178,8 +179,10 @@ func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	logger.Info("new subscription created")
+
 	resp, err := webpush.SendNotification([]byte("Thanks for subscribing!"), &sub, &webpush.Options{
-		Subscriber:      email.(string),
+		Subscriber:      emailStr,
 		VAPIDPublicKey:  s.vapidPublicKey,
 		VAPIDPrivateKey: s.vapidPrivateKey,
 		TTL:             30,
@@ -187,9 +190,24 @@ func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request)
 	if err != nil {
 		logger.Errorf("sending initial web push notification: %w", err)
 		http.Error(w, `{"error":"Error sending initial web push notification","status":"failed"}`, http.StatusBadRequest)
+		return
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			logger.Errorf("reading body from initial web push notification: %w", err)
+			http.Error(w, `{"error":"Error sending initial web push notification","status":"failed"}`, http.StatusBadRequest)
+			return
+		}
+
+		defer resp.Body.Close()
+		logger.Errorw("sending initial web push notification", "statusCode", resp.StatusCode, "status", resp.Status, "body", string(body))
+		http.Error(w, `{"error":"Error sending initial web push notification","status":"failed"}`, http.StatusBadRequest)
+		return
+	}
 
 	fmt.Fprintf(w, `{"error":"","status":"success"}`)
 }
@@ -381,7 +399,7 @@ func requireLogin(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		if !isAuthenticated(req) {
 			if !strings.Contains(req.Header.Get("User-Agent"), "DigitalOcean Uptime Probe") {
-				logger.Warnf("Unauthenticated request, X-Forwarded-For: %s, User-Agent: %s", req.Header["X-Forwarded-For"], req.Header["User-Agent"])
+				// logger.Warnf("Unauthenticated request, X-Forwarded-For: %s, User-Agent: %s", req.Header["X-Forwarded-For"], req.Header["User-Agent"])
 				http.Redirect(w, req, "/google/login", http.StatusFound)
 			}
 			return
