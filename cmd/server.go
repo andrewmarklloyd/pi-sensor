@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"time"
@@ -420,7 +421,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 
 	if (lastStatus.Status == config.CLOSED && currentStatus.Status == config.OPEN) || (lastStatus.Status == config.UNKNOWN && currentStatus.Status == config.OPEN) {
 		logger.Infof("%s was just opened", currentStatus.Source)
-		if !serverConfig.MockMode && armed {
+		if armed {
 			subs, err := serverClients.Redis.ReadAllSubscription(context.Background())
 			if err != nil {
 				return fmt.Errorf("reading all subscriptions: %w", err)
@@ -520,15 +521,27 @@ func sendPushNotification(serverClients clients.ServerClients, serverConfig conf
 			return fmt.Errorf("parsing subscription payload: %s", err)
 		}
 
-		_, err = webpush.SendNotification([]byte(message), &sub, &webpush.Options{
+		opts := &webpush.Options{
 			Subscriber:      email,
 			VAPIDPublicKey:  serverConfig.WebPushConfig.VAPIDPublicKey,
 			VAPIDPrivateKey: serverConfig.WebPushConfig.VAPIDPrivateKey,
 			TTL:             30,
-		})
+		}
+
+		r, err := webpush.SendNotification([]byte(message), &sub, opts)
 		if err != nil {
 			return fmt.Errorf("sending push notification: %s", err)
 		}
+
+		if r.StatusCode != 200 {
+			body, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				return err
+			}
+			defer r.Body.Close()
+			logger.Errorw("sending push notification", "statusCode", r.StatusCode, "status", r.Status, "body", string(body))
+		}
+
 	}
 	return nil
 }
