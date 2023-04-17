@@ -35,8 +35,7 @@ jobs:
       - name: Deploy agents
         uses: dawidd6/action-ansible-playbook@v2
         env:
-          OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
-          OP_CONNECT_HOST: ${{ secrets.OP_CONNECT_HOST }}
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
         with:
           playbook: deploy-agent.yaml
           key: ${{ secrets.AGENT_SSH_KEY }}
