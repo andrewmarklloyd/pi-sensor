@@ -4,8 +4,7 @@
   become: true
   # todo: fail when these env vars are unset
   vars:
-    OP_CONNECT_TOKEN: "{{ lookup('ansible.builtin.env', 'OP_CONNECT_TOKEN') }}"
-    OP_CONNECT_HOST: "{{ lookup('ansible.builtin.env', 'OP_CONNECT_HOST') }}"
+    OP_SERVICE_ACCOUNT_TOKEN: "{{ lookup('ansible.builtin.env', 'OP_SERVICE_ACCOUNT_TOKEN') }}"
   tasks:
   - name: Make directory
     file:
