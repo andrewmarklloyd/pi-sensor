@@ -3,7 +3,7 @@ RUN go install github.com/andrewmarklloyd/do-app-firewall-entrypoint@latest
 
 RUN apk add curl
 RUN curl -sSfo op.zip \
-  https://cache.agilebits.com/dist/1P/op2/pkg/v2.17.0-beta.01/op_linux_amd64_v2.17.0-beta.01.zip \
+  https://cache.agilebits.com/dist/1P/op2/pkg/v2.18.0-beta.01/op_linux_amd64_v2.18.0-beta.01.zip \
   && unzip -od /usr/local/bin/ op.zip \
   && rm op.zip
 
