@@ -9,8 +9,9 @@ if ! command -v yq &> /dev/null; then
 fi
 
 if ! command -v doctl &> /dev/null; then
-  wget -q https://github.com/digitalocean/doctl/releases/download/v1.84.1/doctl-1.84.1-linux-amd64.tar.gz -P /tmp
-  tar xf /tmp/doctl-1.84.1-linux-amd64.tar.gz -C /tmp
+  doctlVersion="1.94.0"
+  wget -q https://github.com/digitalocean/doctl/releases/download/v${doctlVersion}/doctl-${doctlVersion}-linux-amd64.tar.gz -P /tmp
+  tar xf /tmp/doctl-${doctlVersion}-linux-amd64.tar.gz -C /tmp
   mv /tmp/doctl /usr/local/bin
 fi
 
@@ -24,7 +25,7 @@ deploy() {
 }
 
 cleanup_tags() {
-  maxTags=10
+  maxTags=5
   tags=$(doctl --access-token ${DO_ACCESS_TOKEN} registry repo list-tags pi-sensor -o json)
   num=$(echo ${tags} | jq 'length')
   if [ "${num}" -gt "${maxTags}" ]; then
