@@ -26,7 +26,6 @@ jobs:
           DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
           GITHUB_SHA: ${{ github.sha }}
           DO_APP_ID: ${{ secrets.DO_APP_ID }}
-          OPCONNECT_CERT: ${{ secrets.OPCONNECT_CERT }}
         run: ./.github/scripts/deploy-do.sh
       - name: Start tailscale
         uses: tailscale/github-action@v1
