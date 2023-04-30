@@ -5,7 +5,26 @@
   # todo: fail when these env vars are unset
   vars:
     OP_SERVICE_ACCOUNT_TOKEN: "{{ lookup('ansible.builtin.env', 'OP_SERVICE_ACCOUNT_TOKEN') }}"
+    OP_VERSION: "2.18.0-beta.01"
   tasks:
+  - name: Gather installed op cli version, if there is any
+    shell:
+      cmd: op --version
+    register: result
+    changed_when: false
+    failed_when: result.rc != 0 and result.rc != 127
+  - name: Set default version, if there is no
+    set_fact:
+      result:
+        stdout_lines: "0.0.0_000"
+    when: "'command not found' in result.stdout"
+  - name: Install or upgrade op cli
+    shell: |
+      curl -sSfo /tmp/op.zip "https://cache.agilebits.com/dist/1P/op2/pkg/v{{ OP_VERSION }}/op_linux_arm_v{{ OP_VERSION }}.zip"
+      unzip -od /usr/local/bin/ /tmp/op.zip
+      rm /tmp/op.zip
+    when:
+      - result.stdout_lines[0] != OP_VERSION
   - name: Make directory
     file:
       path: /usr/local/src/pi-sensor-agent/
