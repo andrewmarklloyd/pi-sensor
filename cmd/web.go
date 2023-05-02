@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
+
 	"net/http"
 	"os"
 	"path/filepath"
@@ -194,7 +194,7 @@ func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request)
 	}
 
 	if resp.StatusCode >= 300 {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			logger.Errorf("reading body from initial web push notification: %w", err)
 			http.Error(w, `{"error":"Error sending initial web push notification","status":"failed"}`, http.StatusBadRequest)

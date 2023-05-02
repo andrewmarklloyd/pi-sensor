@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -534,7 +534,7 @@ func sendPushNotification(serverClients clients.ServerClients, serverConfig conf
 		}
 
 		if r.StatusCode >= 300 {
-			body, err := ioutil.ReadAll(r.Body)
+			body, err := io.ReadAll(r.Body)
 			if err != nil {
 				return err
 			}
