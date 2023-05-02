@@ -193,9 +193,7 @@ func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
+	if resp.StatusCode >= 300 {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			logger.Errorf("reading body from initial web push notification: %w", err)

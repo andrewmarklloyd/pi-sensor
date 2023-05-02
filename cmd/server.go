@@ -533,7 +533,7 @@ func sendPushNotification(serverClients clients.ServerClients, serverConfig conf
 			return fmt.Errorf("sending push notification: %s", err)
 		}
 
-		if r.StatusCode != 200 {
+		if r.StatusCode >= 300 {
 			body, err := ioutil.ReadAll(r.Body)
 			if err != nil {
 				return err
