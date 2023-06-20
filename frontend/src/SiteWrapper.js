@@ -48,10 +48,10 @@ class SiteWrapper extends React.Component {
         navProps={{ itemsObjects: navBarItems }}
         footerProps={{
           links: [
-            <a href="https://github.com/andrewmarklloyd/pi-sensor">Source Code</a>
+            <a href={"https://github.com/andrewmarklloyd/pi-sensor/commit/"+process.env.REACT_APP_VERSION}>App Version {process.env.REACT_APP_VERSION}</a>
           ],
           note:
-            <a href={"https://github.com/andrewmarklloyd/pi-sensor/commit/"+process.env.REACT_APP_VERSION}>App Version {process.env.REACT_APP_VERSION}</a>
+            <img src="https://github.com/andrewmarklloyd/pi-sensor/actions/workflows/main.yml/badge.svg"></img>
         }}
       >
         {this.props.children}
