@@ -51,7 +51,7 @@ class SiteWrapper extends React.Component {
             <a href={"https://github.com/andrewmarklloyd/pi-sensor/commit/"+process.env.REACT_APP_VERSION}>App Version {process.env.REACT_APP_VERSION}</a>
           ],
           note:
-            <img src="https://github.com/andrewmarklloyd/pi-sensor/actions/workflows/main.yml/badge.svg"></img>
+            <img src="https://github.com/andrewmarklloyd/pi-sensor/actions/workflows/main.yml/badge.svg" alt="build-badge"></img>
         }}
       >
         {this.props.children}
