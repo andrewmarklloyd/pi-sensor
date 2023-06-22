@@ -481,21 +481,6 @@ func handleOpenTimeout(serverClients clients.ServerClients, s config.SensorStatu
 func buildTokenMetadata() []config.TokenMetadata {
 	return []config.TokenMetadata{
 		{
-			Name:       "pi-sensor-server",
-			Owner:      "opconnect",
-			Expiration: viper.GetString("OP_TOKEN_EXP_SERVER"),
-		},
-		{
-			Name:       "pi-sensor-agent",
-			Owner:      "opconnect",
-			Expiration: viper.GetString("OP_TOKEN_EXP_AGENT"),
-		},
-		{
-			Name:       "pi-sensor-firewall-updater",
-			Owner:      "digitalocean",
-			Expiration: viper.GetString("DO_TOKEN_EXP_FIREWALL_UPDATER"),
-		},
-		{
 			Name:       "github-ci",
 			Owner:      "digitalocean",
 			Expiration: viper.GetString("DO_TOKEN_EXP_GITHUB_CI"),
