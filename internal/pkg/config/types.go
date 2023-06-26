@@ -36,6 +36,11 @@ type SensorStatus struct {
 	Version   string `json:"version"`
 }
 
+type SensorConfig struct {
+	Source             string `json:"source"`
+	OpenTimeoutMinutes int32  `json:"openTimeoutMinutes"`
+}
+
 type SensorState struct {
 	Sensors []SensorStatus    `json:"sensors"`
 	Arming  map[string]string `json:"arming"`

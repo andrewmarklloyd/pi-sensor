@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	createTableStmt = `CREATE TABLE IF NOT EXISTS status(source text, status text, timestamp text, version text);`
-	limit           = 100
+	createTableStatusStmt = `CREATE TABLE IF NOT EXISTS status(source text, status text, timestamp text, version text);`
+	createTableConfigStmt = `CREATE TABLE IF NOT EXISTS sensorconfig(source text PRIMARY KEY, openTimeoutMinutes text);`
+	limit                 = 100
 )
 
 type Client struct {
@@ -27,10 +28,16 @@ func NewPostgresClient(databaseURL string) (Client, error) {
 	}
 	postgresClient.sqlDB = db
 
-	_, err = db.Exec(createTableStmt)
+	_, err = db.Exec(createTableStatusStmt)
 	if err != nil {
 		return postgresClient, err
 	}
+
+	_, err = db.Exec(createTableConfigStmt)
+	if err != nil {
+		return postgresClient, err
+	}
+
 	return postgresClient, nil
 }
 
@@ -191,4 +198,34 @@ func (c *Client) GetAllRows() ([]config.SensorStatus, error) {
 		statuses = append(statuses, s)
 	}
 	return statuses, nil
+}
+
+func (c *Client) WriteSensorConfig(s config.SensorConfig) error {
+	stmt := "INSERT INTO sensorconfig(source, openTimeoutMinutes) VALUES($1, $2) ON CONFLICT (source) DO UPDATE SET openTimeoutMinutes = excluded.openTimeoutMinutes;"
+	_, err := c.sqlDB.Exec(stmt, s.Source, s.OpenTimeoutMinutes)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Client) GetSensorConfig() ([]config.SensorConfig, error) {
+	var sensorConfig []config.SensorConfig
+	stmt := `SELECT * FROM sensorconfig`
+	rows, err := c.sqlDB.Query(stmt)
+	if err != nil {
+		return sensorConfig, fmt.Errorf("executing select query: %s", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var s config.SensorConfig
+		err := rows.Scan(&s.Source, &s.OpenTimeoutMinutes)
+		if err != nil {
+			return sensorConfig, err
+		}
+		sensorConfig = append(sensorConfig, s)
+	}
+	return sensorConfig, nil
 }
