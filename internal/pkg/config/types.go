@@ -19,8 +19,8 @@ const (
 	HeartbeatTypeSensor = "sensor"
 	HeartbeatTypeApp    = "app"
 
-	OpenTimeout      = 5 * time.Minute
-	HeartbeatTimeout = 5 * time.Minute
+	DefaultOpenTimeoutMinutes = 5
+	HeartbeatTimeout          = 5 * time.Minute
 )
 
 type Heartbeat struct {

@@ -17,11 +17,15 @@ const (
 )
 
 type Client struct {
-	sqlDB *sql.DB
+	sqlDB            *sql.DB
+	sensorConfigChan chan<- config.SensorConfig
 }
 
-func NewPostgresClient(databaseURL string) (Client, error) {
-	postgresClient := Client{}
+func NewPostgresClient(databaseURL string, sensorConfigChan chan<- config.SensorConfig) (Client, error) {
+	postgresClient := Client{
+		sensorConfigChan: sensorConfigChan,
+	}
+
 	db, err := sql.Open("postgres", databaseURL)
 	if err != nil {
 		return postgresClient, err
@@ -39,6 +43,13 @@ func NewPostgresClient(databaseURL string) (Client, error) {
 	}
 
 	return postgresClient, nil
+}
+
+func (c *Client) Tmp(ch chan<- config.SensorConfig) {
+	ch <- config.SensorConfig{
+		Source:             "garage",
+		OpenTimeoutMinutes: 5,
+	}
 }
 
 func (c *Client) WriteSensorStatus(s config.SensorStatus) error {
@@ -206,6 +217,8 @@ func (c *Client) WriteSensorConfig(s config.SensorConfig) error {
 	if err != nil {
 		return err
 	}
+
+	c.sensorConfigChan <- s
 
 	return nil
 }
