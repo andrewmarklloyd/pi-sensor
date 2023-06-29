@@ -317,6 +317,13 @@ func (s WebServer) sensorOpenTimeoutHandler(w http.ResponseWriter, req *http.Req
 		return
 	}
 
+	if sensor.OpenTimeout < config.MinOpenTimeoutMinutes || sensor.OpenTimeout > config.MaxOpenTimeoutMinutes {
+		msg := fmt.Sprintf("open timeout must be between %d and %d", config.MinOpenTimeoutMinutes, config.MaxOpenTimeoutMinutes)
+		logger.Errorf("error in sensor open timeout handler: %s", msg)
+		http.Error(w, fmt.Sprintf(`{"status":"error","error":"%s"}`, msg), http.StatusBadRequest)
+		return
+	}
+
 	cfg := config.SensorConfig{
 		Source:             sensor.Source,
 		OpenTimeoutMinutes: int32(sensor.OpenTimeout),

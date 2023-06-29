@@ -20,7 +20,10 @@ const (
 	HeartbeatTypeApp    = "app"
 
 	DefaultOpenTimeoutMinutes = 5
-	HeartbeatTimeout          = 5 * time.Minute
+	MinOpenTimeoutMinutes     = 1
+	MaxOpenTimeoutMinutes     = 60
+
+	HeartbeatTimeout = 5 * time.Minute
 )
 
 type Heartbeat struct {
