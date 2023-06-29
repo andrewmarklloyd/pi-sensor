@@ -47,6 +47,7 @@ type SensorState struct {
 }
 
 type APIPayload struct {
-	Source string `json:"source"`
-	Armed  string `json:"armed"` // TODO: use bool. Need to handle zero value
+	Source      string `json:"source"`
+	Armed       string `json:"armed"` // TODO: use bool. Need to handle zero value
+	OpenTimeout int    `json:"openTimeout,omitempty"`
 }
