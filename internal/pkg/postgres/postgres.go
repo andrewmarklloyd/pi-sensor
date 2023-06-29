@@ -45,13 +45,6 @@ func NewPostgresClient(databaseURL string, sensorConfigChan chan<- config.Sensor
 	return postgresClient, nil
 }
 
-func (c *Client) Tmp(ch chan<- config.SensorConfig) {
-	ch <- config.SensorConfig{
-		Source:             "garage",
-		OpenTimeoutMinutes: 5,
-	}
-}
-
 func (c *Client) WriteSensorStatus(s config.SensorStatus) error {
 	stmt := "INSERT INTO status(source, status, timestamp, version) VALUES($1, $2, $3, $4)"
 	_, err := c.sqlDB.Exec(stmt, s.Source, s.Status, s.Timestamp, s.Version)
