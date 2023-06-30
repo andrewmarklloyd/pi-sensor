@@ -120,7 +120,7 @@ class SensorPage extends Component {
               <div>
                 <form onSubmit={this.submitOpenTimeout.bind(this)}>
                   <label>
-                    Name:
+                    Open Timeout:
                     <input type="number" min="1" max="60" value={this.state.openTimeout} onChange={this.handleChange.bind(this)} />
                   </label>
                   <input type="submit" value="Submit" />
