@@ -24,9 +24,11 @@ import (
 )
 
 var (
-	logger          *zap.SugaredLogger
-	forwarderLogger *zap.SugaredLogger
-	version         = "unknown"
+	logger           *zap.SugaredLogger
+	forwarderLogger  *zap.SugaredLogger
+	version          = "unknown"
+	sensorConfigChan = make(chan config.SensorConfig, 1)
+	sensorConfigMap  = make(map[string]int32)
 )
 
 const (
@@ -95,6 +97,21 @@ func runServer() {
 	}
 
 	webServer := newWebServer(serverConfig, serverClients)
+
+	allCfg, err := serverClients.Postgres.GetSensorConfig()
+	if err != nil {
+		logger.Fatalf("error getting sensor config from postgres: %s", err)
+	}
+
+	for _, c := range allCfg {
+		sensorConfigMap[c.Source] = c.OpenTimeoutMinutes
+	}
+
+	// receive updates to sensorconfig from postgres
+	go func(sensorConfigMap map[string]int32) {
+		cfg := <-sensorConfigChan
+		sensorConfigMap[cfg.Source] = cfg.OpenTimeoutMinutes
+	}(sensorConfigMap)
 
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
 	serverClients.Mqtt.Subscribe(config.SensorStatusTopic, func(message string) {
@@ -278,7 +295,7 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		return clients.ServerClients{}, fmt.Errorf("creating redis client: %s", err)
 	}
 
-	postgresClient, err := postgres.NewPostgresClient(serverConfig.PostgresURL)
+	postgresClient, err := postgres.NewPostgresClient(serverConfig.PostgresURL, sensorConfigChan)
 	if err != nil {
 		return clients.ServerClients{}, fmt.Errorf("creating postgres client: %s", err)
 	}
@@ -407,8 +424,12 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 
 	armedString, err := serverClients.Redis.ReadArming(currentStatus.Source, context.Background())
 	if err != nil {
-		return fmt.Errorf("reading arming from redis: %w", err)
+		if err.Error() != "redis: nil" {
+			return fmt.Errorf("reading state from redis: %w", err)
+		}
+		armedString = ""
 	}
+
 	armed := true
 	if armedString == "" || armedString == "false" {
 		armed = false
@@ -441,8 +462,14 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 	}
 
 	if currentStatus.Status == config.OPEN {
-		timer := time.AfterFunc(config.OpenTimeout, func() {
-			handleOpenTimeout(serverClients, currentStatus, armed, serverConfig.MockMode)
+		openTimeout, ok := sensorConfigMap[currentStatus.Source]
+		if !ok {
+			openTimeout = int32(config.DefaultOpenTimeoutMinutes)
+		}
+
+		duration := time.Duration(openTimeout) * time.Minute
+		timer := time.AfterFunc(duration, func() {
+			handleOpenTimeout(serverClients, currentStatus, armed, serverConfig.MockMode, openTimeout)
 		})
 		delayTimerMap[currentStatus.Source] = timer
 	} else if currentStatus.Status == config.CLOSED {
@@ -467,8 +494,8 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 	return nil
 }
 
-func handleOpenTimeout(serverClients clients.ServerClients, s config.SensorStatus, armed, mockMode bool) {
-	message := fmt.Sprintf("🚨 %s opened longer than %s", s.Source, config.OpenTimeout)
+func handleOpenTimeout(serverClients clients.ServerClients, s config.SensorStatus, armed, mockMode bool, openTimeout int32) {
+	message := fmt.Sprintf("🚨 %s opened longer than %d min", s.Source, openTimeout)
 	logger.Warn(message)
 	if !mockMode && armed {
 		err := serverClients.Mqtt.PublishHAOpenWarn(s)

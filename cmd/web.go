@@ -81,6 +81,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
 	router.Handle("/api/agent-logs", http.HandlerFunc(agentLogsHandler)).Methods(post)
 	router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(w.sensorRestartHandler))).Methods(post)
+	router.Handle("/api/sensor/openTimeout", requireLogin(http.HandlerFunc(w.sensorOpenTimeoutHandler))).Methods(post)
 	router.Handle("/api/sensor/arming", requireLogin(http.HandlerFunc(w.sensorArmingHandler))).Methods(post)
 	router.Handle("/api/sensor/all", requireLogin(http.HandlerFunc(w.allSensorsHandler))).Methods(get)
 	router.Handle("/api/report", requireLogin(http.HandlerFunc(w.reportHandler))).Methods(get)
@@ -304,6 +305,36 @@ func (s WebServer) sensorRestartHandler(w http.ResponseWriter, req *http.Request
 		return
 	}
 	logger.Infof("Publishing sensor restart message for %s", sensor.Source)
+	fmt.Fprintf(w, "{\"status\":\"success\"}")
+}
+
+func (s WebServer) sensorOpenTimeoutHandler(w http.ResponseWriter, req *http.Request) {
+	var sensor config.APIPayload
+	err := json.NewDecoder(req.Body).Decode(&sensor)
+	if err != nil {
+		logger.Errorf("unmarshalling sensor open timeout payload: %w", err)
+		http.Error(w, `{"status":"error","error":"Error parsing request"}`, http.StatusBadRequest)
+		return
+	}
+
+	if sensor.OpenTimeout < config.MinOpenTimeoutMinutes || sensor.OpenTimeout > config.MaxOpenTimeoutMinutes {
+		msg := fmt.Sprintf("open timeout must be between %d and %d", config.MinOpenTimeoutMinutes, config.MaxOpenTimeoutMinutes)
+		logger.Errorf("error in sensor open timeout handler: %s", msg)
+		http.Error(w, fmt.Sprintf(`{"status":"error","error":"%s"}`, msg), http.StatusBadRequest)
+		return
+	}
+
+	cfg := config.SensorConfig{
+		Source:             sensor.Source,
+		OpenTimeoutMinutes: int32(sensor.OpenTimeout),
+	}
+	err = s.serverClients.Postgres.WriteSensorConfig(cfg)
+	if err != nil {
+		logger.Errorf("writing sensor config: %s", err)
+		http.Error(w, `{"status":"error","error":"Error writing open timeout to database"}`, http.StatusInternalServerError)
+		return
+	}
+
 	fmt.Fprintf(w, "{\"status\":\"success\"}")
 }
 

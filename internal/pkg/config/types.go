@@ -19,7 +19,10 @@ const (
 	HeartbeatTypeSensor = "sensor"
 	HeartbeatTypeApp    = "app"
 
-	OpenTimeout      = 5 * time.Minute
+	DefaultOpenTimeoutMinutes = 5
+	MinOpenTimeoutMinutes     = 1
+	MaxOpenTimeoutMinutes     = 60
+
 	HeartbeatTimeout = 5 * time.Minute
 )
 
@@ -36,12 +39,18 @@ type SensorStatus struct {
 	Version   string `json:"version"`
 }
 
+type SensorConfig struct {
+	Source             string `json:"source"`
+	OpenTimeoutMinutes int32  `json:"openTimeoutMinutes"`
+}
+
 type SensorState struct {
 	Sensors []SensorStatus    `json:"sensors"`
 	Arming  map[string]string `json:"arming"`
 }
 
 type APIPayload struct {
-	Source string `json:"source"`
-	Armed  string `json:"armed"` // TODO: use bool. Need to handle zero value
+	Source      string `json:"source"`
+	Armed       string `json:"armed"` // TODO: use bool. Need to handle zero value
+	OpenTimeout int    `json:"openTimeout,omitempty"`
 }
