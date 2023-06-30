@@ -15,6 +15,24 @@ class SensorPage extends Component {
   constructor(props) {
     super(props)
     this.state = this.props.location.state
+    var component = this
+    fetch("/api/sensor/getOpenTimeout?source="+component.state.source, {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      referrerPolicy: 'no-referrer'
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === "success") {
+        component.state.openTimeout = res.openTimeout
+        component.setState(component.state)
+      } else {
+        console.log("error getting openTimeout: ", res.error)
+      }
+    })
   }
 
   restartSensor(source) {

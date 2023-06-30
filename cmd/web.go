@@ -82,6 +82,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	router.Handle("/api/agent-logs", http.HandlerFunc(agentLogsHandler)).Methods(post)
 	router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(w.sensorRestartHandler))).Methods(post)
 	router.Handle("/api/sensor/openTimeout", requireLogin(http.HandlerFunc(w.sensorOpenTimeoutHandler))).Methods(post)
+	router.Handle("/api/sensor/getOpenTimeout", requireLogin(http.HandlerFunc(w.getSensorOpenTimeoutHandler))).Methods(get)
 	router.Handle("/api/sensor/arming", requireLogin(http.HandlerFunc(w.sensorArmingHandler))).Methods(post)
 	router.Handle("/api/sensor/all", requireLogin(http.HandlerFunc(w.allSensorsHandler))).Methods(get)
 	router.Handle("/api/report", requireLogin(http.HandlerFunc(w.reportHandler))).Methods(get)
@@ -306,6 +307,31 @@ func (s WebServer) sensorRestartHandler(w http.ResponseWriter, req *http.Request
 	}
 	logger.Infof("Publishing sensor restart message for %s", sensor.Source)
 	fmt.Fprintf(w, "{\"status\":\"success\"}")
+}
+
+func (s WebServer) getSensorOpenTimeoutHandler(w http.ResponseWriter, req *http.Request) {
+	source := req.URL.Query().Get("source")
+
+	if source == "" {
+		http.Error(w, `{"status":"error","error":"must pass 'source' as query arg"}`, http.StatusBadRequest)
+		return
+	}
+
+	allCfg, err := s.serverClients.Postgres.GetSensorConfig()
+	if err != nil {
+		logger.Errorf("getting sensor config: %s", err)
+		http.Error(w, `{"status":"error","error":"Error getting open timeout from database"}`, http.StatusInternalServerError)
+		return
+	}
+
+	openTimeout := config.DefaultOpenTimeoutMinutes
+	for _, cfg := range allCfg {
+		if cfg.Source == source {
+			openTimeout = int(cfg.OpenTimeoutMinutes)
+		}
+	}
+
+	fmt.Fprintf(w, `{"status":"success","openTimeout":%d}`, openTimeout)
 }
 
 func (s WebServer) sensorOpenTimeoutHandler(w http.ResponseWriter, req *http.Request) {
