@@ -173,9 +173,7 @@ func configureCronJobs(serverClients clients.ServerClients, serverConfig config.
 		}()
 	}
 
-	// todo: set as env var
-	tokenExpMetricEnabled := true
-	if tokenExpMetricEnabled {
+	if !serverConfig.MockMode {
 		t := time.NewTicker(tokenExpMetricFreq)
 		go func() {
 			for range t.C {
