@@ -1,7 +1,7 @@
 FROM golang:1.19-alpine as builder
 
 RUN apk add curl
-ENV OP_VERSION=v2.18.0
+ENV OP_VERSION=v2.19.0-beta.01
 RUN curl -sSfo op.zip \
   https://cache.agilebits.com/dist/1P/op2/pkg/${OP_VERSION}/op_linux_amd64_${OP_VERSION}.zip \
   && unzip -od /usr/local/bin/ op.zip \
