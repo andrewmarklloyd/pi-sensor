@@ -23,7 +23,7 @@ jobs:
         run: |
           exit 1
       - name: Actions Ntfy
-        if: always()
+        if: failure()
         run: |
           curl -s \
             -H "Title: Github Action" \
