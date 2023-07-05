@@ -18,9 +18,6 @@ export GOOGLE_CLIENT_ID=$(op read op://pi-sensor-server/config/GOOGLE_CLIENT_ID)
 export GOOGLE_CLIENT_SECRET=$(op read op://pi-sensor-server/config/GOOGLE_CLIENT_SECRET)
 export REDIRECT_URL=http://localhost:8080/google/callback
 export AUTHORIZED_USERS=$(op read op://pi-sensor-server/config/AUTHORIZED_USERS)
-export VAPID_PUBLIC_KEY=$(op read op://pi-sensor-server/config/VAPID_PUBLIC_KEY)
-export REACT_APP_VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
-export VAPID_PRIVATE_KEY=$(op read op://pi-sensor-server/config/VAPID_PRIVATE_KEY)
 
 
 if [[ ${1} != source ]]; then
