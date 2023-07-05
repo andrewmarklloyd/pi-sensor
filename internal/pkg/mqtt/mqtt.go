@@ -25,6 +25,7 @@ func NewMQTTClient(addr string, connectHandler func(client mqtt.Client), connect
 	opts.SetClientID(clientID)
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectionLostHandler
+	opts.AutoReconnect = true
 	client := mqtt.NewClient(opts)
 
 	return MqttClient{

@@ -86,7 +86,7 @@ func main() {
 	mqttClient := mqtt.NewMQTTClient(mqttAddr, func(client mqttC.Client) {
 		logger.Info("Connected to MQTT server")
 	}, func(client mqttC.Client, err error) {
-		logger.Fatalf("Connection to MQTT server lost: %v", err)
+		logger.Errorf("Connection to MQTT server lost: %v", err)
 	})
 	err = mqttClient.Connect()
 	if err != nil {
