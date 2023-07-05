@@ -60,3 +60,8 @@ type NTFYMessage struct {
 	Priority string
 	Tags     []string
 }
+
+type NTFYResponse struct {
+	Id    string `json:"id"`
+	Event string `json:"event"`
+}

@@ -519,10 +519,18 @@ func sendPushNotification(serverClients clients.ServerClients, serverConfig conf
 	req.Header.Set("Priority", msg.Priority)
 	req.Header.Set("Tags", strings.Join(msg.Tags, ","))
 
-	_, err := http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("posting to ntfy: %w", err)
 	}
+
+	var r config.NTFYResponse
+	err = json.NewDecoder(resp.Body).Decode(&r)
+	if err != nil {
+		return fmt.Errorf("decoding ntfy response: %w", err)
+	}
+
+	logger.Infof("response from ntfy: (id: %s) (event: %s)", r.Id, r.Event)
 
 	return nil
 }
