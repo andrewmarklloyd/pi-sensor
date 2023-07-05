@@ -25,6 +25,6 @@ jobs:
           curl -s \
             -H "Title: Github Action" \
             -H "Content-Type: text/plain" \
-            -H "Actions: view, View Build, https://github.com/${{github.repository}}/commit/${{github.sha}}/checks/${{github.run_id}}" \
+            -H "Actions: view, View Build, https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}" \
             -d $'\nStatus: ${{ job.status}}' \
             ${{ secrets.NTFY_URL }} >/dev/null
