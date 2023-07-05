@@ -331,15 +331,7 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 }
 
 func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClients, serverConfig config.ServerConfig, webServer WebServer) {
-	if h.Type == config.HeartbeatTypeApp {
-		logger.Warnf("Heartbeat timeout occurred for %s", h.Name)
-		if !serverConfig.MockMode {
-			err := serverClients.Mqtt.PublishHASensorLostConnection(h.Name)
-			if err != nil {
-				logger.Errorf("publishing lost connection message: %w", err)
-			}
-		}
-	} else if h.Type == config.HeartbeatTypeSensor {
+	if h.Type == config.HeartbeatTypeSensor {
 		messageString, err := serverClients.Redis.ReadState(h.Name, context.Background())
 		if err != nil {
 			logger.Errorf("Error handling timeout: reading redis state: %s Message string was: %s", err, messageString)
@@ -368,9 +360,14 @@ func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClie
 		}
 
 		if !serverConfig.MockMode {
-			err := serverClients.Mqtt.PublishHASensorLostConnection(lastStatus.Source)
+			msg := config.NTFYMessage{
+				Body:     fmt.Sprintf("%s sensor lost connection", h.Name),
+				Priority: "urgent",
+				Tags:     []string{"rotating_light,skull"},
+			}
+			err := sendPushNotification(serverClients, serverConfig, msg)
 			if err != nil {
-				logger.Errorf("publishing lost connection message: %w", err)
+				logger.Errorf("sending lost connection push notification: %w", err)
 			}
 		}
 
@@ -449,11 +446,6 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 			if err != nil {
 				return fmt.Errorf("sending push notifications: %w", err)
 			}
-
-			err = serverClients.Mqtt.PublishHASensorNotify(currentStatus)
-			if err != nil {
-				return fmt.Errorf("publishing ha sensor notify: %w", err)
-			}
 		}
 	}
 
@@ -497,7 +489,7 @@ func handleOpenTimeout(serverClients clients.ServerClients, serverConfig config.
 		msg := config.NTFYMessage{
 			Body:     body,
 			Priority: "default",
-			Tags:     []string{"rotating_light"},
+			Tags:     []string{"warning"},
 		}
 		err := sendPushNotification(serverClients, serverConfig, msg)
 		if err != nil {
