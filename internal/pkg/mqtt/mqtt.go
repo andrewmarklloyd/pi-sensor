@@ -89,30 +89,6 @@ func (c MqttClient) PublishHASensorStatus(h config.SensorStatus) error {
 	return c.publish(config.HASensorStatusTopic, string(j))
 }
 
-func (c MqttClient) PublishHASensorNotify(h config.SensorStatus) error {
-	j, err := json.Marshal(h)
-	if err != nil {
-		return fmt.Errorf("marshalling sensor status: %s", err)
-	}
-	return c.publish(config.HASensorNotifyTopic, string(j))
-}
-
-// PublishHAOpenWarn sends message to topic indicating
-// a sensor's door has been open longer than a timeout
-func (c MqttClient) PublishHAOpenWarn(h config.SensorStatus) error {
-	j, err := json.Marshal(h)
-	if err != nil {
-		return fmt.Errorf("marshalling sensor status: %s", err)
-	}
-	return c.publish(config.HASensorStatusOpenWarnTopic, string(j))
-}
-
-// PublishHASensorLostConnection sends message to topic indicating
-// a sensor's heartbeat timeout has occurred and has lost connection
-func (c MqttClient) PublishHASensorLostConnection(sensorSource string) error {
-	return c.publish(config.HASensorLostConnectionTopic, sensorSource)
-}
-
 func (c MqttClient) PublishHASensorArming(p config.APIPayload) error {
 	j, err := json.Marshal(p)
 	if err != nil {

@@ -20,12 +20,6 @@ const navBarItems = [
     useExact: true,
   },
   {
-    value: "Notifications",
-    to: "/notifications",
-    icon: "bell",
-    useExact: true,
-  },
-  {
     value: "Logout",
     to: "/logout",
     icon: "log-out",

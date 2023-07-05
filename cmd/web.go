@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SherClockHolmes/webpush-go"
 	gosocketio "github.com/ambelovsky/gosf-socketio"
 	"github.com/ambelovsky/gosf-socketio/transport"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
@@ -40,11 +39,9 @@ const (
 var sessionStore *sessions.CookieStore
 
 type WebServer struct {
-	httpServer      *http.Server
-	socketServer    *gosocketio.Server
-	serverClients   clients.ServerClients
-	vapidPublicKey  string
-	vapidPrivateKey string
+	httpServer    *http.Server
+	socketServer  *gosocketio.Server
+	serverClients clients.ServerClients
 }
 
 type zapLog struct {
@@ -61,10 +58,8 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	socketServer := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
 
 	w := WebServer{
-		serverClients:   clients,
-		socketServer:    socketServer,
-		vapidPublicKey:  serverConfig.WebPushConfig.VAPIDPublicKey,
-		vapidPrivateKey: serverConfig.WebPushConfig.VAPIDPrivateKey,
+		serverClients: clients,
+		socketServer:  socketServer,
 	}
 	socketServer.On(gosocketio.OnConnection, w.newSocketConnection)
 
@@ -86,7 +81,6 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	router.Handle("/api/sensor/arming", requireLogin(http.HandlerFunc(w.sensorArmingHandler))).Methods(post)
 	router.Handle("/api/sensor/all", requireLogin(http.HandlerFunc(w.allSensorsHandler))).Methods(get)
 	router.Handle("/api/report", requireLogin(http.HandlerFunc(w.reportHandler))).Methods(get)
-	router.Handle("/api/subscription", requireLogin(http.HandlerFunc(w.subscriptionHandler))).Methods(post)
 	router.Handle("/google/login", google.StateHandler(stateConfig, google.LoginHandler(oauth2Config, nil)))
 	router.Handle("/google/callback", google.StateHandler(stateConfig, google.CallbackHandler(oauth2Config, issueSession(serverConfig), nil)))
 	router.HandleFunc("/logout", logoutHandler)
@@ -129,87 +123,6 @@ func (s WebServer) reportHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	json, _ := json.Marshal(messages)
 	fmt.Fprintf(w, `{"messages":%s,"numPages":%d}`, string(json), numPages)
-}
-
-func (s WebServer) subscriptionHandler(w http.ResponseWriter, req *http.Request) {
-	var sub webpush.Subscription
-	err := json.NewDecoder(req.Body).Decode(&sub)
-	if err != nil {
-		logger.Errorf("Error parsing subscription payload: %s", err)
-		http.Error(w, `{"error":"Error parsing request","status":"failed"}`, http.StatusBadRequest)
-		return
-	}
-
-	sess, err := sessionStore.Get(req, sessionName)
-	if err != nil {
-		logger.Errorf("getting session information")
-		http.Error(w, `{"error":"Error getting session information","status":"failed"}`, http.StatusBadRequest)
-		return
-	}
-	email, ok := sess.Values["user-email"]
-	if !ok {
-		logger.Errorf("getting session email")
-		http.Error(w, `{"error":"Error getting session email","status":"failed"}`, http.StatusBadRequest)
-		return
-	}
-
-	subMarshalled, err := json.Marshal(sub)
-	if err != nil {
-		logger.Errorf("marshalling subscription request body: %s", err)
-		http.Error(w, `{"error":"Error saving subscription","status":"failed"}`, http.StatusBadRequest)
-		return
-	}
-
-	encrypted, err := s.serverClients.CryptoUtil.Encrypt(subMarshalled)
-	if err != nil {
-		logger.Errorf("encrypting subscription: %s", err)
-		http.Error(w, `{"error":"Error saving subscription","status":"failed"}`, http.StatusBadRequest)
-		return
-	}
-
-	emailStr, ok := email.(string)
-	if !ok {
-		logger.Errorf("converting subscription email to string: %s", email)
-		http.Error(w, `{"error":"Error saving subscription","status":"failed"}`, http.StatusBadRequest)
-		return
-	}
-
-	err = s.serverClients.Redis.WriteSubscription(emailStr, string(encrypted), req.Context())
-	if err != nil {
-		logger.Errorf("writing subscription to redis: %s", err)
-		http.Error(w, `{"error":"Error saving subscription","status":"failed"}`, http.StatusBadRequest)
-		return
-	}
-
-	logger.Info("new subscription created")
-
-	resp, err := webpush.SendNotification([]byte("Thanks for subscribing!"), &sub, &webpush.Options{
-		Subscriber:      emailStr,
-		VAPIDPublicKey:  s.vapidPublicKey,
-		VAPIDPrivateKey: s.vapidPrivateKey,
-		TTL:             30,
-	})
-	if err != nil {
-		logger.Errorf("sending initial web push notification: %w", err)
-		http.Error(w, `{"error":"Error sending initial web push notification","status":"failed"}`, http.StatusBadRequest)
-		return
-	}
-
-	if resp.StatusCode >= 300 {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			logger.Errorf("reading body from initial web push notification: %w", err)
-			http.Error(w, `{"error":"Error sending initial web push notification","status":"failed"}`, http.StatusBadRequest)
-			return
-		}
-
-		defer resp.Body.Close()
-		logger.Errorw("sending initial web push notification", "statusCode", resp.StatusCode, "status", resp.Status, "body", string(body))
-		http.Error(w, `{"error":"Error sending initial web push notification","status":"failed"}`, http.StatusBadRequest)
-		return
-	}
-
-	fmt.Fprintf(w, `{"error":"","status":"success"}`)
 }
 
 func (s WebServer) newSocketConnection(c *gosocketio.Channel) {

@@ -16,7 +16,7 @@ type ServerConfig struct {
 	Version            string
 	AllowedAPIKeys     []string
 	DatadogConfig      DatadogConfig
-	WebPushConfig      WebPushConfig
+	NTFYConfig         NTFYConfig
 	EncryptionKey      string
 }
 
@@ -51,7 +51,12 @@ type TokenMetadata struct {
 	Expiration string
 }
 
-type WebPushConfig struct {
-	VAPIDPublicKey  string
-	VAPIDPrivateKey string
+type NTFYConfig struct {
+	Topic string
+}
+
+type NTFYMessage struct {
+	Body     string
+	Priority string
+	Tags     []string
 }
