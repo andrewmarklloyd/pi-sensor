@@ -4,12 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/SherClockHolmes/webpush-go"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/aws"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
@@ -79,11 +78,10 @@ func runServer() {
 			MaxRetentionRows:  parseRetentionRowsConfig(viper.GetString("DB_MAX_RETENTION_ROWS")),
 			FullBackupEnabled: viper.GetBool("DB_FULL_BACKUP_ENABLED"),
 		},
-		WebPushConfig: config.WebPushConfig{
-			VAPIDPublicKey:  viper.GetString("VAPID_PUBLIC_KEY"),
-			VAPIDPrivateKey: viper.GetString("VAPID_PRIVATE_KEY"),
-		},
 		EncryptionKey: viper.GetString("ENCRYPTION_KEY"),
+		NTFYConfig: config.NTFYConfig{
+			Topic: viper.GetString("NTFY_TOPIC"),
+		},
 	}
 
 	serverClients, err := createClients(serverConfig)
@@ -441,13 +439,13 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 	if (lastStatus.Status == config.CLOSED && currentStatus.Status == config.OPEN) || (lastStatus.Status == config.UNKNOWN && currentStatus.Status == config.OPEN) {
 		logger.Infof("%s was just opened", currentStatus.Source)
 		if armed {
-			subs, err := serverClients.Redis.ReadAllSubscription(context.Background())
-			if err != nil {
-				return fmt.Errorf("reading all subscriptions: %w", err)
+			msg := config.NTFYMessage{
+				Body:     fmt.Sprintf("%s was just opened", currentStatus.Source),
+				Priority: "default",
+				Tags:     []string{"loudspeaker"},
 			}
 
-			message := fmt.Sprintf("%s was just opened", currentStatus.Source)
-			err = sendPushNotification(serverClients, serverConfig, subs, message)
+			err = sendPushNotification(serverClients, serverConfig, msg)
 			if err != nil {
 				return fmt.Errorf("sending push notifications: %w", err)
 			}
@@ -467,7 +465,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 
 		duration := time.Duration(openTimeout) * time.Minute
 		timer := time.AfterFunc(duration, func() {
-			handleOpenTimeout(serverClients, currentStatus, armed, serverConfig.MockMode, openTimeout)
+			handleOpenTimeout(serverClients, serverConfig, currentStatus, armed, serverConfig.MockMode, openTimeout)
 		})
 		delayTimerMap[currentStatus.Source] = timer
 	} else if currentStatus.Status == config.CLOSED {
@@ -492,13 +490,18 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 	return nil
 }
 
-func handleOpenTimeout(serverClients clients.ServerClients, s config.SensorStatus, armed, mockMode bool, openTimeout int32) {
-	message := fmt.Sprintf("🚨 %s opened longer than %d min", s.Source, openTimeout)
-	logger.Warn(message)
+func handleOpenTimeout(serverClients clients.ServerClients, serverConfig config.ServerConfig, s config.SensorStatus, armed, mockMode bool, openTimeout int32) {
+	body := fmt.Sprintf("%s opened longer than %d min", s.Source, openTimeout)
+	logger.Warn(body)
 	if !mockMode && armed {
-		err := serverClients.Mqtt.PublishHAOpenWarn(s)
+		msg := config.NTFYMessage{
+			Body:     body,
+			Priority: "default",
+			Tags:     []string{"rotating_light"},
+		}
+		err := sendPushNotification(serverClients, serverConfig, msg)
 		if err != nil {
-			logger.Errorf("publishing HA open warning message: %w", err)
+			logger.Errorf("sending push notification: %w", err)
 		}
 	}
 }
@@ -518,40 +521,16 @@ func buildTokenMetadata() []config.TokenMetadata {
 	}
 }
 
-func sendPushNotification(serverClients clients.ServerClients, serverConfig config.ServerConfig, subscriptions map[string]string, message string) error {
-	for email, sub := range subscriptions {
-		decrypted, err := serverClients.CryptoUtil.Decrypt([]byte(sub))
-		if err != nil {
-			return fmt.Errorf("decrypting subscription: %w", err)
-		}
+func sendPushNotification(serverClients clients.ServerClients, serverConfig config.ServerConfig, msg config.NTFYMessage) error {
+	req, _ := http.NewRequest("POST", fmt.Sprintf("https://ntfy.sh/%s", serverConfig.NTFYConfig.Topic), strings.NewReader(msg.Body))
+	req.Header.Set("Title", "Pi Sensor Update")
+	req.Header.Set("Priority", msg.Priority)
+	req.Header.Set("Tags", strings.Join(msg.Tags, ","))
 
-		var sub webpush.Subscription
-		err = json.Unmarshal(decrypted, &sub)
-		if err != nil {
-			return fmt.Errorf("parsing subscription payload: %s", err)
-		}
-
-		opts := &webpush.Options{
-			Subscriber:      email,
-			VAPIDPublicKey:  serverConfig.WebPushConfig.VAPIDPublicKey,
-			VAPIDPrivateKey: serverConfig.WebPushConfig.VAPIDPrivateKey,
-			TTL:             30,
-		}
-
-		r, err := webpush.SendNotification([]byte(message), &sub, opts)
-		if err != nil {
-			return fmt.Errorf("sending push notification: %s", err)
-		}
-
-		if r.StatusCode >= 300 {
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				return err
-			}
-			defer r.Body.Close()
-			logger.Errorw("sending push notification", "statusCode", r.StatusCode, "status", r.Status, "body", string(body))
-		}
-
+	_, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("posting to ntfy: %w", err)
 	}
+
 	return nil
 }
