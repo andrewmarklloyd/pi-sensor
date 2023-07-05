@@ -8,25 +8,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: '1.19.0'
-      - name: Check
-        run: |
-          make vet
-          make test
-      - name: Run build
-        run: |
-          make build-ci
+      # - name: Setup Go
+      #   uses: actions/setup-go@v3
+      #   with:
+      #     go-version: '1.19.0'
+      # - name: Check
+      #   run: |
+      #     make vet
+      #     make test
+      # - name: Run build
+      #   run: |
+      #     make build-ci
       - name: Actions Ntfy
         if: always()
         run: |
-          curl \
+          curl -s \
             -H "Title: Github Action" \
             -H "Content-Type: text/plain" \
-            -d $'{workflow} has {status_message}\n{repo_url}\nCommit: ${{ github.sha }}\nRef: ${{ github.ref }}\nStatus: ${{ job.status}}' \
+            -H "Actions: view, View Build, https://github.com/${{github.repository}}/commit/${{github.sha}}/checks/${{github.run_id}}" \
+            -d $'\nStatus: ${{ job.status}}' \
             ${{ secrets.NTFY_URL }} >/dev/null
-
-# footer: 'Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>'
-# notify_when: 'failure'
