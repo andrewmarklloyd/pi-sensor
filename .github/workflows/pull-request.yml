@@ -19,3 +19,14 @@ jobs:
       - name: Run build
         run: |
           make build-ci
+      - name: Actions Ntfy
+        if: always()
+        run: |
+          curl \
+            -H "Title: Github Action" \
+            -H "Content-Type: text/plain" \
+            -d $'{workflow} has {status_message}\n{repo_url}\nCommit: ${{ github.sha }}\nRef: ${{ github.ref }}\nStatus: ${{ job.status}}' \
+            ${{ secrets.NTFY_URL }} >/dev/null
+
+# footer: 'Linked Repo <{repo_url}|{repo}> | <{workflow_url}|View Workflow>'
+# notify_when: 'failure'
