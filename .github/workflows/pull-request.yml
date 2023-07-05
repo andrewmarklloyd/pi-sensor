@@ -8,20 +8,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      # - name: Setup Go
-      #   uses: actions/setup-go@v3
-      #   with:
-      #     go-version: '1.19.0'
-      # - name: Check
-      #   run: |
-      #     make vet
-      #     make test
-      # - name: Run build
-      #   run: |
-      #     make build-ci
-      - name: debug
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.19.0'
+      - name: Check
         run: |
-          exit 1
+          make vet
+          make test
+      - name: Run build
+        run: |
+          make build-ci
       - name: Actions Ntfy
         if: failure()
         run: |
