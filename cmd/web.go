@@ -72,7 +72,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 		Scopes:       []string{"profile", "email"},
 	}
 	sessionStore = sessions.NewCookieStore([]byte(serverConfig.GoogleConfig.SessionSecret), nil)
-	stateConfig := gologin.DebugOnlyCookieConfig
+	stateConfig := gologin.DefaultCookieConfig
 	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
 	router.Handle("/api/agent-logs", http.HandlerFunc(agentLogsHandler)).Methods(post)
 	router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(w.sensorRestartHandler))).Methods(post)
