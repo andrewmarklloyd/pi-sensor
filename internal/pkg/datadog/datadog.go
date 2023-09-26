@@ -79,3 +79,54 @@ func (c *Client) PublishTokenDaysLeft(ctx context.Context, tokenMetadata config.
 
 	return nil
 }
+
+func (c *Client) PublishHeartbeat(ctx context.Context, agent string) error {
+	valueCtx := context.WithValue(
+		ctx,
+		datadog.ContextAPIKeys,
+		map[string]datadog.APIKey{
+			"apiKeyAuth": {
+				Key: c.apiKey,
+			},
+			"appKeyAuth": {
+				Key: c.appKey,
+			},
+		},
+	)
+
+	body := datadogV2.MetricPayload{
+		Series: []datadogV2.MetricSeries{
+			{
+				Metric: "agent.heartbeat",
+				Type:   datadogV2.METRICINTAKETYPE_COUNT.Ptr(),
+				Points: []datadogV2.MetricPoint{
+					{
+						Timestamp: datadog.PtrInt64(time.Now().Unix()),
+						Value:     datadog.PtrFloat64(1),
+					},
+				},
+				Resources: []datadogV2.MetricResource{
+					{
+						Type: datadog.PtrString("source"),
+						Name: datadog.PtrString("pi-sensor"),
+					},
+					{
+						Type: datadog.PtrString("service"),
+						Name: datadog.PtrString("pi-sensor"),
+					},
+					{
+						Type: datadog.PtrString("agent"),
+						Name: datadog.PtrString(agent),
+					},
+				},
+			},
+		},
+	}
+
+	_, _, err := c.api.SubmitMetrics(valueCtx, body, *datadogV2.NewSubmitMetricsOptionalParameters())
+	if err != nil {
+		return fmt.Errorf("submitting metrics: %s", err)
+	}
+
+	return nil
+}

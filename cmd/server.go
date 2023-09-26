@@ -127,6 +127,12 @@ func runServer() {
 			logger.Errorf("error unmarshalling message from heartbeat channel: %s. Message received was: %s", err, messageString)
 			return
 		}
+
+		err = serverClients.DDClient.PublishHeartbeat(context.Background(), h.Name)
+		if err != nil {
+			logger.Errorf("publishing heartbeat for %s: %s", h.Name, err.Error())
+		}
+
 		currentTimer := heartbeatTimerMap[h.Name]
 		if currentTimer != nil {
 			currentTimer.Stop()
