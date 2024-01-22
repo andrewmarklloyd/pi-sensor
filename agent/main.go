@@ -30,7 +30,6 @@ var (
 
 const (
 	heartbeatIntervalSeconds = 60
-	statusFile               = "/home/pi/.pi-sensor-status"
 )
 
 func main() {
@@ -127,6 +126,8 @@ func main() {
 		}
 	})
 
+	statusFile := getStatusFileName(*sensorSource)
+
 	lastStatus, err := getLastStatus(statusFile)
 	if err != nil {
 		logger.Warnf("error reading status file: %s. Setting status to %s", err, config.UNKNOWN)
@@ -168,4 +169,8 @@ func getLastStatus(path string) (string, error) {
 
 func writeStatus(path, status string) error {
 	return os.WriteFile(path, []byte(status), 0644)
+}
+
+func getStatusFileName(sensorSource string) string {
+	return fmt.Sprintf("/home/pi/.pi-sensor-status-%s", sensorSource)
 }
