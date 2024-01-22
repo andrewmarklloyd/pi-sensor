@@ -17,6 +17,7 @@ import (
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/gpio"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/tailscale"
 )
 
 var (
@@ -115,6 +116,20 @@ func main() {
 			err := mqttClient.PublishHeartbeat(h)
 			if err != nil {
 				logger.Errorf("error publishing heartbeat: %s", err)
+			}
+		}
+	}()
+
+	tailscaleStatusTicker := time.NewTicker(time.Hour)
+	go func() {
+		for range tailscaleStatusTicker.C {
+			status, err := tailscale.CheckStatus()
+			if err != nil {
+				logger.Errorf("error checking tailscale status: %s", err)
+			} else {
+				if status.BackendState != "Running" || !status.Self.Online {
+					logger.Errorf("tailscale BackendState should be 'Running' and Self.Online should be true but values are: BackendState:%s, Self.Online:%t", status.BackendState)
+				}
 			}
 		}
 	}()
