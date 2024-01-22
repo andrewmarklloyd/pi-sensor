@@ -128,7 +128,9 @@ func main() {
 				logger.Errorf("error checking tailscale status: %s", err)
 			} else {
 				if status.BackendState != "Running" || !status.Self.Online {
-					logger.Errorf("tailscale BackendState should be 'Running' and Self.Online should be true but values are: BackendState:%s, Self.Online:%t", status.BackendState)
+					logger.Errorf("Tailscale BackendState should be 'Running' and Self.Online should be true but values are: BackendState:%s, Self.Online:%t", status.BackendState)
+				} else {
+					logger.Infof("Tailscale status check results - BackendState:%s, Self.Online:%t", status.BackendState, status.Self.Online)
 				}
 			}
 		}
