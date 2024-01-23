@@ -129,8 +129,6 @@ func main() {
 			} else {
 				if status.BackendState != "Running" {
 					logger.Errorf("Tailscale BackendState should be 'Running' but value is: '%s'", status.BackendState)
-				} else {
-					logger.Infof("Tailscale status check results - BackendState:%s", status.BackendState)
 				}
 			}
 		}
