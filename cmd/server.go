@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -312,10 +313,11 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	mqttClient := mqtt.NewMQTTClient(mqttAddr, func(client mqttC.Client) {
 		logger.Info("Connected to MQTT server")
 	}, func(client mqttC.Client, err error) {
-		// TODO: using Fatalf restarts app to ensure new client
+		// TODO: exiting 1 restarts app to ensure new client
 		// is subscribed to events. might be possible to resubscribe
 		// or something else is happening
-		logger.Fatalf("Connection to MQTT server lost: %v", err)
+		logger.Warnf("Connection to MQTT server lost: %v", err)
+		os.Exit(1)
 	})
 
 	awsClient, err := aws.NewClient(serverConfig)
