@@ -17,12 +17,12 @@ require (
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/golangci/golangci-lint v1.44.2
 	github.com/gorilla/mux v1.8.0
-	github.com/jaedle/golang-tplink-hs100 v0.4.1
 	github.com/lib/pq v1.10.4
+	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
 	github.com/stianeikeland/go-rpio v4.2.0+incompatible
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.8.0
 	go.uber.org/zap v1.21.0
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
@@ -168,7 +168,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/ssgreg/nlreturn/v2 v2.2.1 // indirect
-	github.com/stretchr/objx v0.1.1 // indirect
+	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/sylvia7788/contextcheck v1.0.4 // indirect
 	github.com/tdakkota/asciicheck v0.1.1 // indirect

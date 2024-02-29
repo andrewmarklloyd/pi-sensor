@@ -17,8 +17,11 @@ import (
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/datadog"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/postgres"
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/rabbit"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/redis"
 	mqttC "github.com/eclipse/paho.mqtt.golang"
+	amqp "github.com/rabbitmq/amqp091-go"
+
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
@@ -51,6 +54,7 @@ func runServer() {
 		MqttBrokerURL:      viper.GetString("CLOUDMQTT_URL"),
 		MqttServerUser:     viper.GetString("CLOUDMQTT_SERVER_USER"),
 		MqttServerPassword: viper.GetString("CLOUDMQTT_SERVER_PASSWORD"),
+		CloudAMQPURL:       viper.GetString("CLOUDAMQP_URL"),
 		RedisURL:           viper.GetString("REDIS_URL"),
 		RedisTLSURL:        viper.GetString("REDIS_TLS_URL"),
 		PostgresURL:        viper.GetString("DATABASE_URL"),
@@ -93,6 +97,14 @@ func runServer() {
 	err = serverClients.Mqtt.Connect()
 	if err != nil {
 		logger.Fatalf("error connecting to mqtt: %s", err)
+	}
+
+	queueName := "test-queue"
+	err = rabbit.Consumer(serverConfig.CloudAMQPURL, queueName, func(d amqp.Delivery) {
+		fmt.Println(string(d.Body))
+	})
+	if err != nil {
+		logger.Warnf("error connection to AMQP: %s", err)
 	}
 
 	webServer := newWebServer(serverConfig, serverClients)

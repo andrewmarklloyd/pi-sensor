@@ -5,6 +5,7 @@ type ServerConfig struct {
 	MqttBrokerURL      string
 	MqttServerUser     string
 	MqttServerPassword string
+	CloudAMQPURL       string
 	Topic              string
 	RedisURL           string
 	RedisTLSURL        string
