@@ -12,9 +12,8 @@ type RabbitProducer struct {
 	queueName string
 }
 
-type ConsumerCallback func(d amqp.Delivery)
-
-func Consumer(cloudAMQPURL, queueName string, callback ConsumerCallback) error {
+// TODO handle disconnects
+func Consumer(cloudAMQPURL, queueName string) (<-chan amqp.Delivery, error) {
 	config := amqp.Config{
 		Properties: amqp.NewConnectionProperties(),
 	}
@@ -22,14 +21,14 @@ func Consumer(cloudAMQPURL, queueName string, callback ConsumerCallback) error {
 
 	conn, err := amqp.DialConfig(cloudAMQPURL, config)
 	if err != nil {
-		return fmt.Errorf("dialing AMQP: %w", err)
+		return nil, fmt.Errorf("dialing AMQP: %w", err)
 	}
 
 	defer conn.Close()
 
 	channelRabbitMQ, err := conn.Channel()
 	if err != nil {
-		return fmt.Errorf("opening a channel: %w", err)
+		return nil, fmt.Errorf("opening a channel: %w", err)
 	}
 
 	defer channelRabbitMQ.Close()
@@ -44,20 +43,10 @@ func Consumer(cloudAMQPURL, queueName string, callback ConsumerCallback) error {
 		nil,       // arguments
 	)
 	if err != nil {
-		return fmt.Errorf("opening consume of queue: %w", err)
+		return nil, fmt.Errorf("opening consume of queue: %w", err)
 	}
 
-	forever := make(chan bool)
-
-	go func() {
-		for message := range messages {
-			callback(message)
-		}
-	}()
-
-	<-forever
-
-	return nil
+	return messages, nil
 }
 
 func NewProducer(amqpServerURL, queueName string) (RabbitProducer, error) {
