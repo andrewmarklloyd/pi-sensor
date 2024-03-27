@@ -18,7 +18,6 @@ require (
 	github.com/golangci/golangci-lint v1.44.2
 	github.com/gorilla/mux v1.8.0
 	github.com/lib/pq v1.10.4
-	github.com/rabbitmq/amqp091-go v1.9.0
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
 	github.com/stianeikeland/go-rpio v4.2.0+incompatible
@@ -184,6 +183,7 @@ require (
 	gitlab.com/bosi/decorder v0.2.1 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
+	go.uber.org/goleak v1.2.1 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
