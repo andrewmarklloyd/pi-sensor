@@ -17,7 +17,6 @@ import (
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/datadog"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/postgres"
-	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/rabbit"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/redis"
 	mqttC "github.com/eclipse/paho.mqtt.golang"
 
@@ -49,17 +48,19 @@ func runServer() {
 	defer forwarderLogger.Sync()
 
 	serverConfig := config.ServerConfig{
-		AppName:            viper.GetString("APP_NAME"),
-		MqttBrokerURL:      viper.GetString("CLOUDMQTT_URL"),
-		MqttServerUser:     viper.GetString("CLOUDMQTT_SERVER_USER"),
-		MqttServerPassword: viper.GetString("CLOUDMQTT_SERVER_PASSWORD"),
-		CloudAMQPURL:       viper.GetString("CLOUDAMQP_URL"),
-		RedisURL:           viper.GetString("REDIS_URL"),
-		RedisTLSURL:        viper.GetString("REDIS_TLS_URL"),
-		PostgresURL:        viper.GetString("DATABASE_URL"),
-		Port:               viper.GetString("PORT"),
-		MockMode:           viper.GetBool("MOCK_MODE"),
-		AllowedAPIKeys:     viper.GetStringSlice("ALLOWED_API_KEYS"),
+		AppName:                 viper.GetString("APP_NAME"),
+		MqttBrokerURL:           viper.GetString("CLOUDMQTT_URL"),
+		MqttServerUser:          viper.GetString("CLOUDMQTT_SERVER_USER"),
+		MqttServerPassword:      viper.GetString("CLOUDMQTT_SERVER_PASSWORD"),
+		MosquittoServerDomain:   viper.GetString("MOSQUITTO_SERVER_DOMAIN"),
+		MosquittoServerUser:     viper.GetString("MOSQUITTO_SERVER_USER"),
+		MosquittoServerPassword: viper.GetString("MOSQUITTO_SERVER_PASSWORD"),
+		RedisURL:                viper.GetString("REDIS_URL"),
+		RedisTLSURL:             viper.GetString("REDIS_TLS_URL"),
+		PostgresURL:             viper.GetString("DATABASE_URL"),
+		Port:                    viper.GetString("PORT"),
+		MockMode:                viper.GetBool("MOCK_MODE"),
+		AllowedAPIKeys:          viper.GetStringSlice("ALLOWED_API_KEYS"),
 		GoogleConfig: config.GoogleConfig{
 			AuthorizedUsers: viper.GetString("AUTHORIZED_USERS"),
 			ClientId:        viper.GetString("GOOGLE_CLIENT_ID"),
@@ -98,17 +99,7 @@ func runServer() {
 		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
 
-	queueName := "test-queue"
-	messages, err := rabbit.Consumer(serverConfig.CloudAMQPURL, queueName)
-	if err != nil {
-		logger.Warnf("error connection to AMQP: %s", err)
-	}
-
-	go func() {
-		for message := range messages {
-			fmt.Println(string(message.Body))
-		}
-	}()
+	configureMosquittoClient(serverConfig)
 
 	webServer := newWebServer(serverConfig, serverClients)
 
@@ -354,6 +345,20 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		DDClient:   ddClient,
 		CryptoUtil: cryptoUtil,
 	}, nil
+}
+
+func configureMosquittoClient(serverConfig config.ServerConfig) {
+	mosquittoAddr := fmt.Sprintf("mqtt://%s:%s@%s", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
+
+	mqtt.NewMQTTClient(mosquittoAddr, func(client mqttC.Client) {
+		logger.Info("Connected to MQTT server")
+	}, func(client mqttC.Client, err error) {
+		// TODO: exiting 1 restarts app to ensure new client
+		// is subscribed to events. might be possible to resubscribe
+		// or something else is happening
+		logger.Infof("Connection to mosquitto server lost: %v", err)
+
+	})
 }
 
 func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClients, serverConfig config.ServerConfig, webServer WebServer) {
