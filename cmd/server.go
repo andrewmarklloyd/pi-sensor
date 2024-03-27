@@ -99,7 +99,11 @@ func runServer() {
 		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
 
-	configureMosquittoClient(serverConfig)
+	mosquittoClient := configureMosquittoClient(serverConfig)
+	err = mosquittoClient.Connect()
+	if err != nil {
+		logger.Infof("error connecting to mosquitto server: %s", err)
+	}
 
 	webServer := newWebServer(serverConfig, serverClients)
 
@@ -347,18 +351,19 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	}, nil
 }
 
-func configureMosquittoClient(serverConfig config.ServerConfig) {
+func configureMosquittoClient(serverConfig config.ServerConfig) mqtt.MqttClient {
 	mosquittoAddr := fmt.Sprintf("mqtt://%s:%s@%s", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
 
-	mqtt.NewMQTTClient(mosquittoAddr, func(client mqttC.Client) {
+	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, func(client mqttC.Client) {
 		logger.Info("Connected to MQTT server")
 	}, func(client mqttC.Client, err error) {
 		// TODO: exiting 1 restarts app to ensure new client
 		// is subscribed to events. might be possible to resubscribe
 		// or something else is happening
 		logger.Infof("Connection to mosquitto server lost: %v", err)
-
 	})
+
+	return mosquittoClient
 }
 
 func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClients, serverConfig config.ServerConfig, webServer WebServer) {
