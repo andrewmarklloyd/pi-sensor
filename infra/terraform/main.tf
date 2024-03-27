@@ -47,6 +47,18 @@ resource "digitalocean_firewall" "mqtt_server" {
   }
 }
 
+resource "digitalocean_domain" "mqtt" {
+  name       = var.mosquitto_domain
+  ip_address = digitalocean_droplet.mqtt_server.ipv4_address
+}
+
+resource "digitalocean_record" "mqtt" {
+  domain = digitalocean_domain.mqtt.id
+  type   = "A"
+  name   = "mqtt"
+  value  = digitalocean_droplet.mqtt_server.ipv4_address
+}
+
 output "ip_address" {
   value = digitalocean_droplet.mqtt_server.ipv4_address
 }
