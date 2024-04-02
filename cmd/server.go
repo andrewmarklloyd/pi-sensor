@@ -102,7 +102,7 @@ func runServer() {
 	mosquittoClient := configureMosquittoClient(serverConfig)
 	err = mosquittoClient.Connect()
 	if err != nil {
-		logger.Infof("error connecting to mosquitto server: %s", err)
+		logger.Warnf("error connecting to mosquitto server: %s", err)
 	}
 
 	webServer := newWebServer(serverConfig, serverClients)
@@ -320,7 +320,8 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	domain := urlSplit[1]
 	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", serverConfig.MqttServerUser, serverConfig.MqttServerPassword, domain)
 
-	mqttClient := mqtt.NewMQTTClient(mqttAddr, func(client mqttC.Client) {
+	insecureSkipVerify := false
+	mqttClient := mqtt.NewMQTTClient(mqttAddr, insecureSkipVerify, func(client mqttC.Client) {
 		logger.Info("Connected to MQTT server")
 	}, func(client mqttC.Client, err error) {
 		// TODO: exiting 1 restarts app to ensure new client
@@ -354,7 +355,9 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 func configureMosquittoClient(serverConfig config.ServerConfig) mqtt.MqttClient {
 	mosquittoAddr := fmt.Sprintf("mqtts://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
 
-	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, func(client mqttC.Client) {
+	// todo: remove this after using prod certbot cert
+	insecureSkipVerify := true
+	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, insecureSkipVerify, func(client mqttC.Client) {
 		logger.Info("Connected to MQTT server")
 	}, func(client mqttC.Client, err error) {
 		// TODO: exiting 1 restarts app to ensure new client

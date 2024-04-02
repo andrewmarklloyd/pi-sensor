@@ -35,12 +35,6 @@ resource "digitalocean_firewall" "mqtt_server" {
     source_addresses = [var.ssh_inbound_ip]
   }
 
-  inbound_rule {
-    protocol         = "tcp"
-    port_range       = "9001"
-    source_addresses = [var.ssh_inbound_ip]
-  }
-
   outbound_rule {
     protocol              = "icmp"
     destination_addresses = ["0.0.0.0/0"]
