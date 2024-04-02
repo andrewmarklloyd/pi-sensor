@@ -1,7 +1,8 @@
 #!/bin/bash
 
 sudo apt-get update -y
-sudo apt-get install mosquitto -y
+sudo apt-get install mosquitto certbot -y
+
 
 # Create user and immediately delete password
 USERNAME=mqtt-server

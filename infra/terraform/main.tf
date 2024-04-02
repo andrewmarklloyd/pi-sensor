@@ -25,6 +25,12 @@ resource "digitalocean_firewall" "mqtt_server" {
 
   inbound_rule {
     protocol         = "tcp"
+    port_range       = "80"
+    source_addresses = ["0.0.0.0/0"]
+  }
+
+  inbound_rule {
+    protocol         = "tcp"
     port_range       = "1883"
     source_addresses = [var.ssh_inbound_ip]
   }

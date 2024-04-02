@@ -5,7 +5,7 @@ set -u
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 export TF_VAR_ssh_inbound_ip=$(curl -4s ifconfig.me)
-eval $(op inject -i .op.tmpl)
+eval $(op inject -i ${SCRIPT_DIR}/.op.tmpl)
 
 cd ${SCRIPT_DIR}/../terraform/
 tfenv install

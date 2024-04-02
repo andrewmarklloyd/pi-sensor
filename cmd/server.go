@@ -352,7 +352,7 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 }
 
 func configureMosquittoClient(serverConfig config.ServerConfig) mqtt.MqttClient {
-	mosquittoAddr := fmt.Sprintf("mqtt://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
+	mosquittoAddr := fmt.Sprintf("mqtts://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
 
 	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, func(client mqttC.Client) {
 		logger.Info("Connected to MQTT server")

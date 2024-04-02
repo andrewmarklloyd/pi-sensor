@@ -4,8 +4,8 @@
   become: true
   # todo: fail when these env vars are unset
   vars:
-    MOSQUITTO_USER: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_USER') }}"
-    MOSQUITTO_PASS: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_PASS') }}"
+    MOSQUITTO_SERVER_USER: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_SERVER_USER') }}"
+    MOSQUITTO_SERVER_PASSWORD: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_SERVER_PASSWORD') }}"
   tasks:
   - name: Ensure passwd file exists
     copy:
@@ -17,7 +17,7 @@
       mode: 0664
   - name: Configure mosquitto_passwd
     shell:
-      cmd: sudo mosquitto_passwd -b /etc/mosquitto/passwd {{ MOSQUITTO_USER }} {{ MOSQUITTO_PASS }}
+      cmd: sudo mosquitto_passwd -b /etc/mosquitto/passwd {{ MOSQUITTO_SERVER_USER }} {{ MOSQUITTO_SERVER_PASSWORD }}
   - name: Copy mosquitto.conf
     ansible.builtin.copy:
       src: ./mosquitto.conf
