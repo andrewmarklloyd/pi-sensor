@@ -26,7 +26,7 @@ jobs:
           DO_APP_ID: ${{ secrets.DO_APP_ID }}
         run: ./.github/scripts/deploy-do.sh
       - name: Start tailscale
-        uses: tailscale/github-action@v1
+        uses: tailscale/github-action@v2
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
       - name: Deploy agents
