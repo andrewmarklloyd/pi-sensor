@@ -6,6 +6,8 @@
   vars:
     MOSQUITTO_SERVER_USER: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_SERVER_USER') }}"
     MOSQUITTO_SERVER_PASSWORD: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_SERVER_PASSWORD') }}"
+    MOSQUITTO_AGENT_USER: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_AGENT_USER') }}"
+    MOSQUITTO_AGENT_PASSWORD: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_AGENT_PASSWORD') }}"
   tasks:
   - name: Ensure passwd file exists
     copy:
@@ -15,12 +17,16 @@
       group: sys
       owner: root
       mode: 0664
-  - name: Configure mosquitto_passwd
+  - name: Configure server mosquitto_passwd
     shell:
       cmd: sudo mosquitto_passwd -b /etc/mosquitto/passwd {{ MOSQUITTO_SERVER_USER }} {{ MOSQUITTO_SERVER_PASSWORD }}
+  - name: Configure agent mosquitto_passwd
+    shell:
+      cmd: sudo mosquitto_passwd -b /etc/mosquitto/passwd {{ MOSQUITTO_AGENT_USER }} {{ MOSQUITTO_AGENT_PASSWORD }}
   - name: Copy mosquitto.conf
     ansible.builtin.copy:
       src: ./mosquitto.conf
+      # todo: the cert script messes this up
       dest: /etc/mosquitto/conf.d/mosquitto.conf
       mode: 0664
       owner: root
