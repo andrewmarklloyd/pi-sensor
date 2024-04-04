@@ -1,13 +1,13 @@
 all:
   hosts:
-    garage:
+    garage.taile0eaf.ts.net:
       agents:
         - sensor_source: garage
           gpio_pin: 18
         - sensor_source: garage-2
           gpio_pin: 17
       forwarder_systemd_units: "pi-sensor-agent-garage,pi-sensor-agent-garage-2"
-    shed:
+    shed.taile0eaf.ts.net:
       agents:
         - sensor_source: shed
           gpio_pin: 18
