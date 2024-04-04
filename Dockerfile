@@ -1,4 +1,5 @@
-FROM golang:1.19-alpine as builder
+FROM golang:1.22-alpine as builder
+RUN go install github.com/andrewmarklloyd/do-app-firewall-entrypoint@latest
 
 RUN apk add curl
 ENV OP_VERSION=v2.22.0
@@ -9,6 +10,7 @@ RUN curl -sSfo op.zip \
 
 FROM alpine
 
+COPY --from=builder /go/bin/do-app-firewall-entrypoint /app/do-app-firewall-entrypoint
 COPY --from=builder /usr/local/bin/op /app/op
 COPY build/pi-sensor-server /app/
 COPY frontend/build /app/frontend/build
