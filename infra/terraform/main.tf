@@ -45,6 +45,13 @@ resource "digitalocean_firewall" "mqtt_server" {
     port_range            = "1-65535"
     destination_addresses = ["0.0.0.0/0"]
   }
+
+  # do-app-firewall-entrypoint manages the inbound rules
+  lifecycle {
+    ignore_changes = [
+      inbound_rule,
+    ]
+  }
 }
 
 resource "digitalocean_domain" "mqtt" {
