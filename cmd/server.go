@@ -100,9 +100,15 @@ func runServer() {
 	}
 
 	mosquittoClient := configureMosquittoClient(serverConfig)
-	err = mosquittoClient.Connect()
-	if err != nil {
+	if err := mosquittoClient.Connect(); err != nil {
 		logger.Warnf("error connecting to mosquitto server: %s", err)
+	}
+
+	err = mosquittoClient.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
+		logger.Infof("mosquitto sensor heartbeat received: %s", messageString)
+	})
+	if err != nil {
+		logger.Warnf("error subscribing to heartbeat topic: %s", err)
 	}
 
 	webServer := newWebServer(serverConfig, serverClients)
