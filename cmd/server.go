@@ -358,7 +358,7 @@ func configureMosquittoClient(serverConfig config.ServerConfig) mqtt.MqttClient 
 	// todo: remove this after using prod certbot cert
 	insecureSkipVerify := true
 	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, insecureSkipVerify, func(client mqttC.Client) {
-		logger.Info("Connected to MQTT server")
+		logger.Info("Connected to mosquitto server")
 	}, func(client mqttC.Client, err error) {
 		// TODO: exiting 1 restarts app to ensure new client
 		// is subscribed to events. might be possible to resubscribe
