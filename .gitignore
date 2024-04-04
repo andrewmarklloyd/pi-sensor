@@ -11,3 +11,4 @@ build/
 .secrets
 run.sh
 door-light
+.terraform/

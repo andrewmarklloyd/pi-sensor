@@ -83,7 +83,8 @@ func main() {
 		logger.Infof("Using GPIO_PIN %d", pinNum)
 	}
 
-	mqttClient := mqtt.NewMQTTClient(mqttAddr, func(client mqttC.Client) {
+	insecureSkipVerify := false
+	mqttClient := mqtt.NewMQTTClient(mqttAddr, insecureSkipVerify, func(client mqttC.Client) {
 		logger.Info("Connected to MQTT server")
 	}, func(client mqttC.Client, err error) {
 		logger.Warnf("Connection to MQTT server lost: %v", err)

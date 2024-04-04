@@ -1,6 +1,7 @@
 package mqtt
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -16,13 +17,16 @@ type MqttClient struct {
 	client mqtt.Client
 }
 
-func NewMQTTClient(addr string, connectHandler func(client mqtt.Client), connectionLostHandler func(client mqtt.Client, err error)) MqttClient {
+func NewMQTTClient(addr string, insecureSkipVerify bool, connectHandler func(client mqtt.Client), connectionLostHandler func(client mqtt.Client, err error)) MqttClient {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(addr)
 	var clientID string
 	u, _ := uuid.NewV4()
 	clientID = u.String()
 	opts.SetClientID(clientID)
+	opts.TLSConfig = &tls.Config{
+		InsecureSkipVerify: insecureSkipVerify,
+	}
 	opts.OnConnect = connectHandler
 	opts.OnConnectionLost = connectionLostHandler
 	opts.AutoReconnect = true
