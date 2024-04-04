@@ -21,12 +21,15 @@ import (
 )
 
 var (
-	brokerurl     = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The MQTT broker to connect")
-	agentUser     = flag.String("agentuser", os.Getenv("CLOUDMQTT_AGENT_USER"), "The MQTT agent user to connect")
-	agentPassword = flag.String("agentpassword", os.Getenv("CLOUDMQTT_AGENT_PASSWORD"), "The MQTT agent password to connect")
-	sensorSource  = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")
-	mockFlag      = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
-	version       = "unknown"
+	brokerurl              = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The MQTT broker to connect")
+	agentUser              = flag.String("agentuser", os.Getenv("CLOUDMQTT_AGENT_USER"), "The MQTT agent user to connect")
+	agentPassword          = flag.String("agentpassword", os.Getenv("CLOUDMQTT_AGENT_PASSWORD"), "The MQTT agent password to connect")
+	mosquittoDomain        = flag.String("mosquittodomain", os.Getenv("MOSQUITTO_AGENT_DOMAIN"), "The mosquitto domain to connect")
+	mosquittoAgentUser     = flag.String("mosquittoagentuser", os.Getenv("MOSQUITTO_AGENT_USER"), "The mosquitto agent user to connect")
+	mosquittoAgentPassword = flag.String("mosquittoagentpassword", os.Getenv("MOSQUITTO_AGENT_PASSWORD"), "The mosquitto agent password to connect")
+	sensorSource           = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")
+	mockFlag               = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
+	version                = "unknown"
 )
 
 const (
@@ -94,6 +97,12 @@ func main() {
 	if err != nil {
 		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
+
+	mosquittoClient := configureMosquittoClient(*mosquittoDomain, *mosquittoAgentUser, *mosquittoAgentPassword, *logger)
+	if err := mosquittoClient.Connect(); err != nil {
+		logger.Warnf("error connecting to mosquitto server: %s", err)
+	}
+
 	pinClient := gpio.NewPinClient(pinNum, mockMode)
 
 	c := make(chan os.Signal, 1)
@@ -115,10 +124,15 @@ func main() {
 	ticker := time.NewTicker(heartbeatIntervalSeconds * time.Second)
 	go func() {
 		for range ticker.C {
-			err := mqttClient.PublishHeartbeat(h)
-			if err != nil {
-				logger.Errorf("error publishing heartbeat: %s", err)
+
+			if err := mqttClient.PublishHeartbeat(h); err != nil {
+				logger.Errorf("error publishing mqtt heartbeat: %s", err)
 			}
+
+			if err := mosquittoClient.PublishHeartbeat(h); err != nil {
+				logger.Warnf("error publishing mosquitto heartbeat: %s", err)
+			}
+
 		}
 	}()
 
@@ -190,4 +204,21 @@ func writeStatus(path, status string) error {
 
 func getStatusFileName(sensorSource string) string {
 	return fmt.Sprintf("/home/pi/.pi-sensor-status-%s", sensorSource)
+}
+
+func configureMosquittoClient(domain, user, password string, logger zap.SugaredLogger) mqtt.MqttClient {
+	mosquittoAddr := fmt.Sprintf("mqtts://%s:%s@%s:1883", user, password, domain)
+
+	// todo: remove this after using prod certbot cert
+	insecureSkipVerify := true
+	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, insecureSkipVerify, func(client mqttC.Client) {
+		logger.Info("Connected to mosquitto server")
+	}, func(client mqttC.Client, err error) {
+		// TODO: exiting 1 restarts app to ensure new client
+		// is subscribed to events. might be possible to resubscribe
+		// or something else is happening
+		logger.Warnf("Connection to mosquitto server lost: %v", err)
+	})
+
+	return mosquittoClient
 }
