@@ -80,7 +80,7 @@ func (c *Client) PublishTokenDaysLeft(ctx context.Context, tokenMetadata config.
 	return nil
 }
 
-func (c *Client) PublishHeartbeat(ctx context.Context, agent string) error {
+func (c *Client) PublishHeartbeat(ctx context.Context, agent, provider string) error {
 	valueCtx := context.WithValue(
 		ctx,
 		datadog.ContextAPIKeys,
@@ -117,6 +117,10 @@ func (c *Client) PublishHeartbeat(ctx context.Context, agent string) error {
 					{
 						Type: datadog.PtrString("agent"),
 						Name: datadog.PtrString(agent),
+					},
+					{
+						Type: datadog.PtrString("provider"),
+						Name: datadog.PtrString(provider),
 					},
 				},
 			},

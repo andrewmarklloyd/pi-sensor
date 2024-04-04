@@ -105,7 +105,19 @@ func runServer() {
 	}
 
 	err = mosquittoClient.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
-		logger.Infof("mosquitto sensor heartbeat received: %s", messageString)
+		var h config.Heartbeat
+		err := json.Unmarshal([]byte(messageString), &h)
+		if err != nil {
+			logger.Warnf("error unmarshalling mosquitto message from heartbeat channel: %s. Message received was: %s", err, messageString)
+			return
+		}
+
+		messageProvider := "mosquitto"
+		err = serverClients.DDClient.PublishHeartbeat(context.Background(), h.Name, messageProvider)
+		if err != nil {
+			logger.Warnf("publishing heartbeat for %s: %s", h.Name, err.Error())
+		}
+
 	})
 	if err != nil {
 		logger.Warnf("error subscribing to heartbeat topic: %s", err)
@@ -145,7 +157,8 @@ func runServer() {
 			return
 		}
 
-		err = serverClients.DDClient.PublishHeartbeat(context.Background(), h.Name)
+		messageProvider := "mqtt"
+		err = serverClients.DDClient.PublishHeartbeat(context.Background(), h.Name, messageProvider)
 		if err != nil {
 			logger.Errorf("publishing heartbeat for %s: %s", h.Name, err.Error())
 		}
