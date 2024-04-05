@@ -99,12 +99,11 @@ func runServer() {
 		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
 
-	mosquittoClient := configureMosquittoClient(serverConfig)
-	if err := mosquittoClient.Connect(); err != nil {
+	if err := serverClients.Mosquitto.Connect(); err != nil {
 		logger.Warnf("error connecting to mosquitto server: %s", err)
 	}
 
-	err = mosquittoClient.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
+	err = serverClients.Mosquitto.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
 		var h config.Heartbeat
 		err := json.Unmarshal([]byte(messageString), &h)
 		if err != nil {
@@ -350,6 +349,19 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		os.Exit(1)
 	})
 
+	mosquittoAddr := fmt.Sprintf("mqtts://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
+
+	// todo: remove this after using prod certbot cert
+	insecureSkipVerifyMosquitto := true
+	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, insecureSkipVerifyMosquitto, func(client mqttC.Client) {
+		logger.Info("Connected to mosquitto server")
+	}, func(client mqttC.Client, err error) {
+		// TODO: exiting 1 restarts app to ensure new client
+		// is subscribed to events. might be possible to resubscribe
+		// or something else is happening
+		logger.Infof("Connection to mosquitto server lost: %v", err)
+	})
+
 	awsClient, err := aws.NewClient(serverConfig)
 	if err != nil {
 		return clients.ServerClients{}, fmt.Errorf("error creating AWS client: %s", err)
@@ -365,27 +377,11 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		Redis:      redisClient,
 		Postgres:   postgresClient,
 		Mqtt:       mqttClient,
+		Mosquitto:  mosquittoClient,
 		AWS:        awsClient,
 		DDClient:   ddClient,
 		CryptoUtil: cryptoUtil,
 	}, nil
-}
-
-func configureMosquittoClient(serverConfig config.ServerConfig) mqtt.MqttClient {
-	mosquittoAddr := fmt.Sprintf("mqtts://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
-
-	// todo: remove this after using prod certbot cert
-	insecureSkipVerify := true
-	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, insecureSkipVerify, func(client mqttC.Client) {
-		logger.Info("Connected to mosquitto server")
-	}, func(client mqttC.Client, err error) {
-		// TODO: exiting 1 restarts app to ensure new client
-		// is subscribed to events. might be possible to resubscribe
-		// or something else is happening
-		logger.Infof("Connection to mosquitto server lost: %v", err)
-	})
-
-	return mosquittoClient
 }
 
 func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClients, serverConfig config.ServerConfig, webServer WebServer) {

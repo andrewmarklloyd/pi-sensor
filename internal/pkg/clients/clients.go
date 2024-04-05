@@ -13,6 +13,7 @@ type ServerClients struct {
 	Redis      redis.Client
 	Postgres   postgres.Client
 	Mqtt       mqtt.MqttClient
+	Mosquitto  mqtt.MqttClient
 	AWS        aws.Client
 	DDClient   datadog.Client
 	CryptoUtil crypto.Util
