@@ -93,8 +93,8 @@ func main() {
 		logger.Warnf("Connection to MQTT server lost: %v", err)
 		os.Exit(1)
 	})
-	err = mqttClient.Connect()
-	if err != nil {
+
+	if err = mqttClient.Connect(); err != nil {
 		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
 
@@ -111,6 +111,7 @@ func main() {
 		<-c
 		logger.Info("SIGTERM received, cleaning up")
 		mqttClient.Cleanup()
+		mosquittoClient.Cleanup()
 		pinClient.Cleanup()
 		os.Exit(0)
 	}()
@@ -157,6 +158,13 @@ func main() {
 		}
 	})
 
+	mosquittoClient.Subscribe(config.SensorRestartTopic, func(messageString string) {
+		if *sensorSource == messageString {
+			logger.Info("Received restart message, restarting app now")
+			os.Exit(0)
+		}
+	})
+
 	statusFile := getStatusFileName(*sensorSource)
 
 	lastStatus, err := getLastStatus(statusFile)
@@ -176,13 +184,20 @@ func main() {
 			logger.Infof(fmt.Sprintf("%s is %s", *sensorSource, currentStatus))
 			lastStatus = currentStatus
 
-			err := mqttClient.PublishSensorStatus(config.SensorStatus{
+			if err := mqttClient.PublishSensorStatus(config.SensorStatus{
 				Source:  *sensorSource,
 				Status:  currentStatus,
 				Version: version,
-			})
-			if err != nil {
+			}); err != nil {
 				logger.Errorf("Error publishing message to sensor status channel: %s", err)
+			}
+
+			if err := mosquittoClient.PublishSensorStatus(config.SensorStatus{
+				Source:  *sensorSource,
+				Status:  currentStatus,
+				Version: version,
+			}); err != nil {
+				logger.Warnf("Error publishing message to sensor status channel: %s", err)
 			}
 		}
 		time.Sleep(5 * time.Second)
