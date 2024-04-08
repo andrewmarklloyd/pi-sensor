@@ -101,3 +101,7 @@ func (c MqttClient) PublishHASensorArming(p config.APIPayload) error {
 	}
 	return c.publish(config.HASensorArmingTopic, string(j))
 }
+
+func (c MqttClient) Publish(topic, message string) error {
+	return c.publish(topic, message)
+}

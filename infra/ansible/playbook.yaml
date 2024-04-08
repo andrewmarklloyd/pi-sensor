@@ -8,6 +8,7 @@
     MOSQUITTO_SERVER_PASSWORD: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_SERVER_PASSWORD') }}"
     MOSQUITTO_AGENT_USER: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_AGENT_USER') }}"
     MOSQUITTO_AGENT_PASSWORD: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_AGENT_PASSWORD') }}"
+    MOSQUITTO_HA_USER: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_HA_USER') }}"
   tasks:
   - name: Ensure passwd file exists
     copy:
@@ -29,6 +30,13 @@
       # todo: the cert script messes this up
       dest: /etc/mosquitto/conf.d/mosquitto.conf
       mode: 0664
+      owner: root
+      group: root
+      force: yes
+  - name: Write mosquitto acl file
+    ansible.builtin.template:
+      src: ./acl.file
+      dest: /etc/mosquitto/acl.file
       owner: root
       group: root
       force: yes
