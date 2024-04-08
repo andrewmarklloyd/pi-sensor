@@ -24,7 +24,7 @@ var (
 	brokerurl              = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The MQTT broker to connect")
 	agentUser              = flag.String("agentuser", os.Getenv("CLOUDMQTT_AGENT_USER"), "The MQTT agent user to connect")
 	agentPassword          = flag.String("agentpassword", os.Getenv("CLOUDMQTT_AGENT_PASSWORD"), "The MQTT agent password to connect")
-	mosquittoDomain        = flag.String("mosquittodomain", os.Getenv("MOSQUITTO_AGENT_DOMAIN"), "The mosquitto domain to connect")
+	mosquittoDomain        = flag.String("mosquittodomain", os.Getenv("MOSQUITTO_DOMAIN"), "The mosquitto domain to connect")
 	mosquittoAgentUser     = flag.String("mosquittoagentuser", os.Getenv("MOSQUITTO_AGENT_USER"), "The mosquitto agent user to connect")
 	mosquittoAgentPassword = flag.String("mosquittoagentpassword", os.Getenv("MOSQUITTO_AGENT_PASSWORD"), "The mosquitto agent password to connect")
 	sensorSource           = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")

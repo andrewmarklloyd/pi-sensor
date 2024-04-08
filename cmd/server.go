@@ -48,19 +48,20 @@ func runServer() {
 	defer forwarderLogger.Sync()
 
 	serverConfig := config.ServerConfig{
-		AppName:                 viper.GetString("APP_NAME"),
-		MqttBrokerURL:           viper.GetString("CLOUDMQTT_URL"),
-		MqttServerUser:          viper.GetString("CLOUDMQTT_SERVER_USER"),
-		MqttServerPassword:      viper.GetString("CLOUDMQTT_SERVER_PASSWORD"),
-		MosquittoServerDomain:   viper.GetString("MOSQUITTO_SERVER_DOMAIN"),
-		MosquittoServerUser:     viper.GetString("MOSQUITTO_SERVER_USER"),
-		MosquittoServerPassword: viper.GetString("MOSQUITTO_SERVER_PASSWORD"),
-		RedisURL:                viper.GetString("REDIS_URL"),
-		RedisTLSURL:             viper.GetString("REDIS_TLS_URL"),
-		PostgresURL:             viper.GetString("DATABASE_URL"),
-		Port:                    viper.GetString("PORT"),
-		MockMode:                viper.GetBool("MOCK_MODE"),
-		AllowedAPIKeys:          viper.GetStringSlice("ALLOWED_API_KEYS"),
+		AppName:                  viper.GetString("APP_NAME"),
+		MqttBrokerURL:            viper.GetString("CLOUDMQTT_URL"),
+		MqttServerUser:           viper.GetString("CLOUDMQTT_SERVER_USER"),
+		MqttServerPassword:       viper.GetString("CLOUDMQTT_SERVER_PASSWORD"),
+		MosquittoServerDomain:    viper.GetString("MOSQUITTO_DOMAIN"),
+		MosquittoServerUser:      viper.GetString("MOSQUITTO_SERVER_USER"),
+		MosquittoServerPassword:  viper.GetString("MOSQUITTO_SERVER_PASSWORD"),
+		MessageProviderMosquitto: viper.GetBool("MESSAGE_PROVIDER_MOSQUITTO"),
+		RedisURL:                 viper.GetString("REDIS_URL"),
+		RedisTLSURL:              viper.GetString("REDIS_TLS_URL"),
+		PostgresURL:              viper.GetString("DATABASE_URL"),
+		Port:                     viper.GetString("PORT"),
+		MockMode:                 viper.GetBool("MOCK_MODE"),
+		AllowedAPIKeys:           viper.GetStringSlice("ALLOWED_API_KEYS"),
 		GoogleConfig: config.GoogleConfig{
 			AuthorizedUsers: viper.GetString("AUTHORIZED_USERS"),
 			ClientId:        viper.GetString("GOOGLE_CLIENT_ID"),
@@ -94,8 +95,7 @@ func runServer() {
 		logger.Fatalf("Error creating clients: %s", err)
 	}
 
-	err = serverClients.Mqtt.Connect()
-	if err != nil {
+	if err = serverClients.Mqtt.Connect(); err != nil {
 		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
 
@@ -373,14 +373,21 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		return clients.ServerClients{}, fmt.Errorf("error creating crypto client: %s", err)
 	}
 
+	var primaryMessageProvider mqtt.MqttClient
+	if serverConfig.MessageProviderMosquitto {
+		primaryMessageProvider = mosquittoClient
+	} else {
+		primaryMessageProvider = mqttClient
+	}
 	return clients.ServerClients{
-		Redis:      redisClient,
-		Postgres:   postgresClient,
-		Mqtt:       mqttClient,
-		Mosquitto:  mosquittoClient,
-		AWS:        awsClient,
-		DDClient:   ddClient,
-		CryptoUtil: cryptoUtil,
+		Redis:                  redisClient,
+		Postgres:               postgresClient,
+		Mqtt:                   mqttClient,
+		Mosquitto:              mosquittoClient,
+		PrimaryMessageProvider: primaryMessageProvider,
+		AWS:                    awsClient,
+		DDClient:               ddClient,
+		CryptoUtil:             cryptoUtil,
 	}, nil
 }
 
