@@ -9,6 +9,7 @@
     MOSQUITTO_AGENT_USER: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_AGENT_USER') }}"
     MOSQUITTO_AGENT_PASSWORD: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_AGENT_PASSWORD') }}"
     MOSQUITTO_HA_USER: "{{ lookup('ansible.builtin.env', 'MOSQUITTO_HA_USER') }}"
+    datadog_api_key: "{{ lookup('ansible.builtin.env', 'DD_API_KEY') }}"
   tasks:
   - name: Ensure passwd file exists
     copy:
@@ -53,3 +54,11 @@
       force: yes
       name: mosquitto
       state: restarted
+  - name: Import the Datadog Agent role from the Datadog collection
+    import_role:
+      name: datadog.dd.agent
+    vars:
+      datadog_config:
+        tags:
+          - "service:pi-sensor"
+          - "source:mqtt-server"
