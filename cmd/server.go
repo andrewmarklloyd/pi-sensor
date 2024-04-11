@@ -100,26 +100,7 @@ func runServer() {
 	}
 
 	if err := serverClients.Mosquitto.Connect(); err != nil {
-		logger.Warnf("error connecting to mosquitto server: %s", err)
-	}
-
-	err = serverClients.Mosquitto.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
-		var h config.Heartbeat
-		err := json.Unmarshal([]byte(messageString), &h)
-		if err != nil {
-			logger.Warnf("error unmarshalling mosquitto message from heartbeat channel: %s. Message received was: %s", err, messageString)
-			return
-		}
-
-		messageProvider := "mosquitto"
-		err = serverClients.DDClient.PublishHeartbeat(context.Background(), h.Name, messageProvider)
-		if err != nil {
-			logger.Warnf("publishing heartbeat for %s: %s", h.Name, err.Error())
-		}
-
-	})
-	if err != nil {
-		logger.Warnf("error subscribing to heartbeat topic: %s", err)
+		logger.Fatalf("error connecting to mosquitto server: %s", err)
 	}
 
 	webServer := newWebServer(serverConfig, serverClients)
