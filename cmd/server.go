@@ -140,7 +140,7 @@ func runServer() {
 	}(sensorConfigMap)
 
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	serverClients.Mqtt.Subscribe(config.SensorStatusTopic, func(message string) {
+	serverClients.PrimaryMessageProvider.Subscribe(config.SensorStatusTopic, func(message string) {
 		err := handleSensorStatusSubscribe(serverClients, webServer, serverConfig, message, delayTimerMap)
 		if err != nil {
 			logger.Errorf("handling sensor status message: %s", err)
@@ -148,7 +148,7 @@ func runServer() {
 	})
 
 	var heartbeatTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	serverClients.Mqtt.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
+	serverClients.PrimaryMessageProvider.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
 		var h config.Heartbeat
 		err := json.Unmarshal([]byte(messageString), &h)
 		if err != nil {
@@ -489,7 +489,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 		armed = false
 	}
 
-	err = serverClients.Mqtt.PublishHASensorStatus(currentStatus)
+	err = serverClients.PrimaryMessageProvider.PublishHASensorStatus(currentStatus)
 	if err != nil {
 		return fmt.Errorf("publishing ha sensor status: %w", err)
 	}

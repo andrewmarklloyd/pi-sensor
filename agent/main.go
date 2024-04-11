@@ -100,7 +100,7 @@ func main() {
 
 	mosquittoClient := configureMosquittoClient(*mosquittoDomain, *mosquittoAgentUser, *mosquittoAgentPassword, *logger)
 	if err := mosquittoClient.Connect(); err != nil {
-		logger.Warnf("error connecting to mosquitto server: %s", err)
+		logger.Fatalf("error connecting to mosquitto server: %s", err)
 	}
 
 	pinClient := gpio.NewPinClient(pinNum, mockMode)
@@ -131,7 +131,7 @@ func main() {
 			}
 
 			if err := mosquittoClient.PublishHeartbeat(h); err != nil {
-				logger.Warnf("error publishing mosquitto heartbeat: %s", err)
+				logger.Errorf("error publishing mosquitto heartbeat: %s", err)
 			}
 
 		}
@@ -197,7 +197,7 @@ func main() {
 				Status:  currentStatus,
 				Version: version,
 			}); err != nil {
-				logger.Warnf("Error publishing message to sensor status channel: %s", err)
+				logger.Errorf("Error publishing message to sensor status channel: %s", err)
 			}
 		}
 		time.Sleep(5 * time.Second)
@@ -233,6 +233,7 @@ func configureMosquittoClient(domain, user, password string, logger zap.SugaredL
 		// is subscribed to events. might be possible to resubscribe
 		// or something else is happening
 		logger.Warnf("Connection to mosquitto server lost: %v", err)
+		os.Exit(1)
 	})
 
 	return mosquittoClient
