@@ -137,8 +137,7 @@ func runServer() {
 			return
 		}
 
-		messageProvider := "mqtt"
-		err = serverClients.DDClient.PublishHeartbeat(context.Background(), h.Name, messageProvider)
+		err = serverClients.DDClient.PublishHeartbeat(context.Background(), h.Name)
 		if err != nil {
 			logger.Errorf("publishing heartbeat for %s: %s", h.Name, err.Error())
 		}
