@@ -1,27 +1,23 @@
 package config
 
 type ServerConfig struct {
-	AppName                  string
-	MqttBrokerURL            string
-	MqttServerUser           string
-	MqttServerPassword       string
-	MosquittoServerDomain    string
-	MosquittoServerUser      string
-	MosquittoServerPassword  string
-	MessageProviderMosquitto bool
-	Topic                    string
-	RedisURL                 string
-	RedisTLSURL              string
-	PostgresURL              string
-	Port                     string
-	MockMode                 bool
-	GoogleConfig             GoogleConfig
-	S3Config                 S3Config
-	Version                  string
-	AllowedAPIKeys           []string
-	DatadogConfig            DatadogConfig
-	NTFYConfig               NTFYConfig
-	EncryptionKey            string
+	AppName                 string
+	MosquittoServerDomain   string
+	MosquittoServerUser     string
+	MosquittoServerPassword string
+	Topic                   string
+	RedisURL                string
+	RedisTLSURL             string
+	PostgresURL             string
+	Port                    string
+	MockMode                bool
+	GoogleConfig            GoogleConfig
+	S3Config                S3Config
+	Version                 string
+	AllowedAPIKeys          []string
+	DatadogConfig           DatadogConfig
+	NTFYConfig              NTFYConfig
+	EncryptionKey           string
 }
 
 type GoogleConfig struct {

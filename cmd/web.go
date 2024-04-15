@@ -163,7 +163,7 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 		}
 
 		for k := range armingState {
-			err = s.serverClients.Mqtt.PublishHASensorArming(config.APIPayload{
+			err = s.serverClients.Mosquitto.PublishHASensorArming(config.APIPayload{
 				Source: k,
 				Armed:  p.Armed,
 			})
@@ -194,7 +194,7 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 		armed = p.Armed
 	}
 
-	err = s.serverClients.Mqtt.PublishHASensorArming(config.APIPayload{
+	err = s.serverClients.Mosquitto.PublishHASensorArming(config.APIPayload{
 		Source: p.Source,
 		Armed:  armed,
 	})
@@ -213,7 +213,7 @@ func (s WebServer) sensorRestartHandler(w http.ResponseWriter, req *http.Request
 		http.Error(w, "Error parsing request", http.StatusBadRequest)
 		return
 	}
-	err = s.serverClients.Mqtt.PublishSensorRestart(sensor.Source)
+	err = s.serverClients.Mosquitto.PublishSensorRestart(sensor.Source)
 	if err != nil {
 		http.Error(w, "Error publishing restart message", http.StatusBadRequest)
 		return

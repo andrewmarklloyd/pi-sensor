@@ -7,7 +7,7 @@ Distributed magnetic sensor status dashboard and alerting system. Allows an arbi
 
 ### Server
 
-Golang server using MQTT messaging and Redis for data storage.
+Golang server using Mosquitto messaging and Redis for data storage.
 
 ### Agent
 
