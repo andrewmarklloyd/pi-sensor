@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -48,20 +47,16 @@ func runServer() {
 	defer forwarderLogger.Sync()
 
 	serverConfig := config.ServerConfig{
-		AppName:                  viper.GetString("APP_NAME"),
-		MqttBrokerURL:            viper.GetString("CLOUDMQTT_URL"),
-		MqttServerUser:           viper.GetString("CLOUDMQTT_SERVER_USER"),
-		MqttServerPassword:       viper.GetString("CLOUDMQTT_SERVER_PASSWORD"),
-		MosquittoServerDomain:    viper.GetString("MOSQUITTO_DOMAIN"),
-		MosquittoServerUser:      viper.GetString("MOSQUITTO_SERVER_USER"),
-		MosquittoServerPassword:  viper.GetString("MOSQUITTO_SERVER_PASSWORD"),
-		MessageProviderMosquitto: viper.GetBool("MESSAGE_PROVIDER_MOSQUITTO"),
-		RedisURL:                 viper.GetString("REDIS_URL"),
-		RedisTLSURL:              viper.GetString("REDIS_TLS_URL"),
-		PostgresURL:              viper.GetString("DATABASE_URL"),
-		Port:                     viper.GetString("PORT"),
-		MockMode:                 viper.GetBool("MOCK_MODE"),
-		AllowedAPIKeys:           viper.GetStringSlice("ALLOWED_API_KEYS"),
+		AppName:                 viper.GetString("APP_NAME"),
+		MosquittoServerDomain:   viper.GetString("MOSQUITTO_DOMAIN"),
+		MosquittoServerUser:     viper.GetString("MOSQUITTO_SERVER_USER"),
+		MosquittoServerPassword: viper.GetString("MOSQUITTO_SERVER_PASSWORD"),
+		RedisURL:                viper.GetString("REDIS_URL"),
+		RedisTLSURL:             viper.GetString("REDIS_TLS_URL"),
+		PostgresURL:             viper.GetString("DATABASE_URL"),
+		Port:                    viper.GetString("PORT"),
+		MockMode:                viper.GetBool("MOCK_MODE"),
+		AllowedAPIKeys:          viper.GetStringSlice("ALLOWED_API_KEYS"),
 		GoogleConfig: config.GoogleConfig{
 			AuthorizedUsers: viper.GetString("AUTHORIZED_USERS"),
 			ClientId:        viper.GetString("GOOGLE_CLIENT_ID"),
@@ -95,10 +90,6 @@ func runServer() {
 		logger.Fatalf("Error creating clients: %s", err)
 	}
 
-	if err = serverClients.Mqtt.Connect(); err != nil {
-		logger.Fatalf("error connecting to mqtt: %s", err)
-	}
-
 	if err := serverClients.Mosquitto.Connect(); err != nil {
 		logger.Fatalf("error connecting to mosquitto server: %s", err)
 	}
@@ -121,7 +112,7 @@ func runServer() {
 	}(sensorConfigMap)
 
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	serverClients.PrimaryMessageProvider.Subscribe(config.SensorStatusTopic, func(message string) {
+	serverClients.Mosquitto.Subscribe(config.SensorStatusTopic, func(message string) {
 		err := handleSensorStatusSubscribe(serverClients, webServer, serverConfig, message, delayTimerMap)
 		if err != nil {
 			logger.Errorf("handling sensor status message: %s", err)
@@ -129,7 +120,7 @@ func runServer() {
 	})
 
 	var heartbeatTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	serverClients.PrimaryMessageProvider.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
+	serverClients.Mosquitto.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
 		var h config.Heartbeat
 		err := json.Unmarshal([]byte(messageString), &h)
 		if err != nil {
@@ -311,24 +302,6 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		return clients.ServerClients{}, fmt.Errorf("creating postgres client: %s", err)
 	}
 
-	urlSplit := strings.Split(serverConfig.MqttBrokerURL, "@")
-	if len(urlSplit) != 2 {
-		return clients.ServerClients{}, fmt.Errorf("unexpected CLOUDMQTT_URL parsing error, expected length of split after '@' to be 2")
-	}
-	domain := urlSplit[1]
-	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", serverConfig.MqttServerUser, serverConfig.MqttServerPassword, domain)
-
-	insecureSkipVerify := false
-	mqttClient := mqtt.NewMQTTClient(mqttAddr, insecureSkipVerify, func(client mqttC.Client) {
-		logger.Info("Connected to MQTT server")
-	}, func(client mqttC.Client, err error) {
-		// TODO: exiting 1 restarts app to ensure new client
-		// is subscribed to events. might be possible to resubscribe
-		// or something else is happening
-		logger.Warnf("Connection to MQTT server lost: %v", err)
-		os.Exit(1)
-	})
-
 	mosquittoAddr := fmt.Sprintf("mqtts://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
 
 	// todo: remove this after using prod certbot cert
@@ -353,21 +326,13 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		return clients.ServerClients{}, fmt.Errorf("error creating crypto client: %s", err)
 	}
 
-	var primaryMessageProvider mqtt.MqttClient
-	if serverConfig.MessageProviderMosquitto {
-		primaryMessageProvider = mosquittoClient
-	} else {
-		primaryMessageProvider = mqttClient
-	}
 	return clients.ServerClients{
-		Redis:                  redisClient,
-		Postgres:               postgresClient,
-		Mqtt:                   mqttClient,
-		Mosquitto:              mosquittoClient,
-		PrimaryMessageProvider: primaryMessageProvider,
-		AWS:                    awsClient,
-		DDClient:               ddClient,
-		CryptoUtil:             cryptoUtil,
+		Redis:      redisClient,
+		Postgres:   postgresClient,
+		Mosquitto:  mosquittoClient,
+		AWS:        awsClient,
+		DDClient:   ddClient,
+		CryptoUtil: cryptoUtil,
 	}, nil
 }
 
@@ -469,7 +434,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 		armed = false
 	}
 
-	err = serverClients.PrimaryMessageProvider.PublishHASensorStatus(currentStatus)
+	err = serverClients.Mosquitto.PublishHASensorStatus(currentStatus)
 	if err != nil {
 		return fmt.Errorf("publishing ha sensor status: %w", err)
 	}

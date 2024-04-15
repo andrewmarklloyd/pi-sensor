@@ -21,9 +21,6 @@ import (
 )
 
 var (
-	brokerurl              = flag.String("brokerurl", os.Getenv("CLOUDMQTT_URL"), "The MQTT broker to connect")
-	agentUser              = flag.String("agentuser", os.Getenv("CLOUDMQTT_AGENT_USER"), "The MQTT agent user to connect")
-	agentPassword          = flag.String("agentpassword", os.Getenv("CLOUDMQTT_AGENT_PASSWORD"), "The MQTT agent password to connect")
 	mosquittoDomain        = flag.String("mosquittodomain", os.Getenv("MOSQUITTO_DOMAIN"), "The mosquitto domain to connect")
 	mosquittoAgentUser     = flag.String("mosquittoagentuser", os.Getenv("MOSQUITTO_AGENT_USER"), "The mosquitto agent user to connect")
 	mosquittoAgentPassword = flag.String("mosquittoagentpassword", os.Getenv("MOSQUITTO_AGENT_PASSWORD"), "The mosquitto agent password to connect")
@@ -55,26 +52,6 @@ func main() {
 
 	logger.Infof("Initializing app, version: %s", version)
 
-	if *brokerurl == "" {
-		logger.Fatal("CLOUDMQTT_URL env var is required")
-	}
-
-	if *agentUser == "" {
-		logger.Fatal("CLOUDMQTT_AGENT_USER environment variable not found")
-	}
-
-	if *agentPassword == "" {
-		logger.Fatal("CLOUDMQTT_AGENT_PASSWORD environment variable not found")
-	}
-
-	urlSplit := strings.Split(*brokerurl, "@")
-	if len(urlSplit) != 2 {
-		logger.Fatal("unexpected CLOUDMQTT_URL parsing error")
-	}
-	domain := urlSplit[1]
-
-	mqttAddr := fmt.Sprintf("mqtt://%s:%s@%s", *agentUser, *agentPassword, domain)
-
 	mockMode, _ := strconv.ParseBool(*mockFlag)
 
 	defaultPin := 18
@@ -84,18 +61,6 @@ func main() {
 		pinNum = defaultPin
 	} else {
 		logger.Infof("Using GPIO_PIN %d", pinNum)
-	}
-
-	insecureSkipVerify := false
-	mqttClient := mqtt.NewMQTTClient(mqttAddr, insecureSkipVerify, func(client mqttC.Client) {
-		logger.Info("Connected to MQTT server")
-	}, func(client mqttC.Client, err error) {
-		logger.Warnf("Connection to MQTT server lost: %v", err)
-		os.Exit(1)
-	})
-
-	if err = mqttClient.Connect(); err != nil {
-		logger.Fatalf("error connecting to mqtt: %s", err)
 	}
 
 	mosquittoClient := configureMosquittoClient(*mosquittoDomain, *mosquittoAgentUser, *mosquittoAgentPassword, *logger)
@@ -110,7 +75,6 @@ func main() {
 	go func() {
 		<-c
 		logger.Info("SIGTERM received, cleaning up")
-		mqttClient.Cleanup()
 		mosquittoClient.Cleanup()
 		pinClient.Cleanup()
 		os.Exit(0)
@@ -125,11 +89,6 @@ func main() {
 	ticker := time.NewTicker(heartbeatIntervalSeconds * time.Second)
 	go func() {
 		for range ticker.C {
-
-			if err := mqttClient.PublishHeartbeat(h); err != nil {
-				logger.Errorf("error publishing mqtt heartbeat: %s", err)
-			}
-
 			if err := mosquittoClient.PublishHeartbeat(h); err != nil {
 				logger.Errorf("error publishing mosquitto heartbeat: %s", err)
 			}
@@ -150,13 +109,6 @@ func main() {
 			}
 		}
 	}()
-
-	mqttClient.Subscribe(config.SensorRestartTopic, func(messageString string) {
-		if *sensorSource == messageString {
-			logger.Info("Received restart message, restarting app now")
-			os.Exit(0)
-		}
-	})
 
 	mosquittoClient.Subscribe(config.SensorRestartTopic, func(messageString string) {
 		if *sensorSource == messageString {
@@ -183,14 +135,6 @@ func main() {
 		if currentStatus != lastStatus {
 			logger.Infof(fmt.Sprintf("%s is %s", *sensorSource, currentStatus))
 			lastStatus = currentStatus
-
-			if err := mqttClient.PublishSensorStatus(config.SensorStatus{
-				Source:  *sensorSource,
-				Status:  currentStatus,
-				Version: version,
-			}); err != nil {
-				logger.Errorf("Error publishing message to sensor status channel: %s", err)
-			}
 
 			if err := mosquittoClient.PublishSensorStatus(config.SensorStatus{
 				Source:  *sensorSource,

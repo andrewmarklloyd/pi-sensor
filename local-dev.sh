@@ -5,11 +5,11 @@ docker-compose up -d
 
 export REDIS_URL=redis://127.0.0.1:6379
 export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable
-export CLOUDMQTT_URL=mqtt://user:pass@127.0.0.1:1883
-export CLOUDMQTT_SERVER_PASSWORD=abc
-export CLOUDMQTT_SERVER_USER=abc
-export CLOUDMQTT_AGENT_USER=abc
-export CLOUDMQTT_AGENT_PASSWORD=abc
+export MOSQUITTO_URL=mqtt://user:pass@127.0.0.1:1883
+export MOSQUITTO_SERVER_PASSWORD=abc
+export MOSQUITTO_SERVER_USER=abc
+export MOSQUITTO_AGENT_USER=abc
+export MOSQUITTO_AGENT_PASSWORD=abc
 export MOCK_MODE=true
 export PORT=8080
 # random uuid
