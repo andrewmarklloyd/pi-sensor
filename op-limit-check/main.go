@@ -42,8 +42,9 @@ func main() {
 func GetRateLimit() (bool, error) {
 	cmd := exec.Command("/app/op", "service-account", "ratelimit")
 
-	out, err := cmd.Output()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Println(string(out))
 		return true, err
 	}
 
