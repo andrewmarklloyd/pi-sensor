@@ -52,9 +52,7 @@ start_certbot() {
 
     sleep 5
 
-    #todo: remove --test-cert
     sudo certbot certonly \
-        --test-cert \
         --non-interactive \
         --agree-tos \
         --manual \

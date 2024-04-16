@@ -1,0 +1,10 @@
+# /etc/datadog-agent/conf.d/mosquitto.d/conf.yaml
+# chown on mosquitto log file
+# sudo chmod 0604 /var/log/mosquitto/mosquitto.log
+logs:
+  - type: file
+    path: /var/log/mosquitto/mosquitto.log
+    service: pi-sensor
+    source: mosquitto
+
+

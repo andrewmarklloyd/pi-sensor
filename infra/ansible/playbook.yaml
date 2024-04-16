@@ -25,10 +25,15 @@
   - name: Configure agent mosquitto_passwd
     shell:
       cmd: sudo mosquitto_passwd -b /etc/mosquitto/passwd {{ MOSQUITTO_AGENT_USER }} {{ MOSQUITTO_AGENT_PASSWORD }}
+  - name: Check if mosquitto.conf exists
+    stat:
+      path: /etc/mosquitto/conf.d/mosquitto.conf
+    register: stat_result
   - name: Determine if certbot has run
     shell:
       cmd: grep cafile /etc/mosquitto/conf.d/mosquitto.conf
     register: cafile_result
+    when: stat_result.stat.exists
   - name: Copy mosquitto.conf
     ansible.builtin.copy:
       src: ./mosquitto.conf
@@ -38,7 +43,7 @@
       group: root
       force: yes
     # certbot writes config to mosquitto.conf
-    when: "'cafile' not in cafile_result.stdout"
+    when: (stat_result.stat.exists) and ("'cafile' not in cafile_result.stdout")
   - name: Write mosquitto acl file
     ansible.builtin.template:
       src: ./acl.file
