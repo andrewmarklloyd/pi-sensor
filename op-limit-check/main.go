@@ -40,7 +40,7 @@ func main() {
 }
 
 func GetRateLimit() (bool, error) {
-	cmd := exec.Command("op", "service-account", "ratelimit")
+	cmd := exec.Command("/app/op", "service-account", "ratelimit")
 
 	out, err := cmd.Output()
 	if err != nil {
