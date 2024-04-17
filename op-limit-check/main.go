@@ -12,14 +12,19 @@ import (
 )
 
 func main() {
-	limited, err := GetRateLimit()
-	if err != nil {
-		panic(err)
-	}
-
-	if !limited {
+	rateLimited := os.Getenv("OP_RATE_LIMITED")
+	if rateLimited != "true" {
 		os.Exit(0)
 	}
+
+	// limited, err := GetRateLimit()
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// if !limited {
+	// 	os.Exit(0)
+	// }
 
 	fmt.Println("being rate limited by 1password, starting maintenance web server")
 
