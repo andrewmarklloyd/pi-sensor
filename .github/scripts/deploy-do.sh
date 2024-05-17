@@ -9,7 +9,7 @@ if ! command -v yq &> /dev/null; then
 fi
 
 if ! command -v doctl &> /dev/null; then
-  doctlVersion="1.94.0"
+  doctlVersion="1.106.0"
   wget -q https://github.com/digitalocean/doctl/releases/download/v${doctlVersion}/doctl-${doctlVersion}-linux-amd64.tar.gz -P /tmp
   tar xf /tmp/doctl-${doctlVersion}-linux-amd64.tar.gz -C /tmp
   mv /tmp/doctl /usr/local/bin
@@ -17,11 +17,18 @@ fi
 
 deploy() {
   echo "Deploying version ${SHORT_SHA}"
-  doctl --access-token ${DO_ACCESS_TOKEN} registry login --expiry-seconds 300
-  image="registry.digitalocean.com/pi-sensor/pi-sensor:${SHORT_SHA}"
+  echo $GH_TOKEN | docker login ghcr.io -u 'andrewmarklloyd' --password-stdin
+  image="ghcr.io/andrewmarklloyd/pi-sensor:${SHORT_SHA}"
   docker build -t ${image} .
   docker push ${image}
-  doctl --access-token ${DO_ACCESS_TOKEN} apps spec get ${DO_APP_ID} | yq ".services[0].image.tag = \"${SHORT_SHA}\"" - | doctl --access-token ${DO_ACCESS_TOKEN} apps update ${DO_APP_ID} --wait --spec -
+
+  DO_APP_ID=$(doctl --access-token ${DO_ACCESS_TOKEN} apps list -o json | yq -r '.[] | select(.spec.name == "pi-sensor").id')
+
+  TFILE=$(mktemp --suffix .yaml)
+  doctl --access-token ${DO_ACCESS_TOKEN} apps spec get ${DO_APP_ID} > ${TFILE}
+  yq -i ".services[0].image.tag = \"${SHORT_SHA}\"" ${TFILE}
+  doctl --access-token ${DO_ACCESS_TOKEN} apps update ${DO_APP_ID} --wait --spec "${TFILE}"
+  rm -f ${TFILE}
 }
 
 cleanup_tags() {
