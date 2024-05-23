@@ -12,6 +12,7 @@ FROM alpine
 
 COPY --from=builder /go/bin/do-app-firewall-entrypoint /app/do-app-firewall-entrypoint
 COPY --from=builder /usr/local/bin/op /app/op
+RUN chmod +x build/*
 COPY build/pi-sensor-server /app/
 COPY build/op-limit-check-entry /app/
 COPY frontend/build /app/frontend/build
