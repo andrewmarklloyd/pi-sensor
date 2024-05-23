@@ -4,22 +4,18 @@ on:
     branches: [ main ]
   workflow_dispatch:
 jobs:
-  build_deploy:
+  build:
+    uses: ./.github/workflows/build.yml
+  deploy:
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup Go
-        uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
-          go-version: '1.22.0'
-      - name: Check
-        run: |
-          make vet
-          make test
-      - name: Run build
-        run: |
-          make build-ci
-      - name: Deploy DO
+          name: artifacts
+      - name: Deploy
         env:
           DO_ACCESS_TOKEN: ${{ secrets.DO_ACCESS_TOKEN }}
           GITHUB_SHA: ${{ github.sha }}
