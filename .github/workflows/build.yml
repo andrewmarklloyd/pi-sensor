@@ -24,4 +24,6 @@ jobs:
           path: |
             build/pi-sensor-server
             build/op-limit-check-entry
+            build/pi-sensor-agent
+            build/agent-log-forwarder
             frontend/build
