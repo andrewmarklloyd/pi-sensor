@@ -3,7 +3,9 @@
 /app/do-app-firewall-entrypoint
 
 unset DO_ACCESS_TOKEN
-unset DO_FIREWALL_ID
+unset FIREWALL_NAME
+unset STATIC_INBOUND_IPS
+unset FIREWALL_PORT
 
 /app/op-limit-check-entry
 
