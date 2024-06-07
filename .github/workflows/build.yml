@@ -17,13 +17,13 @@ jobs:
       - name: Run build
         run: |
           make build-ci
-      - name: Create artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifacts
-          path: |
-            build/pi-sensor-server
-            build/op-limit-check-entry
-            build/pi-sensor-agent
-            build/agent-log-forwarder
-            frontend/build
+      # todo: set SHORT_SHA in pr or main workflow
+      - name: Build and push docker image
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
+          echo ${GH_TOKEN} | docker login ghcr.io -u 'andrewmarklloyd' --password-stdin
+          image="ghcr.io/andrewmarklloyd/pi-sensor:${SHORT_SHA}"
+          docker build -t ${image} .
+          docker push ${image}
