@@ -17,6 +17,7 @@ import (
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/gpio"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/mqtt"
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/op"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/tailscale"
 )
 
@@ -49,6 +50,11 @@ func main() {
 
 	logger := l.Sugar().Named(fmt.Sprintf("pi_sensor_agent-%s", *sensorSource))
 	defer logger.Sync()
+
+	limited, resetDuration, err := op.GetRateLimit()
+	if limited {
+		logger.Errorf("being rate limited by 1password until %s, starting maintenance web server", resetDuration)
+	}
 
 	logger.Infof("Initializing app, version: %s", version)
 
