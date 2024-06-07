@@ -17,6 +17,13 @@ jobs:
       - name: Run build
         run: |
           make build-ci
+      - name: Create artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts
+          path: |
+            build/pi-sensor-agent
+            build/agent-log-forwarder
       # todo: set SHORT_SHA in pr or main workflow
       - name: Build and push docker image
         env:
