@@ -11,7 +11,7 @@ RUN curl -sSfo op.zip \
 FROM alpine
 
 COPY --from=builder /go/bin/do-app-firewall-entrypoint /app/do-app-firewall-entrypoint
-COPY --from=builder /usr/local/bin/op /app/op
+COPY --from=builder /usr/local/bin/op /usr/local/bin/op
 COPY build/pi-sensor-server /app/
 RUN chmod +x /app/pi-sensor-server
 COPY build/op-limit-check-entry /app/

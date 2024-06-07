@@ -9,4 +9,4 @@ unset FIREWALL_PORT
 
 /app/op-limit-check-entry
 
-/app/op run --env-file="/app/.env.server.tmpl" -- /app/pi-sensor-server
+op run --env-file="/app/.env.server.tmpl" -- /app/pi-sensor-server
