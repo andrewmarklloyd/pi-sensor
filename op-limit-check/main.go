@@ -12,21 +12,16 @@ import (
 )
 
 func main() {
-	rateLimited := os.Getenv("OP_RATE_LIMITED")
-	if rateLimited != "true" {
+	limited, resetDuration, err := GetRateLimit()
+	if err != nil {
+		panic(err)
+	}
+
+	if !limited {
 		os.Exit(0)
 	}
 
-	// limited, err := GetRateLimit()
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// if !limited {
-	// 	os.Exit(0)
-	// }
-
-	fmt.Println("being rate limited by 1password, starting maintenance web server")
+	fmt.Printf("being rate limited by 1password until %s, starting maintenance web server\n", resetDuration)
 
 	// todo: capture sleep time from output
 	// for example 11 hours etc
@@ -44,32 +39,29 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func GetRateLimit() (bool, error) {
+func GetRateLimit() (bool, string, error) {
 	cmd := exec.Command("/app/op", "service-account", "ratelimit")
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println(string(out))
-		return true, err
+		return true, "", err
 	}
 
-	output := []string{}
 	scanner := bufio.NewScanner(strings.NewReader(string(out)))
 	for scanner.Scan() {
-		text := scanner.Text()
-		if !strings.Contains(text, "TYPE") && !strings.Contains(text, "ACTION") && !strings.Contains(text, "N/A") {
-			output = append(output, text)
+		fields := strings.Fields(scanner.Text())
+		if len(fields) < 6 {
+			return true, "", fmt.Errorf("less than 6 fields were found when running ratelimit command")
+		}
+		if fields[4] == "0" {
+			return true, strings.Join(fields[5:], " "), nil
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return true, err
+		return true, "", err
 	}
 
-	if len(output) > 0 {
-		fmt.Println(string(out))
-		return true, nil
-	}
-
-	return false, nil
+	return false, "", nil
 }
