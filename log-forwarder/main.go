@@ -12,6 +12,10 @@ import (
 	"strings"
 )
 
+const dataDogEndpoint = "https://http-intake.logs.datadoghq.com/api/v2/logs"
+
+var hostname string
+
 type syslog struct {
 	Identifier string `json:"SYSLOG_IDENTIFIER"`
 	Message    string `json:"MESSAGE"`
@@ -22,15 +26,18 @@ type response struct {
 	Error string `json:"error"`
 }
 
+type ddBody struct {
+	DDtags   string `json:"ddtags"`
+	Hostname string `json:"hostname"`
+	Message  string `json:"message"`
+	Service  string `json:"service"`
+	Source   string `json:"source"`
+}
+
 func main() {
-	logEndpoint := os.Getenv("LOG_ENDPOINT")
-	if logEndpoint == "" {
-		fmt.Println("LOG_ENDPOINT env var must be set")
-		os.Exit(1)
-	}
-	logApiKey := os.Getenv("LOG_API_KEY")
-	if logApiKey == "" {
-		fmt.Println("LOG_API_KEY env var must be set")
+	ddAPIKey := os.Getenv("DD_API_KEY")
+	if ddAPIKey == "" {
+		fmt.Println("DD_API_KEY env var must be set")
 		os.Exit(1)
 	}
 	systemdUnits := os.Getenv("SYSTEMD_UNITS")
@@ -44,6 +51,12 @@ func main() {
 		units = append(units, strings.Trim(s, " "))
 	}
 
+	b, err := os.ReadFile("/etc/hostname")
+	if err != nil {
+		panic(err)
+	}
+	hostname = string(b)
+
 	fmt.Println("Starting agent log forwarder")
 
 	logChannel := make(chan syslog)
@@ -54,7 +67,7 @@ func main() {
 			break
 		}
 
-		err := sendLogs(log.Message, logEndpoint, logApiKey)
+		err := sendLogs(log.Message, ddAPIKey)
 		if err != nil {
 			fmt.Println("error sending logs:", err)
 		}
@@ -101,14 +114,27 @@ func tailSystemdLogs(ch chan syslog, systemdUnits []string) error {
 	return nil
 }
 
-func sendLogs(log, logEndpoint, logApiKey string) error {
-	req, err := http.NewRequest("POST", logEndpoint, bytes.NewBuffer([]byte(log)))
+func sendLogs(log, ddAPIKey string) error {
+	b := ddBody{
+		DDtags:   fmt.Sprintf("source:%s", hostname),
+		Hostname: hostname,
+		Message:  log,
+		Service:  "pi-sensor",
+		Source:   "pi-sensor-agent",
+	}
+
+	bodyBytes, err := json.Marshal(b)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", dataDogEndpoint, bytes.NewBuffer(bodyBytes))
 
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Add("api-key", logApiKey)
+	req.Header.Add("DD-API-KEY", ddAPIKey)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
