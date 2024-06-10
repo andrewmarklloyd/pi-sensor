@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 
 	"net/http"
 	"os"
@@ -74,7 +73,6 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	sessionStore = sessions.NewCookieStore([]byte(serverConfig.GoogleConfig.SessionSecret), nil)
 	stateConfig := gologin.DefaultCookieConfig
 	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
-	router.Handle("/api/agent-logs", http.HandlerFunc(agentLogsHandler)).Methods(post)
 	router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(w.sensorRestartHandler))).Methods(post)
 	router.Handle("/api/sensor/openTimeout", requireLogin(http.HandlerFunc(w.sensorOpenTimeoutHandler))).Methods(post)
 	router.Handle("/api/sensor/getOpenTimeout", requireLogin(http.HandlerFunc(w.getSensorOpenTimeoutHandler))).Methods(get)
@@ -399,57 +397,6 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	fmt.Fprintf(w, `{"version":"%s"}`, version)
-}
-
-func agentLogsHandler(w http.ResponseWriter, req *http.Request) {
-	apiKey := req.Header.Get("api-key")
-	if !validAPIKey(apiKey) {
-		http.Error(w, `{"error":"unauthenticated"}`, http.StatusUnauthorized)
-		return
-	}
-
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		http.Error(w, `{"error":"reading request body"}`, http.StatusBadRequest)
-		return
-	}
-
-	var zLog zapLog
-	if err := json.Unmarshal(body, &zLog); err != nil {
-		logger.Errorf("unmarshalling log forwarded message into zap log message: %s, raw message json: %s", err, string(body))
-		// this is an error for pi-sensor, but not due to an error
-		// with log-forwarder so don't return an error
-		fmt.Fprintf(w, `{"error":""}`)
-		return
-	}
-
-	leveledLogFunction := getLogFunction(zLog)
-
-	leveledLogFunction(zLog.Msg,
-		"agentLogger", zLog.Logger,
-	)
-
-	fmt.Fprintf(w, `{"error":""}`)
-}
-
-// TODO: is it possible to use zap to dynamically
-// determine which log level function to use?
-func getLogFunction(z zapLog) func(msg string, keysAndValues ...interface{}) {
-	switch z.Level {
-	case "debug":
-		return forwarderLogger.Debugw
-	case "info":
-		return forwarderLogger.Infow
-	case "warn":
-		return forwarderLogger.Warnw
-	case "error":
-		return forwarderLogger.Errorw
-	case "panic":
-		return forwarderLogger.Panicw
-	case "fatal":
-		return forwarderLogger.Fatalw
-	}
-	return forwarderLogger.Infow
 }
 
 func validAPIKey(apiKey string) bool {
