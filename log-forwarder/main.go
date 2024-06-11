@@ -9,10 +9,15 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
+	"time"
 )
 
-const dataDogEndpoint = "https://http-intake.logs.datadoghq.com/api/v2/logs"
+const (
+	dataDogEndpoint = "https://http-intake.logs.datadoghq.com/api/v2/logs"
+	maxRestarts     = 5
+)
 
 var hostname string
 
@@ -49,6 +54,12 @@ func main() {
 	units := []string{}
 	for _, s := range unitsSplit {
 		units = append(units, strings.Trim(s, " "))
+	}
+
+	for _, u := range units {
+		go func() {
+			monitorRestarts(u)
+		}()
 	}
 
 	b, err := os.ReadFile("/etc/hostname")
@@ -158,4 +169,43 @@ func sendLogs(log, ddAPIKey string) error {
 	}
 
 	return nil
+}
+
+func monitorRestarts(systemdUnit string) {
+	fmt.Println("Starting restart monitor")
+	for range time.NewTicker(time.Minute * 5).C {
+		cmd := exec.Command("systemctl", "show", systemdUnit, "-p", "NRestarts")
+
+		stdout, err := cmd.Output()
+
+		if err != nil {
+			fmt.Printf("ERROR: %s\n", err.Error())
+			continue
+		}
+
+		out := strings.TrimSuffix(string(stdout), "\n")
+		split := strings.Split(out, "=")
+		if len(split) != 2 {
+			fmt.Printf("ERROR: expected output to be length 2 but got %d\n", len(split))
+			continue
+		}
+
+		i, err := strconv.Atoi(split[1])
+		if err != nil {
+			fmt.Printf("ERROR: %s\n", err.Error())
+		}
+
+		if i > maxRestarts {
+			fmt.Println("restart above limit, ensuring unit is stopped")
+			cmd := exec.Command("sudo", "systemctl", "stop", systemdUnit)
+
+			stdout, err := cmd.Output()
+			if err != nil {
+				fmt.Printf("ERROR: %s\n", err.Error())
+				continue
+			}
+
+			fmt.Println(string(stdout))
+		}
+	}
 }
