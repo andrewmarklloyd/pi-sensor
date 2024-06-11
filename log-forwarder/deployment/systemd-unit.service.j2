@@ -8,8 +8,8 @@ StartLimitInterval=0
 WantedBy=multi-user.target
 
 [Service]
-EnvironmentFile=/usr/local/src/pi-sensor-agent/.op-env
-ExecStart=op run --env-file=".forwarder-env-file.tmpl" -- /usr/local/src/pi-sensor-agent/agent-log-forwarder
+EnvironmentFile=/usr/local/src/pi-sensor-agent/.forwarder-env-file
+ExecStart=/usr/local/src/pi-sensor-agent/agent-log-forwarder
 WorkingDirectory=/usr/local/src/pi-sensor-agent
 StandardOutput=inherit
 StandardError=inherit

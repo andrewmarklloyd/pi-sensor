@@ -5,6 +5,7 @@
   # todo: fail when these env vars are unset
   vars:
     OP_SERVICE_ACCOUNT_TOKEN: "{{ lookup('ansible.builtin.env', 'OP_SERVICE_ACCOUNT_TOKEN') }}"
+    DD_API_KEY: "{{ lookup('ansible.builtin.env', 'DD_API_KEY') }}"
     OP_VERSION: "2.23.0"
   tasks:
   - name: Gather installed op cli version, if there is any
@@ -47,10 +48,10 @@
       group: root
       force: yes
     register: forwarder_binary
-  - name: Write forwarder op cli env-file template
+  - name: Write forwarder env file
     ansible.builtin.template:
       src: ./log-forwarder/deployment/env-file.tmpl
-      dest: /usr/local/src/pi-sensor-agent/.forwarder-env-file.tmpl
+      dest: /usr/local/src/pi-sensor-agent/.forwarder-env-file
       owner: root
       group: root
       force: yes
