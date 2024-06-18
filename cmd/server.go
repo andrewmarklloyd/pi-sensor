@@ -308,10 +308,7 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, insecureSkipVerifyMosquitto, func(client mqttC.Client) {
 		logger.Info("Connected to mosquitto server")
 	}, func(client mqttC.Client, err error) {
-		// TODO: exiting 1 restarts app to ensure new client
-		// is subscribed to events. might be possible to resubscribe
-		// or something else is happening
-		logger.Infof("Connection to mosquitto server lost: %v", err)
+		logger.Warnf("Connection to mosquitto server lost: %v", err)
 	})
 
 	awsClient, err := aws.NewClient(serverConfig)
