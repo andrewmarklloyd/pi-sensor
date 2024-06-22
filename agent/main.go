@@ -183,6 +183,8 @@ func configureMosquittoClient(domain, user, password string, logger zap.SugaredL
 		logger.Info("Connected to mosquitto server")
 	}, func(client mqttC.Client, err error) {
 		logger.Warnf("Connection to mosquitto server lost: %v", err)
+	}, func(mqttC.Client, *mqttC.ClientOptions) {
+		logger.Info("Agent client is reconnecting")
 	})
 
 	return mosquittoClient

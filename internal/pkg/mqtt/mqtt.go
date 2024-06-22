@@ -17,9 +17,10 @@ type MqttClient struct {
 	client mqtt.Client
 }
 
-func NewMQTTClient(addr string, insecureSkipVerify bool, connectHandler func(client mqtt.Client), connectionLostHandler func(client mqtt.Client, err error)) MqttClient {
+func NewMQTTClient(addr string, insecureSkipVerify bool, connectHandler func(client mqtt.Client), connectionLostHandler func(client mqtt.Client, err error), reconnectHandler func(mqtt.Client, *mqtt.ClientOptions)) MqttClient {
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(addr)
+	opts.CleanSession = false
 	var clientID string
 	u, _ := uuid.NewV4()
 	clientID = u.String()
@@ -31,6 +32,8 @@ func NewMQTTClient(addr string, insecureSkipVerify bool, connectHandler func(cli
 	opts.OnConnectionLost = connectionLostHandler
 	opts.AutoReconnect = true
 	client := mqtt.NewClient(opts)
+
+	opts.OnReconnecting = reconnectHandler
 
 	return MqttClient{
 		client,
