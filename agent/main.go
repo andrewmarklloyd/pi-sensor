@@ -178,7 +178,7 @@ func configureMosquittoClient(domain, user, password string, logger zap.SugaredL
 	mosquittoAddr := fmt.Sprintf("mqtts://%s:%s@%s:1883", user, password, domain)
 
 	// todo: remove this after using prod certbot cert
-	insecureSkipVerify := true
+	insecureSkipVerify := false
 	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, insecureSkipVerify, func(client mqttC.Client) {
 		logger.Info("Connected to mosquitto server")
 	}, func(client mqttC.Client, err error) {
