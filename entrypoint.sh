@@ -9,11 +9,12 @@ unset FIREWALL_PORT
 
 /app/op-limit-check-entry
 
-/app/tailscaled &
+/app/tailscaled --tun=userspace-networking &
 until /app/tailscale up --authkey=${TAILSCALE_AUTHKEY}
 do
     sleep 1
 done
 echo Tailscale started
 
+unset TAILSCALE_AUTHKEY
 op run --env-file="/app/.env.server.tmpl" -- /app/pi-sensor-server
