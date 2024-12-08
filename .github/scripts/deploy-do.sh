@@ -18,7 +18,7 @@ fi
 deploy() {
   echo "Deploying version ${SHORT_SHA}"
 
-  # doctl --access-token ${DO_ACCESS_TOKEN} auth init || (echo "doctl not authenticated" && exit 1)
+  doctl --access-token ${DO_ACCESS_TOKEN} auth init || (echo "doctl not authenticated" && exit 1)
   DO_APP_ID=$(doctl --access-token ${DO_ACCESS_TOKEN} apps list -o json | yq -r '.[] | select(.spec.name == "pi-sensor").id')
 
   TFILE=$(mktemp --suffix .yaml)
