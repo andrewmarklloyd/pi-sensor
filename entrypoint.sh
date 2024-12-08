@@ -9,7 +9,7 @@ unset FIREWALL_PORT
 
 /app/op-limit-check-entry
 
-/app/tailscaled --tun=userspace-networking &
+/app/tailscaled --tun=userspace-networking --no-logs-no-support &
 until /app/tailscale up --authkey=${TAILSCALE_AUTHKEY}
 do
     sleep 1
