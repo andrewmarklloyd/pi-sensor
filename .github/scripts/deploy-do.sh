@@ -9,7 +9,7 @@ if ! command -v yq &> /dev/null; then
 fi
 
 if ! command -v doctl &> /dev/null; then
-  doctlVersion="1.106.0"
+  doctlVersion="1.119.1"
   wget -q https://github.com/digitalocean/doctl/releases/download/v${doctlVersion}/doctl-${doctlVersion}-linux-amd64.tar.gz -P /tmp
   tar xf /tmp/doctl-${doctlVersion}-linux-amd64.tar.gz -C /tmp
   mv /tmp/doctl /usr/local/bin
