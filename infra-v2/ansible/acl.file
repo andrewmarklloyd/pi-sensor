@@ -1,0 +1,18 @@
+# /etc/mosquitto/acl.file
+
+# agent
+user {{ MOSQUITTO_AGENT_USER }}
+topic write sensor/status
+topic write sensor/heartbeat
+topic read sensor/restart
+
+# server
+user {{ MOSQUITTO_SERVER_USER }}
+topic read sensor/status
+topic read sensor/heartbeat
+topic write sensor/restart
+topic write ha/#
+
+# ha
+user {{ MOSQUITTO_HA_USER }}
+topic read ha/#
