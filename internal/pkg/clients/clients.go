@@ -10,10 +10,11 @@ import (
 )
 
 type ServerClients struct {
-	Redis      redis.Client
-	Postgres   postgres.Client
-	Mosquitto  mqtt.MqttClient
-	AWS        aws.Client
-	DDClient   datadog.Client
-	CryptoUtil crypto.Util
+	Redis       redis.Client
+	Postgres    postgres.Client
+	Mosquitto   mqtt.MqttClient
+	MosquittoV2 mqtt.MqttClient
+	AWS         aws.Client
+	DDClient    datadog.Client
+	CryptoUtil  crypto.Util
 }
