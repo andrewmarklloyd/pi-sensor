@@ -5,6 +5,7 @@ type ServerConfig struct {
 	MosquittoServerDomain   string
 	MosquittoServerUser     string
 	MosquittoServerPassword string
+	MosquittoServerDomainV2 string
 	Topic                   string
 	RedisURL                string
 	RedisTLSURL             string

@@ -51,6 +51,7 @@ func runServer() {
 		MosquittoServerDomain:   viper.GetString("MOSQUITTO_DOMAIN"),
 		MosquittoServerUser:     viper.GetString("MOSQUITTO_SERVER_USER"),
 		MosquittoServerPassword: viper.GetString("MOSQUITTO_SERVER_PASSWORD"),
+		MosquittoServerDomainV2: viper.GetString("MOSQUITTO_DOMAIN_V2"),
 		RedisURL:                viper.GetString("REDIS_URL"),
 		RedisTLSURL:             viper.GetString("REDIS_TLS_URL"),
 		PostgresURL:             viper.GetString("DATABASE_URL"),
@@ -92,6 +93,10 @@ func runServer() {
 
 	if err := serverClients.Mosquitto.Connect(); err != nil {
 		logger.Fatalf("error connecting to mosquitto server: %s", err)
+	}
+
+	if err := serverClients.MosquittoV2.Connect(); err != nil {
+		logger.Warnf("error connecting to mosquitto V2 server: %s", err)
 	}
 
 	webServer := newWebServer(serverConfig, serverClients)
@@ -313,6 +318,16 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		logger.Info("Server client is reconnecting")
 	})
 
+	mosquittoAddrV2 := fmt.Sprintf("mqtts://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomainV2)
+
+	mosquittoClientV2 := mqtt.NewMQTTClient(mosquittoAddrV2, insecureSkipVerifyMosquitto, func(client mqttC.Client) {
+		logger.Info("Connected to mosquitto V2 server")
+	}, func(client mqttC.Client, err error) {
+		logger.Warnf("Connection to mosquitto V2 server lost: %v", err)
+	}, func(mqttC.Client, *mqttC.ClientOptions) {
+		logger.Info("Mosquitto server V2 client is reconnecting")
+	})
+
 	awsClient, err := aws.NewClient(serverConfig)
 	if err != nil {
 		return clients.ServerClients{}, fmt.Errorf("error creating AWS client: %s", err)
@@ -325,12 +340,13 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	}
 
 	return clients.ServerClients{
-		Redis:      redisClient,
-		Postgres:   postgresClient,
-		Mosquitto:  mosquittoClient,
-		AWS:        awsClient,
-		DDClient:   ddClient,
-		CryptoUtil: cryptoUtil,
+		Redis:       redisClient,
+		Postgres:    postgresClient,
+		Mosquitto:   mosquittoClient,
+		MosquittoV2: mosquittoClientV2,
+		AWS:         awsClient,
+		DDClient:    ddClient,
+		CryptoUtil:  cryptoUtil,
 	}, nil
 }
 
