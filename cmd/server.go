@@ -318,7 +318,7 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		logger.Info("Server client is reconnecting")
 	})
 
-	mosquittoAddrV2 := fmt.Sprintf("mqtts://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomainV2)
+	mosquittoAddrV2 := fmt.Sprintf("mqtt://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomainV2)
 
 	mosquittoClientV2 := mqtt.NewMQTTClient(mosquittoAddrV2, insecureSkipVerifyMosquitto, func(client mqttC.Client) {
 		logger.Info("Connected to mosquitto V2 server")
