@@ -149,14 +149,6 @@ func main() {
 	for {
 		currentStatus = pinClient.CurrentStatus()
 
-		if device != nil {
-			if currentStatus == gpio.OPEN {
-				device.TurnOn()
-			} else if currentStatus == gpio.CLOSED {
-				device.TurnOff()
-			}
-		}
-
 		err = writeStatus(statusFile, currentStatus)
 		if err != nil {
 			logger.Errorf("error writing status file: %s", err)
@@ -171,6 +163,14 @@ func main() {
 				Version: version,
 			}); err != nil {
 				logger.Errorf("Error publishing message to sensor status channel: %s", err)
+			}
+
+			if device != nil {
+				if currentStatus == gpio.OPEN {
+					device.TurnOn()
+				} else if currentStatus == gpio.CLOSED {
+					device.TurnOff()
+				}
 			}
 		}
 		time.Sleep(5 * time.Second)
