@@ -136,8 +136,9 @@ func main() {
 		lastStatus = config.UNKNOWN
 	}
 
+	outletEnabled := os.Getenv("OUTLET_ENABLED") == "true" || os.Getenv("OUTLET_ENABLED") == "True"
 	var device *hs100.Hs100
-	if *sensorSource == "shed" && os.Getenv("OUTLET_ENABLED") == "true" {
+	if outletEnabled {
 		logger.Info("Outlet enabled, setting up device")
 		device, err = getHS100Device()
 		if err != nil {
@@ -165,7 +166,7 @@ func main() {
 				logger.Errorf("Error publishing message to sensor status channel: %s", err)
 			}
 
-			if device != nil {
+			if outletEnabled && device != nil {
 				if currentStatus == gpio.OPEN {
 					device.TurnOn()
 				} else if currentStatus == gpio.CLOSED {
