@@ -12,6 +12,8 @@ import (
 	"time"
 
 	mqttC "github.com/eclipse/paho.mqtt.golang"
+	"github.com/jaedle/golang-tplink-hs100/pkg/configuration"
+	"github.com/jaedle/golang-tplink-hs100/pkg/hs100"
 	"go.uber.org/zap"
 
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
@@ -134,9 +136,26 @@ func main() {
 		lastStatus = config.UNKNOWN
 	}
 
+	var device *hs100.Hs100
+	if *sensorSource == "shed" {
+		device, err = getHS100Device()
+		if err != nil {
+			logger.Errorf("error getting hs100 device: %w", err)
+		}
+	}
+
 	var currentStatus string
 	for {
 		currentStatus = pinClient.CurrentStatus()
+
+		if device != nil {
+			if currentStatus == gpio.OPEN {
+				device.TurnOn()
+			} else if currentStatus == gpio.CLOSED {
+				device.TurnOff()
+			}
+		}
+
 		err = writeStatus(statusFile, currentStatus)
 		if err != nil {
 			logger.Errorf("error writing status file: %s", err)
@@ -188,4 +207,27 @@ func configureMosquittoClient(domain, user, password string, logger zap.SugaredL
 	})
 
 	return mosquittoClient
+}
+
+func getHS100Device() (*hs100.Hs100, error) {
+	allDevices, err := hs100.Discover("192.168.1.1/24", configuration.Default().WithTimeout(time.Second*5))
+	if err != nil {
+		return nil, err
+	}
+
+	var device *hs100.Hs100
+	deviceName := "Growler"
+
+	for _, d := range allDevices {
+		name, err := d.GetName()
+		if err != nil {
+			return nil, err
+		}
+
+		if name == deviceName {
+			device = d
+		}
+	}
+
+	return device, nil
 }
