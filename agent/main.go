@@ -137,7 +137,8 @@ func main() {
 	}
 
 	var device *hs100.Hs100
-	if *sensorSource == "shed" {
+	if *sensorSource == "shed" && os.Getenv("OUTLET_ENABLED") == "true" {
+		logger.Info("Outlet enabled, setting up device")
 		device, err = getHS100Device()
 		if err != nil {
 			logger.Errorf("error getting hs100 device: %w", err)
