@@ -14,6 +14,7 @@ import Sensor from "./Sensor";
 import { translateStatus, timeSince } from "./DataModel";
 
 var socket
+var socket2
 
 class Home extends Component {
   constructor(props) {
@@ -25,12 +26,30 @@ class Home extends Component {
     } else {
       url = "ws://localhost:8080"
     }
+
+    socket2 = new WebSocket(`${url}/ws/`);
+    socket2.onopen = () => {
+      console.log("connection opened")
+      const msg = {
+        type: "message",
+        channel: "test/message",
+        text: "this is from the client",
+        date: Date.now(),
+      };
+      socket2.send(JSON.stringify(msg));
+    };
+    socket2.onclose = function () {
+      console.log("closed connection")
+    };
+
     socket = socketIOClient.connect(`${url}`, { transports: ['websocket'] });
     socket.on("connect", function() {})
   }
 
   componentDidMount() {
-    console.log("hello")
+    socket2.onmessage = (event) => {
+      console.log("message", event.data)
+    }
     var component = this
     socket.on("sensor/list", function(data) {
       var d = JSON.parse(data)

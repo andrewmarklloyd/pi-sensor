@@ -61,6 +61,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 		socketServer:  socketServer,
 	}
 	socketServer.On(gosocketio.OnConnection, w.newSocketConnection)
+	router.Handle("/ws/", http.HandlerFunc(serveWs))
 
 	router.Handle("/socket.io/", socketServer)
 	oauth2Config := &oauth2.Config{
