@@ -11,6 +11,7 @@ WantedBy=multi-user.target
 Environment="SENSOR_SOURCE={{ item.sensor_source }}"
 Environment="GPIO_PIN={{ item.gpio_pin }}"
 Environment="OUTLET_ENABLED={{ item.outlet_enabled }}"
+Environment="SENSOR_READ_INTERVAL_SECONDS={{ item.sensor_read_interval_seconds }}"
 EnvironmentFile=/usr/local/src/pi-sensor-agent/.op-env
 ExecStart=op run --env-file=".env-file.tmpl" -- /usr/local/src/pi-sensor-agent/pi-sensor-agent
 WorkingDirectory=/usr/local/src/pi-sensor-agent

@@ -23,12 +23,13 @@ import (
 )
 
 var (
-	mosquittoDomain        = flag.String("mosquittodomain", os.Getenv("MOSQUITTO_DOMAIN"), "The mosquitto domain to connect")
-	mosquittoAgentUser     = flag.String("mosquittoagentuser", os.Getenv("MOSQUITTO_AGENT_USER"), "The mosquitto agent user to connect")
-	mosquittoAgentPassword = flag.String("mosquittoagentpassword", os.Getenv("MOSQUITTO_AGENT_PASSWORD"), "The mosquitto agent password to connect")
-	sensorSource           = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")
-	mockFlag               = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
-	version                = "unknown"
+	mosquittoDomain               = flag.String("mosquittodomain", os.Getenv("MOSQUITTO_DOMAIN"), "The mosquitto domain to connect")
+	mosquittoAgentUser            = flag.String("mosquittoagentuser", os.Getenv("MOSQUITTO_AGENT_USER"), "The mosquitto agent user to connect")
+	mosquittoAgentPassword        = flag.String("mosquittoagentpassword", os.Getenv("MOSQUITTO_AGENT_PASSWORD"), "The mosquitto agent password to connect")
+	sensorSource                  = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")
+	mockFlag                      = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
+	sensorReadIntervalSecondsFlag = flag.String("sensorReadIntervalSeconds", os.Getenv("SENSOR_READ_INTERVAL_SECONDS"), "How often in seconds to read the sensor status")
+	version                       = "unknown"
 )
 
 const (
@@ -72,6 +73,11 @@ func main() {
 		pinNum = defaultPin
 	} else {
 		logger.Infof("Using GPIO_PIN %d", pinNum)
+	}
+
+	sensorReadIntervalSeconds, err := strconv.Atoi(*sensorReadIntervalSecondsFlag)
+	if err != nil {
+		logger.Fatalf("converting SENSOR_READ_INTERVAL_SECONDS to int: %s", err)
 	}
 
 	mosquittoClient := configureMosquittoClient(*mosquittoDomain, *mosquittoAgentUser, *mosquittoAgentPassword, *logger)
@@ -174,7 +180,7 @@ func main() {
 				}
 			}
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(time.Duration(sensorReadIntervalSeconds) * time.Second)
 	}
 }
 
@@ -192,7 +198,7 @@ func writeStatus(path, status string) error {
 }
 
 func getStatusFileName(sensorSource string) string {
-	return fmt.Sprintf("/home/pi/.pi-sensor-status-%s", sensorSource)
+	return fmt.Sprintf("%s/.pi-sensor-status-%s", os.Getenv("HOME"), sensorSource)
 }
 
 func configureMosquittoClient(domain, user, password string, logger zap.SugaredLogger) mqtt.MqttClient {
