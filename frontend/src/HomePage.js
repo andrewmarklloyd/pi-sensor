@@ -1,7 +1,7 @@
 // @flow
 
 import React, { Component } from "react";
-import { io } from 'socket.io-client';
+import socketIOClient from "socket.io-client";
 
 import {
   Page,
@@ -25,7 +25,7 @@ class Home extends Component {
     } else {
       url = "ws://localhost:8080"
     }
-    socket = io.connect(`${url}`, { transports: ['websocket'] });
+    socket = socketIOClient.connect(`${url}`, { transports: ['websocket'] });
     socket.on("connect", function() {})
   }
 
