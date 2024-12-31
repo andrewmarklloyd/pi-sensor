@@ -143,7 +143,7 @@ func runServer() {
 	})
 
 	if serverConfig.S3Config.FullBackupEnabled {
-		runFullBackup(serverClients, serverConfig)
+		runFullBackup(serverClients)
 	}
 
 	if serverConfig.S3Config.RetentionEnabled {
@@ -172,7 +172,7 @@ func configureCronJobs(serverClients clients.ServerClients, serverConfig config.
 		dataTicker := time.NewTicker(fullBackupCronFrequency)
 		go func() {
 			for range dataTicker.C {
-				runFullBackup(serverClients, serverConfig)
+				runFullBackup(serverClients)
 			}
 		}()
 	}
@@ -258,7 +258,7 @@ func runDataRetention(serverClients clients.ServerClients, serverConfig config.S
 	}
 }
 
-func runFullBackup(serverClients clients.ServerClients, serverConfig config.ServerConfig) {
+func runFullBackup(serverClients clients.ServerClients) {
 	logger.Info("Running full database backup")
 	rows, err := serverClients.Postgres.GetAllRows()
 	if err != nil {

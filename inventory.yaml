@@ -4,14 +4,17 @@ all:
       agents:
         - sensor_source: garage
           gpio_pin: 18
+          sensor_read_interval_seconds: 5
           outlet_enabled: false
         - sensor_source: garage-2
+          sensor_read_interval_seconds: 5
           gpio_pin: 17
           outlet_enabled: false
       forwarder_systemd_units: "pi-sensor-agent-garage,pi-sensor-agent-garage-2"
     shed.taile0eaf.ts.net:
       agents:
         - sensor_source: shed
+          sensor_read_interval_seconds: 2
           gpio_pin: 18
           outlet_enabled: true
       forwarder_systemd_units: "pi-sensor-agent-shed"
