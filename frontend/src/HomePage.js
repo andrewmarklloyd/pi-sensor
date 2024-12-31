@@ -25,14 +25,24 @@ class Home extends Component {
     } else {
       url = "ws://localhost:8080"
     }
+
+    const socketa = io(`${url}`, { transports: ['websocket'] });
+    socketa.on("connect_error", (e) => {
+      console.log("connecteddddddd",e)
+    });
+
     socket = io.connect(`${url}`, { transports: ['websocket'] });
-    socket.on("connect", function() {})
+    socket.on("connect", function() {
+      console.log("connected to socket")
+    })
   }
 
   componentDidMount() {
+    console.log("hello")
     var component = this
     socket.on("sensor/list", function(data) {
       var d = JSON.parse(data)
+      console.log(d)
       var sensors = []
       if (d.sensors == null) {
         d.sensors = []
