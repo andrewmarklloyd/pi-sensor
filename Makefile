@@ -32,3 +32,4 @@ test:
 clean:
 	rm -rf build/
 	rm -rf frontend/build/
+	rm -rf frontend/dist/
