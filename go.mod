@@ -14,7 +14,7 @@ require (
 	github.com/dghubble/sessions v0.1.0
 	github.com/eclipse/paho.mqtt.golang v1.3.5
 	github.com/go-redis/redis/v8 v8.11.4
-	github.com/gofrs/uuid v4.2.0+incompatible
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golangci/golangci-lint v1.44.2
 	github.com/gorilla/mux v1.8.0
 	github.com/jaedle/golang-tplink-hs100 v0.6.2-0.20241125123209-5ea6be3fb9e7
