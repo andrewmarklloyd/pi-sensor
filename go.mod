@@ -16,7 +16,7 @@ require (
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/gofrs/uuid v4.2.0+incompatible
 	github.com/golangci/golangci-lint v1.44.2
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.1
 	github.com/jaedle/golang-tplink-hs100 v0.6.2-0.20241125123209-5ea6be3fb9e7
 	github.com/lib/pq v1.10.4
 	github.com/spf13/cobra v1.8.0
