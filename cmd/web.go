@@ -20,6 +20,7 @@ import (
 	"github.com/dghubble/gologin/v2/google"
 	"github.com/dghubble/sessions"
 	gmux "github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	"golang.org/x/oauth2"
 	googleOAuth2 "golang.org/x/oauth2/google"
 )
@@ -41,6 +42,7 @@ type WebServer struct {
 	httpServer    *http.Server
 	socketServer  *gosocketio.Server
 	serverClients clients.ServerClients
+	socketConn    *websocket.Conn
 }
 
 type zapLog struct {
@@ -61,7 +63,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 		socketServer:  socketServer,
 	}
 	socketServer.On(gosocketio.OnConnection, w.newSocketConnection)
-	router.Handle("/ws/", http.HandlerFunc(serveWs))
+	router.Handle("/ws/", http.HandlerFunc(w.serveWs))
 
 	router.Handle("/socket.io/", socketServer)
 	oauth2Config := &oauth2.Config{
@@ -289,6 +291,35 @@ func (s WebServer) allSensorsHandler(w http.ResponseWriter, req *http.Request) {
 
 func (s WebServer) SendMessage(channel string, status config.SensorStatus) {
 	s.socketServer.BroadcastToAll(channel, status)
+
+	if s.socketConn == nil {
+		return
+	}
+	fmt.Println("******")
+	statusJson, _ := json.Marshal(status)
+	writer, err := s.socketConn.NextWriter(websocket.TextMessage)
+	if err != nil {
+		logger.Errorf("getting websocket writer: %s", err)
+		return
+	}
+
+	message := config.WebsocketMessage{
+		Message: string(statusJson),
+		Channel: config.SensorStatusTopic,
+	}
+
+	jsonMessage, _ := json.Marshal(message)
+
+	_, err = writer.Write(jsonMessage)
+	if err != nil {
+		logger.Errorf("writing websocket message: %s", err)
+		return
+	}
+
+	if err := writer.Close(); err != nil {
+		logger.Errorf("closing websocket writer: %s", err)
+		return
+	}
 }
 
 // spaHandler implements the http.Handler interface, so we can use it

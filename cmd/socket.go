@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 	"github.com/gorilla/websocket"
 )
 
@@ -13,64 +15,55 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func serveWs(w http.ResponseWriter, r *http.Request) {
+func (s WebServer) serveWs(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("got connection")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		logger.Errorf("upgrading websocket connection: %s", err)
 		return
 	}
 
-	writer, err := conn.NextWriter(websocket.TextMessage)
-	if err != nil {
-		fmt.Println(err)
+	s.socketConn = conn
+
+	sensorList, stateErr := s.serverClients.Redis.ReadAllState(context.Background())
+	if stateErr != nil {
+		logger.Errorf("new socket connection error: reading redis state: %s", stateErr)
 		return
 	}
 
-	_, err = writer.Write([]byte("hello"))
+	armingState, armingStateErr := s.serverClients.Redis.ReadAllArming(context.Background())
+	if armingStateErr != nil {
+		logger.Errorf("new socket connection error: reading arming state from redis: %s", armingStateErr)
+		return
+	}
+
+	sensorState := config.SensorState{
+		Sensors: sensorList,
+		Arming:  armingState,
+	}
+
+	stateJson, _ := json.Marshal(sensorState)
+	writer, err := s.socketConn.NextWriter(websocket.TextMessage)
 	if err != nil {
-		panic(err)
+		logger.Errorf("getting websocket writer: %s", err)
+		return
+	}
+
+	message := config.WebsocketMessage{
+		Message: string(stateJson),
+		Channel: sensorListChannel,
+	}
+
+	jsonMessage, _ := json.Marshal(message)
+
+	_, err = writer.Write(jsonMessage)
+	if err != nil {
+		logger.Errorf("writing websocket message: %s", err)
+		return
 	}
 
 	if err := writer.Close(); err != nil {
-		panic(err)
+		logger.Errorf("closing websocket writer: %s", err)
 		return
 	}
-
-	for {
-		_, message, err := conn.ReadMessage()
-		fmt.Println(string(message))
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
-			}
-			break
-		}
-
-	}
-
 }
-
-/*
-conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	writer, err := conn.NextWriter(websocket.TextMessage)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	_, err = w.Write([]byte("hello"))
-	if err != nil {
-		panic(err)
-	}
-
-	if err := writer.Close(); err != nil {
-		panic(err)
-		return
-	}
-*/
