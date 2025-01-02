@@ -203,7 +203,7 @@ func getStatusFileName(sensorSource string) string {
 
 func configureMosquittoClient(domain, user, password string, logger zap.SugaredLogger) mqtt.MqttClient {
 	mosquittoAddr := fmt.Sprintf("mqtts://%s:%s@%s:1883", user, password, domain)
-	mosquittoAddr = "mqtt://localhost:1883"
+
 	// todo: remove this after using prod certbot cert
 	insecureSkipVerify := false
 	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, insecureSkipVerify, func(client mqttC.Client) {

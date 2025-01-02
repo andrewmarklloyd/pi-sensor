@@ -303,9 +303,8 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	}
 
 	mosquittoAddr := fmt.Sprintf("mqtts://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
-	mosquittoAddr = "mqtt://localhost:1883"
 
-	insecureSkipVerifyMosquitto := true
+	insecureSkipVerifyMosquitto := false
 	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, insecureSkipVerifyMosquitto, func(client mqttC.Client) {
 		logger.Info("Connected to mosquitto server")
 	}, func(client mqttC.Client, err error) {

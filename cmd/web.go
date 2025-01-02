@@ -12,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	gosocketio "github.com/ambelovsky/gosf-socketio"
-	"github.com/ambelovsky/gosf-socketio/transport"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 	"github.com/dghubble/gologin/v2"
@@ -40,7 +38,6 @@ var sessionStore *sessions.CookieStore
 
 type WebServer struct {
 	httpServer    *http.Server
-	socketServer  *gosocketio.Server
 	serverClients clients.ServerClients
 	socketConn    *websocket.Conn
 }
@@ -56,16 +53,13 @@ var allowedAPIKeys []string
 func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClients) *WebServer {
 	allowedAPIKeys = serverConfig.AllowedAPIKeys
 	router := gmux.NewRouter().StrictSlash(true)
-	socketServer := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
 
 	w := WebServer{
 		serverClients: clients,
-		socketServer:  socketServer,
 	}
-	socketServer.On(gosocketio.OnConnection, w.newSocketConnection)
+
 	router.Handle("/ws/", http.HandlerFunc(w.serveWs))
 
-	router.Handle("/socket.io/", socketServer)
 	oauth2Config := &oauth2.Config{
 		ClientID:     serverConfig.GoogleConfig.ClientId,
 		ClientSecret: serverConfig.GoogleConfig.ClientSecret,
@@ -124,28 +118,6 @@ func (s WebServer) reportHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	json, _ := json.Marshal(messages)
 	fmt.Fprintf(w, `{"messages":%s,"numPages":%d}`, string(json), numPages)
-}
-
-func (s WebServer) newSocketConnection(c *gosocketio.Channel) {
-	sensorList, stateErr := s.serverClients.Redis.ReadAllState(context.Background())
-	if stateErr != nil {
-		logger.Errorf("new socket connection error: reading redis state: %s", stateErr)
-		return
-	}
-
-	armingState, armingStateErr := s.serverClients.Redis.ReadAllArming(context.Background())
-	if armingStateErr != nil {
-		logger.Errorf("new socket connection error: reading arming state from redis: %s", armingStateErr)
-		return
-	}
-
-	sensorState := config.SensorState{
-		Sensors: sensorList,
-		Arming:  armingState,
-	}
-
-	json, _ := json.Marshal(sensorState)
-	s.socketServer.BroadcastToAll(sensorListChannel, string(json))
 }
 
 func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request) {
@@ -290,8 +262,6 @@ func (s WebServer) allSensorsHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *WebServer) SendMessage(channel string, status config.SensorStatus) {
-	s.socketServer.BroadcastToAll(channel, status)
-
 	if s.socketConn == nil {
 		return
 	}
