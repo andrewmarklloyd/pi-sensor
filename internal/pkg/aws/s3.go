@@ -174,7 +174,7 @@ func (c *Client) GetBucketInfo(ctx context.Context) (BucketInfo, error) {
 
 	var size int64
 	for _, object := range objectOut.Contents {
-		size += object.Size
+		size += *object.Size
 	}
 
 	return BucketInfo{
