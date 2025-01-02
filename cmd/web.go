@@ -53,7 +53,7 @@ type zapLog struct {
 
 var allowedAPIKeys []string
 
-func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClients) WebServer {
+func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClients) *WebServer {
 	allowedAPIKeys = serverConfig.AllowedAPIKeys
 	router := gmux.NewRouter().StrictSlash(true)
 	socketServer := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
@@ -100,7 +100,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	}
 
 	w.httpServer = srv
-	return w
+	return &w
 }
 
 func (s WebServer) reportHandler(w http.ResponseWriter, req *http.Request) {
@@ -289,13 +289,13 @@ func (s WebServer) allSensorsHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, `{"sensors":%s}`, string(json))
 }
 
-func (s WebServer) SendMessage(channel string, status config.SensorStatus) {
+func (s *WebServer) SendMessage(channel string, status config.SensorStatus) {
 	s.socketServer.BroadcastToAll(channel, status)
 
 	if s.socketConn == nil {
 		return
 	}
-	fmt.Println("******")
+
 	statusJson, _ := json.Marshal(status)
 	writer, err := s.socketConn.NextWriter(websocket.TextMessage)
 	if err != nil {

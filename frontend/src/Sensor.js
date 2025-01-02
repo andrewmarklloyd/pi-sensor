@@ -12,18 +12,17 @@ class Sensor extends Component {
     var source = this.state.source
     var component = this
     this.props.socket.addEventListener("message", function(event) {
-      console.log("got message in sensor")
       var data = JSON.parse(event.data)
       if (data.channel === "sensor/status") {
         var d = JSON.parse(data.message)
         if (d.source === source) {
-          var updated = translateStatus(data.status)
+          var updated = translateStatus(d.status)
           component.setState({
             color: updated.color,
-            source: data.source,
+            source: d.source,
             icon: updated.icon,
-            timestamp: data.timestamp,
-            timesince: timeSince(data.timestamp)
+            timestamp: d.timestamp,
+            timesince: timeSince(d.timestamp)
           })
         }
       }
