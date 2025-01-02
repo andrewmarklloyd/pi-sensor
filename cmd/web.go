@@ -42,12 +42,6 @@ type WebServer struct {
 	socketConn    *websocket.Conn
 }
 
-type zapLog struct {
-	Level  string `json:"level"`
-	Logger string `json:"logger"`
-	Msg    string `json:"msg"`
-}
-
 var allowedAPIKeys []string
 
 func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClients) *WebServer {

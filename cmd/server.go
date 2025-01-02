@@ -369,7 +369,7 @@ func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClie
 				Priority: "urgent",
 				Tags:     []string{"rotating_light,skull"},
 			}
-			err := sendPushNotification(serverClients, serverConfig, msg)
+			err := sendPushNotification(serverConfig, msg)
 			if err != nil {
 				logger.Errorf("sending lost connection push notification: %w", err)
 			}
@@ -446,7 +446,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 				Tags:     []string{"loudspeaker"},
 			}
 
-			err = sendPushNotification(serverClients, serverConfig, msg)
+			err = sendPushNotification(serverConfig, msg)
 			if err != nil {
 				return fmt.Errorf("sending push notifications: %w", err)
 			}
@@ -461,7 +461,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 
 		duration := time.Duration(openTimeout) * time.Minute
 		timer := time.AfterFunc(duration, func() {
-			handleOpenTimeout(serverClients, serverConfig, currentStatus, armed, serverConfig.MockMode, openTimeout)
+			handleOpenTimeout(serverConfig, currentStatus, armed, serverConfig.MockMode, openTimeout)
 		})
 		delayTimerMap[currentStatus.Source] = timer
 	} else if currentStatus.Status == config.CLOSED {
@@ -486,7 +486,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 	return nil
 }
 
-func handleOpenTimeout(serverClients clients.ServerClients, serverConfig config.ServerConfig, s config.SensorStatus, armed, mockMode bool, openTimeout int32) {
+func handleOpenTimeout(serverConfig config.ServerConfig, s config.SensorStatus, armed, mockMode bool, openTimeout int32) {
 	body := fmt.Sprintf("%s opened longer than %d min", s.Source, openTimeout)
 	logger.Warn(body)
 	if !mockMode && armed {
@@ -495,7 +495,7 @@ func handleOpenTimeout(serverClients clients.ServerClients, serverConfig config.
 			Priority: "default",
 			Tags:     []string{"warning"},
 		}
-		err := sendPushNotification(serverClients, serverConfig, msg)
+		err := sendPushNotification(serverConfig, msg)
 		if err != nil {
 			logger.Errorf("sending push notification: %w", err)
 		}
@@ -517,7 +517,7 @@ func buildTokenMetadata() []config.TokenMetadata {
 	}
 }
 
-func sendPushNotification(serverClients clients.ServerClients, serverConfig config.ServerConfig, msg config.NTFYMessage) error {
+func sendPushNotification(serverConfig config.ServerConfig, msg config.NTFYMessage) error {
 	req, _ := http.NewRequest("POST", fmt.Sprintf("https://ntfy.sh/%s", serverConfig.NTFYConfig.Topic), strings.NewReader(msg.Body))
 	req.Header.Set("Title", "Pi Sensor Update")
 	req.Header.Set("Priority", msg.Priority)
