@@ -10,11 +10,11 @@ function App() {
   return (
     <React.StrictMode>
       <Router>
-        <Switch>
+        <Routes>
           <Route path="/" component={<HomePage/>} />
           <Route path="/sensor" component={<SensorPage/>} />
           <Route path="/report" component={<ReportPage/>} />
-        </Switch>
+        </Routes>
       </Router>
     </React.StrictMode>
   );
