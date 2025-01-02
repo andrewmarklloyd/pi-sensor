@@ -111,6 +111,9 @@ func (c *Client) DownloadOrCreateBackupFile(ctx context.Context, tmpWritePath, b
 	defer tmpFile.Close()
 
 	exists, err := c.backupFileExistsInS3(ctx, backupFileKey)
+	if err != nil {
+		return fmt.Errorf("checking if backup file exists in s3: %w", err)
+	}
 	if exists {
 		downloader := manager.NewDownloader(c.S3)
 		_, err = downloader.Download(ctx, tmpFile, &s3.GetObjectInput{
