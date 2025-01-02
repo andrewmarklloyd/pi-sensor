@@ -263,10 +263,11 @@ func (s *WebServer) SendMessage(channel string, status config.SensorStatus) {
 	statusJson, _ := json.Marshal(status)
 	writer, err := s.socketConn.NextWriter(websocket.TextMessage)
 	if err != nil {
-		if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
+		if e, ok := err.(*websocket.CloseError); ok {
+			logger.Warnf("websocket close error %d getting websocket writer trying to send message: %s", e.Code, e)
 			return
 		}
-		logger.Errorf("getting websocket writer while trying to send message: %s", err)
+		logger.Errorf("got unknown error getting websocket writer trying to send message: %s", err)
 		return
 	}
 
