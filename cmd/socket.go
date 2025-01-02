@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
@@ -16,7 +15,6 @@ var upgrader = websocket.Upgrader{
 }
 
 func (s *WebServer) serveWs(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("got connection")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		logger.Errorf("upgrading websocket connection: %s", err)
