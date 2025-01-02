@@ -263,7 +263,7 @@ func (s *WebServer) SendMessage(channel string, status config.SensorStatus) {
 	statusJson, _ := json.Marshal(status)
 	writer, err := s.socketConn.NextWriter(websocket.TextMessage)
 	if err != nil {
-		logger.Errorf("getting websocket writer: %s", err)
+		logger.Errorf("getting websocket writer while trying to send message: %s", err)
 		return
 	}
 

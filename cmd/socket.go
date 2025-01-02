@@ -45,7 +45,7 @@ func (s *WebServer) serveWs(w http.ResponseWriter, r *http.Request) {
 	stateJson, _ := json.Marshal(sensorState)
 	writer, err := s.socketConn.NextWriter(websocket.TextMessage)
 	if err != nil {
-		logger.Errorf("getting websocket writer: %s", err)
+		logger.Errorf("getting websocket writer on initial connection: %s", err)
 		return
 	}
 
