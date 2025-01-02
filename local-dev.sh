@@ -5,7 +5,7 @@ docker-compose up -d
 
 export REDIS_URL=redis://127.0.0.1:6379
 export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable
-export MOSQUITTO_URL=mqtt://user:pass@127.0.0.1:1883
+export MOSQUITTO_DOMAIN=127.0.0.1
 export MOSQUITTO_SERVER_PASSWORD=abc
 export MOSQUITTO_SERVER_USER=abc
 export MOSQUITTO_AGENT_USER=abc

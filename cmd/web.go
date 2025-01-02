@@ -12,14 +12,13 @@ import (
 	"strings"
 	"time"
 
-	gosocketio "github.com/ambelovsky/gosf-socketio"
-	"github.com/ambelovsky/gosf-socketio/transport"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/clients"
 	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 	"github.com/dghubble/gologin/v2"
 	"github.com/dghubble/gologin/v2/google"
 	"github.com/dghubble/sessions"
 	gmux "github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	"golang.org/x/oauth2"
 	googleOAuth2 "golang.org/x/oauth2/google"
 )
@@ -39,8 +38,8 @@ var sessionStore *sessions.CookieStore
 
 type WebServer struct {
 	httpServer    *http.Server
-	socketServer  *gosocketio.Server
 	serverClients clients.ServerClients
+	socketConn    *websocket.Conn
 }
 
 type zapLog struct {
@@ -51,18 +50,16 @@ type zapLog struct {
 
 var allowedAPIKeys []string
 
-func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClients) WebServer {
+func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClients) *WebServer {
 	allowedAPIKeys = serverConfig.AllowedAPIKeys
 	router := gmux.NewRouter().StrictSlash(true)
-	socketServer := gosocketio.NewServer(transport.GetDefaultWebsocketTransport())
 
 	w := WebServer{
 		serverClients: clients,
-		socketServer:  socketServer,
 	}
-	socketServer.On(gosocketio.OnConnection, w.newSocketConnection)
 
-	router.Handle("/socket.io/", socketServer)
+	router.Handle("/ws/", http.HandlerFunc(w.serveWs))
+
 	oauth2Config := &oauth2.Config{
 		ClientID:     serverConfig.GoogleConfig.ClientId,
 		ClientSecret: serverConfig.GoogleConfig.ClientSecret,
@@ -84,7 +81,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	router.HandleFunc("/logout", logoutHandler)
 	router.HandleFunc(unauthPath, unauthHandler).Methods(get)
 	spa := spaHandler{
-		staticPath: "frontend/build",
+		staticPath: "frontend/dist",
 		indexPath:  "index.html",
 	}
 	router.PathPrefix("/").Handler(requireLogin(spa))
@@ -97,7 +94,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	}
 
 	w.httpServer = srv
-	return w
+	return &w
 }
 
 func (s WebServer) reportHandler(w http.ResponseWriter, req *http.Request) {
@@ -121,28 +118,6 @@ func (s WebServer) reportHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	json, _ := json.Marshal(messages)
 	fmt.Fprintf(w, `{"messages":%s,"numPages":%d}`, string(json), numPages)
-}
-
-func (s WebServer) newSocketConnection(c *gosocketio.Channel) {
-	sensorList, stateErr := s.serverClients.Redis.ReadAllState(context.Background())
-	if stateErr != nil {
-		logger.Errorf("new socket connection error: reading redis state: %s", stateErr)
-		return
-	}
-
-	armingState, armingStateErr := s.serverClients.Redis.ReadAllArming(context.Background())
-	if armingStateErr != nil {
-		logger.Errorf("new socket connection error: reading arming state from redis: %s", armingStateErr)
-		return
-	}
-
-	sensorState := config.SensorState{
-		Sensors: sensorList,
-		Arming:  armingState,
-	}
-
-	json, _ := json.Marshal(sensorState)
-	s.socketServer.BroadcastToAll(sensorListChannel, string(json))
 }
 
 func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request) {
@@ -286,8 +261,35 @@ func (s WebServer) allSensorsHandler(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, `{"sensors":%s}`, string(json))
 }
 
-func (s WebServer) SendMessage(channel string, status config.SensorStatus) {
-	s.socketServer.BroadcastToAll(channel, status)
+func (s *WebServer) SendMessage(channel string, status config.SensorStatus) {
+	if s.socketConn == nil {
+		return
+	}
+
+	statusJson, _ := json.Marshal(status)
+	writer, err := s.socketConn.NextWriter(websocket.TextMessage)
+	if err != nil {
+		logger.Errorf("getting websocket writer: %s", err)
+		return
+	}
+
+	message := config.WebsocketMessage{
+		Message: string(statusJson),
+		Channel: config.SensorStatusTopic,
+	}
+
+	jsonMessage, _ := json.Marshal(message)
+
+	_, err = writer.Write(jsonMessage)
+	if err != nil {
+		logger.Errorf("writing websocket message: %s", err)
+		return
+	}
+
+	if err := writer.Close(); err != nil {
+		logger.Errorf("closing websocket writer: %s", err)
+		return
+	}
 }
 
 // spaHandler implements the http.Handler interface, so we can use it

@@ -334,7 +334,7 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 	}, nil
 }
 
-func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClients, serverConfig config.ServerConfig, webServer WebServer) {
+func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClients, serverConfig config.ServerConfig, webServer *WebServer) {
 	if h.Type == config.HeartbeatTypeSensor {
 		messageString, err := serverClients.Redis.ReadState(h.Name, context.Background())
 		if err != nil {
@@ -386,7 +386,7 @@ func handleHeartbeatTimeout(h config.Heartbeat, serverClients clients.ServerClie
 	}
 }
 
-func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer WebServer, serverConfig config.ServerConfig, message string, delayTimerMap map[string]*time.Timer) error {
+func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer *WebServer, serverConfig config.ServerConfig, message string, delayTimerMap map[string]*time.Timer) error {
 	currentStatus := config.SensorStatus{}
 	err := json.Unmarshal([]byte(message), &currentStatus)
 	if err != nil {

@@ -1,7 +1,6 @@
 // @flow
 
 import React, { Component } from "react";
-import socketIOClient from "socket.io-client";
 
 import {
   Page,
@@ -25,35 +24,44 @@ class Home extends Component {
     } else {
       url = "ws://localhost:8080"
     }
-    socket = socketIOClient.connect(`${url}`, { transports: ['websocket'] });
-    socket.on("connect", function() {})
+
+    socket = new WebSocket(`${url}/ws/`);
+    socket.onopen = () => {
+      console.log("connection opened")
+    };
+    socket.onclose = function () {
+      console.log("closed connection")
+    };
   }
 
   componentDidMount() {
     var component = this
-    socket.on("sensor/list", function(data) {
-      var d = JSON.parse(data)
-      var sensors = []
-      if (d.sensors == null) {
-        d.sensors = []
-      }
-      d.sensors.sort(function(a, b) {
-        return a.source > b.source ? 1 : -1
-      });
-      d.sensors.forEach(element => {
-        var updated = translateStatus(element.status)
-        sensors.push({
-          source: element.source,
-          status: element.status,
-          timestamp: element.timestamp,
-          timesince: timeSince(element.timestamp),
-          icon: updated.icon,
-          color: updated.color,
-          armed: d.arming[element.source],
-          version: element.version
+    socket.addEventListener("message", function(event) {
+      var data = JSON.parse(event.data)
+      if (data.channel === "sensor/list") {
+        var d = JSON.parse(data.message)
+        var sensors = []
+        if (d.sensors == null) {
+          d.sensors = []
+        }
+        d.sensors.sort(function(a, b) {
+          return a.source > b.source ? 1 : -1
+        });
+        d.sensors.forEach(element => {
+          var updated = translateStatus(element.status)
+          sensors.push({
+            source: element.source,
+            status: element.status,
+            timestamp: element.timestamp,
+            timesince: timeSince(element.timestamp),
+            icon: updated.icon,
+            color: updated.color,
+            armed: d.arming[element.source],
+            version: element.version
+          })
         })
-      })
-      component.setState({data: sensors})
+        component.setState({data: sensors})
+        }
     })
   }
 

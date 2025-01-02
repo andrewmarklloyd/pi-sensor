@@ -46,6 +46,11 @@ type SensorState struct {
 	Arming  map[string]string `json:"arming"`
 }
 
+type WebsocketMessage struct {
+	Message string `json:"message"`
+	Channel string `json:"channel"`
+}
+
 type APIPayload struct {
 	Source      string `json:"source"`
 	Armed       string `json:"armed"` // TODO: use bool. Need to handle zero value

@@ -6,7 +6,6 @@ toolchain go1.23.3
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.7.0
-	github.com/ambelovsky/gosf-socketio v0.0.0-20201109193639-add9d32f8b19
 	github.com/aws/aws-sdk-go-v2 v1.32.7
 	github.com/aws/aws-sdk-go-v2/config v1.15.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.12.2
@@ -19,6 +18,7 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golangci/golangci-lint v1.62.2
 	github.com/gorilla/mux v1.8.1
+	github.com/gorilla/websocket v1.4.2
 	github.com/jaedle/golang-tplink-hs100 v0.6.2-0.20241125123209-5ea6be3fb9e7
 	github.com/lib/pq v1.10.9
 	github.com/spf13/cobra v1.8.1
@@ -125,7 +125,6 @@ require (
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
 	github.com/gordonklaus/ineffassign v0.1.0 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
-	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/gostaticanalysis/analysisutil v0.7.1 // indirect
 	github.com/gostaticanalysis/comment v1.4.2 // indirect
 	github.com/gostaticanalysis/forcetypeassert v0.1.0 // indirect
