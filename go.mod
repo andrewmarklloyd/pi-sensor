@@ -11,7 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.48
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.44
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.71.1
-	github.com/dghubble/gologin/v2 v2.3.0
+	github.com/dghubble/gologin/v2 v2.5.0
 	github.com/dghubble/sessions v0.1.0
 	github.com/eclipse/paho.mqtt.golang v1.3.5
 	github.com/go-redis/redis/v8 v8.11.4
