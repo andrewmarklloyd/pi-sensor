@@ -18,7 +18,7 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golangci/golangci-lint v1.62.2
 	github.com/gorilla/mux v1.8.1
-	github.com/gorilla/websocket v1.4.2
+	github.com/gorilla/websocket v1.5.3
 	github.com/jaedle/golang-tplink-hs100 v0.6.2-0.20241125123209-5ea6be3fb9e7
 	github.com/lib/pq v1.10.9
 	github.com/spf13/cobra v1.8.1
