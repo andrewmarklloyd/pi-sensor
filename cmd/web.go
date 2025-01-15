@@ -267,6 +267,11 @@ func (s *WebServer) SendMessage(channel string, status config.SensorStatus) {
 			logger.Warnf("websocket close error %d getting websocket writer trying to send message: %s", e.Code, e)
 			return
 		}
+		if strings.Contains(err.Error(), "broken pipe") {
+			logger.Warnf("websocket close error broken pipe: %w", err)
+			return
+		}
+
 		logger.Errorf("got unknown error getting websocket writer trying to send message: %s", err)
 		return
 	}
