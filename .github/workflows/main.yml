@@ -5,9 +5,11 @@ on:
   workflow_dispatch:
 jobs:
   build:
+    if: ${{ github.actor != 'dependabot[bot]' }}
     uses: ./.github/workflows/build.yml
     secrets: inherit
   deploy:
+    if: ${{ github.actor != 'dependabot[bot]' }}
     needs: build
     runs-on: ubuntu-latest
     steps:
