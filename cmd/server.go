@@ -65,9 +65,8 @@ func runServer() {
 			SessionSecret:   viper.GetString("SESSION_SECRET"),
 		},
 		DatadogConfig: config.DatadogConfig{
-			APIKey:         viper.GetString("DD_API_KEY"),
-			APPKey:         viper.GetString("DD_APP_KEY"),
-			TokensMetadata: buildTokenMetadata(),
+			APIKey: viper.GetString("DD_API_KEY"),
+			APPKey: viper.GetString("DD_APP_KEY"),
 		},
 		S3Config: config.S3Config{
 			AccessKeyID:       viper.GetString("SPACES_AWS_ACCESS_KEY_ID"),
@@ -181,11 +180,15 @@ func configureCronJobs(serverClients clients.ServerClients, serverConfig config.
 		t := time.NewTicker(tokenExpMetricFreq)
 		go func() {
 			for range t.C {
-				for _, token := range serverConfig.DatadogConfig.TokensMetadata {
-					err := serverClients.DDClient.PublishTokenDaysLeft(context.Background(), token)
-					if err != nil {
-						logger.Errorf("error publishing token '%s' days left: %s", token.Name, err)
-					}
+				tm, err := crypto.GetCertTokenMetadataExp(serverConfig.MosquittoServerDomain, "1883")
+				if err != nil {
+					logger.Errorf("error publishing token '%s' days left: %s", tm.Name, err)
+					continue
+				}
+
+				err = serverClients.DDClient.PublishTokenDaysLeft(context.Background(), tm)
+				if err != nil {
+					logger.Errorf("error publishing token '%s' days left: %s", tm.Name, err)
 				}
 			}
 		}()
