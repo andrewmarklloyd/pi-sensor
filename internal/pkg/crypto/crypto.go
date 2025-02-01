@@ -4,9 +4,15 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io"
+	"net"
+	"time"
+
+	"github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 )
 
 type Util struct {
@@ -46,4 +52,48 @@ func (u *Util) Decrypt(ciphertext []byte) ([]byte, error) {
 
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
 	return u.gcm.Open(nil, nonce, ciphertext, nil)
+}
+
+func GetCertTokenMetadataExp(host, port string) (config.TokenMetadata, error) {
+	dialer := &net.Dialer{}
+	conn, err := tls.DialWithDialer(
+		dialer,
+		"tcp",
+		host+":"+port,
+		&tls.Config{
+			InsecureSkipVerify: false,
+		})
+	if err != nil {
+		return config.TokenMetadata{}, err
+	}
+
+	defer conn.Close()
+
+	if err := conn.Handshake(); err != nil {
+		return config.TokenMetadata{}, err
+	}
+
+	pc := conn.ConnectionState().PeerCertificates
+	certs := make([]*x509.Certificate, 0, len(pc))
+	for _, cert := range pc {
+		if cert.IsCA {
+			continue
+		}
+		certs = append(certs, cert)
+	}
+
+	if len(certs) != 1 {
+		return config.TokenMetadata{}, fmt.Errorf("expected number of certs to be 1 but was %d", len(certs))
+	}
+
+	if len(certs[0].DNSNames) != 1 {
+		return config.TokenMetadata{}, fmt.Errorf("expected number of dns names to be 1 but was %d", len(certs[0].DNSNames))
+	}
+
+	tm := config.TokenMetadata{
+		Name:       host,
+		Owner:      "server",
+		Expiration: certs[0].NotAfter.Format(time.RFC3339),
+	}
+	return tm, nil
 }
