@@ -8,7 +8,6 @@ import {
   Card,
 } from "tabler-react";
 
-import SiteWrapper from "./SiteWrapper";
 import Sensor from "./Sensor";
 import { translateStatus, timeSince } from "./DataModel";
 
@@ -26,12 +25,6 @@ class Home extends Component {
     }
 
     socket = new WebSocket(`${url}/ws/`);
-    socket.onopen = () => {
-      console.log("connection opened")
-    };
-    socket.onclose = function () {
-      console.log("closed connection")
-    };
   }
 
   componentDidMount() {
@@ -67,26 +60,24 @@ class Home extends Component {
 
   render() {
     return (
-      <SiteWrapper>
-        <Page.Content>
-        {this.state.data.length > 0 ? (
-          <Grid.Row cards={true}>
-          <Grid.Col sm={6} lg={3}>
-            {this.state.data.map(item => (
-              <Sensor key={item.source} source={item.source} socket={socket} status={item.status} icon={item.icon} color={item.color} timestamp={item.timestamp} timesince={item.timesince} armed={item.armed} version={item.version}/>
-            ))
-            }
-          </Grid.Col>
-        </Grid.Row>
-        ) : (
-          <Card>
-          <Card.Header>
-              <Card.Title>No sensors currently connected</Card.Title>
-          </Card.Header>
-        </Card>
-        )}
-        </Page.Content>
-      </SiteWrapper>
+      <Page.Content>
+      {this.state.data.length > 0 ? (
+        <Grid.Row cards={true}>
+        <Grid.Col sm={6} lg={3}>
+          {this.state.data.map(item => (
+            <Sensor key={item.source} source={item.source} socket={socket} status={item.status} icon={item.icon} color={item.color} timestamp={item.timestamp} timesince={item.timesince} armed={item.armed} version={item.version}/>
+          ))
+          }
+        </Grid.Col>
+      </Grid.Row>
+      ) : (
+        <Card>
+        <Card.Header>
+            <Card.Title>No sensors currently connected</Card.Title>
+        </Card.Header>
+      </Card>
+      )}
+      </Page.Content>
     );
   }
 }

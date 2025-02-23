@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-docker-compose up -d
+docker compose up -d
 
 export REDIS_URL=redis://127.0.0.1:6379
 export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres?sslmode=disable

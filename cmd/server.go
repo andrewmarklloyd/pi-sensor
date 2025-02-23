@@ -305,7 +305,7 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		return clients.ServerClients{}, fmt.Errorf("creating postgres client: %s", err)
 	}
 
-	mosquittoAddr := fmt.Sprintf("mqtts://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
+	mosquittoAddr := fmt.Sprintf("mqtt://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
 
 	insecureSkipVerifyMosquitto := false
 	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, insecureSkipVerifyMosquitto, func(client mqttC.Client) {

@@ -9,8 +9,6 @@ import {
 
 import { trimVersion, unixToDate } from "./DataModel";
 
-import SiteWrapper from "./SiteWrapper";
-
 class ReportPage extends Component {
   constructor(props) {
     super(props)
@@ -82,48 +80,46 @@ class ReportPage extends Component {
   
   render() {
     return (
-      <SiteWrapper>
-        <Page.Content>
-        <Card>
-          <Card.Header>
-            <Form.Group label="">
-              <h4>Sensor</h4>
-              <Form.Select onChange={this.handleChange}>
-                {this.state.sensors.map((item, index) => (
-                  <option key={index} value={item}>
-                    {item}
-                  </option>
-                  ))}
-              </Form.Select>
-              <Form.Select onChange={this.handleChange}>
-                {this.getPageOptions()}
-              </Form.Select>
-            </Form.Group>
-          </Card.Header>
-          <Card.Body>
-            <Table>
-              <Table.Header>
-                <Table.ColHeader>Time</Table.ColHeader>
-                <Table.ColHeader>Door</Table.ColHeader>
-                <Table.ColHeader>Status</Table.ColHeader>
-                <Table.ColHeader>Version</Table.ColHeader>
-              </Table.Header>
-              <Table.Body>
-              {this.state.messages.map(item => (
-                <Table.Row>
-                  <Table.Col>{unixToDate(item.timestamp)}</Table.Col>
-                  <Table.Col>{item.source}</Table.Col>
-                  <Table.Col>{item.status}</Table.Col>
-                  <Table.Col>{trimVersion(item.version)}</Table.Col>
-                </Table.Row>
-              ))
-              }
-              </Table.Body>
-            </Table>
-          </Card.Body>
-        </Card>
-        </Page.Content>
-      </SiteWrapper>
+      <Page.Content>
+      <Card>
+        <Card.Header>
+          <Form.Group label="">
+            <h4>Sensor</h4>
+            <Form.Select onChange={this.handleChange}>
+              {this.state.sensors.map((item, index) => (
+                <option key={index} value={item}>
+                  {item}
+                </option>
+                ))}
+            </Form.Select>
+            <Form.Select onChange={this.handleChange}>
+              {this.getPageOptions()}
+            </Form.Select>
+          </Form.Group>
+        </Card.Header>
+        <Card.Body>
+          <Table>
+            <Table.Header>
+              <Table.ColHeader>Time</Table.ColHeader>
+              <Table.ColHeader>Door</Table.ColHeader>
+              <Table.ColHeader>Status</Table.ColHeader>
+              <Table.ColHeader>Version</Table.ColHeader>
+            </Table.Header>
+            <Table.Body>
+            {this.state.messages.map(item => (
+              <Table.Row>
+                <Table.Col>{unixToDate(item.timestamp)}</Table.Col>
+                <Table.Col>{item.source}</Table.Col>
+                <Table.Col>{item.status}</Table.Col>
+                <Table.Col>{trimVersion(item.version)}</Table.Col>
+              </Table.Row>
+            ))
+            }
+            </Table.Body>
+          </Table>
+        </Card.Body>
+      </Card>
+      </Page.Content>
     );
   }
 }
