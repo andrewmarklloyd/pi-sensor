@@ -39,6 +39,7 @@
     ]
   },
   "devDependencies": {
+    "@mui/x-data-grid": "^7.27.0",
     "@rsbuild/core": "^1.1.13",
     "@rsbuild/plugin-react": "^1.1.0"
   }
