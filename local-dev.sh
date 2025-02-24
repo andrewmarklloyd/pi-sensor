@@ -10,6 +10,7 @@ export MOSQUITTO_SERVER_PASSWORD=abc
 export MOSQUITTO_SERVER_USER=abc
 export MOSQUITTO_AGENT_USER=abc
 export MOSQUITTO_AGENT_PASSWORD=abc
+export MOSQUITTO_PROTOCOL=mqtt
 export MOCK_MODE=true
 export PORT=8080
 # random uuid
