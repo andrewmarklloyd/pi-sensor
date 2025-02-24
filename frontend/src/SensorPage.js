@@ -1,15 +1,9 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Button from '@mui/material/Button';
 import { trimVersion, unixToDate } from "./DataModel";
-
-
-import {
-  Page,
-  Card,
-  Button,
-} from "tabler-react";
-
-import SiteWrapper from "./SiteWrapper";
 
 class SensorPage extends Component {
   constructor(props) {
@@ -97,44 +91,38 @@ class SensorPage extends Component {
 
   render() {
     return (
-      <SiteWrapper>
-        <Page.Content>
-        <Card>
-          <Card.Header>
-              <Card.Title>Sensor: {this.state.source}</Card.Title>
-          </Card.Header>
-          <Card.Body>
-              <p>Last activity: {unixToDate(this.state.timestamp)}</p>
-              <p>Alerting: {this.state.armed === "true" ? "Armed" : "Disarmed"}</p>
-              <p>Version: {trimVersion(this.state.version)}</p>
-              <div>
-                <button onClick={() => this.restartSensor(this.state.source)}>
-                  Restart
-                </button>
-              </div>
-              <div>
-                <button onClick={() => this.toggleArm(this.state.source)}>
-                  Arm/Disarm
-                </button>
-              </div>
-              <div>
-                <form onSubmit={this.submitOpenTimeout.bind(this)}>
-                  <label>
-                    Open Timeout:
-                    <input type="number" min="1" max="60" value={this.state.openTimeout} onChange={this.handleChange.bind(this)} />
-                  </label>
-                  <input type="submit" value="Submit" />
-                </form>
-              </div>
-          </Card.Body>
+      <div>
+        <Card sx={{ m: 0.5 }}>
+          <CardContent>
+            <h2>Sensor: {this.state.source}</h2>
+            <p>Last activity: {unixToDate(this.state.timestamp)}</p>
+                <p>Alerting: {this.state.armed === "true" ? "Armed" : "Disarmed"}</p>
+                <p>Version: {trimVersion(this.state.version)}</p>
+                <div>
+                  <button onClick={() => this.restartSensor(this.state.source)}>
+                    Restart
+                  </button>
+                </div>
+                <div>
+                  <button onClick={() => this.toggleArm(this.state.source)}>
+                    Arm/Disarm
+                  </button>
+                </div>
+                <div>
+                  <form onSubmit={this.submitOpenTimeout.bind(this)}>
+                    <label>
+                      Open Timeout:
+                      <input type="number" min="1" max="60" value={this.state.openTimeout} onChange={this.handleChange.bind(this)} />
+                    </label>
+                    <input type="submit" value="Submit" />
+                  </form>
+                </div>
+          </CardContent>
         </Card>
-        <Link to={{pathname: "/"}}><Button color="secondary">Back</Button></Link>
-        </Page.Content>
-      </SiteWrapper>
+        <Link to={{pathname: "/"}}><Button variant="outlined" >Back</Button></Link>
+      </div>
     );
   }
 }
 
 export default SensorPage;
-
-
