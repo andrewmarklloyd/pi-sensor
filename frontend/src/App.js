@@ -4,20 +4,21 @@ import ResponsiveAppBar from './components/AppBar';
 import HomePage from "./HomePage";
 import SensorPage from "./SensorPage";
 import ReportPage from "./ReportPage";
-import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Footer from './components/Footer';
 
 function App() {
   return (
     <React.StrictMode>
       <ResponsiveAppBar></ResponsiveAppBar>
-      <Router>
-        <Switch>
-          <Route exact path="/" component={HomePage} />
-          <Route exact path="/sensor" component={SensorPage} />
-          <Route exact path="/report" component={ReportPage} />
-        </Switch>
-      </Router>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomePage/>} />
+          <Route path="/sensor" element={<SensorPage/>} />
+          <Route path="/report" element={<ReportPage/>} />
+        </Routes>
+      </BrowserRouter>
       <Footer></Footer>
     </React.StrictMode>
   );
