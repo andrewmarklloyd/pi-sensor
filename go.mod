@@ -1,8 +1,6 @@
 module github.com/andrewmarklloyd/pi-sensor
 
-go 1.22.1
-
-toolchain go1.23.3
+go 1.23.3
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.34.0
