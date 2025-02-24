@@ -3,7 +3,7 @@ module github.com/andrewmarklloyd/pi-sensor
 go 1.23.3
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.34.0
+	github.com/DataDog/datadog-api-client-go/v2 v2.35.0
 	github.com/aws/aws-sdk-go-v2 v1.36.0
 	github.com/aws/aws-sdk-go-v2/config v1.29.4
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.57
