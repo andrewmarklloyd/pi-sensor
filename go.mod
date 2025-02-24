@@ -5,12 +5,12 @@ go 1.22.1
 toolchain go1.23.3
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.7.0
-	github.com/aws/aws-sdk-go-v2 v1.32.8
+	github.com/DataDog/datadog-api-client-go/v2 v2.34.0
+	github.com/aws/aws-sdk-go-v2 v1.36.0
 	github.com/aws/aws-sdk-go-v2/config v1.28.11
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.52
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.49
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.72.3
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.75.2
 	github.com/dghubble/gologin/v2 v2.5.0
 	github.com/dghubble/sessions v0.1.0
 	github.com/eclipse/paho.mqtt.golang v1.3.5
@@ -27,7 +27,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/zap v1.24.0
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
-	golang.org/x/oauth2 v0.23.0
+	golang.org/x/oauth2 v0.25.0
 )
 
 require (
@@ -43,7 +43,7 @@ require (
 	github.com/Antonboom/testifylint v1.5.2 // indirect
 	github.com/BurntSushi/toml v1.4.1-0.20240526193622-a339e1f7089c // indirect
 	github.com/Crocmagnon/fatcontext v0.5.3 // indirect
-	github.com/DataDog/zstd v1.5.0 // indirect
+	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/Djarvur/go-err113 v0.0.0-20210108212216-aea10b59be24 // indirect
 	github.com/GaijinEntertainment/go-exhaustruct/v3 v3.3.0 // indirect
 	github.com/Masterminds/semver/v3 v3.3.0 // indirect
@@ -55,20 +55,20 @@ require (
 	github.com/alingse/nilnesserr v0.1.1 // indirect
 	github.com/ashanbrown/forbidigo v1.6.0 // indirect
 	github.com/ashanbrown/makezero v1.2.0 // indirect
-	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.7 // indirect
+	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.8 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.23 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.27 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.27 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.31 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.31 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.1 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.27 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.1 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.4.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.18.8 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.31 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.5.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.12 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.18.12 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.24.9 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.8 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.7 // indirect
-	github.com/aws/smithy-go v1.22.1 // indirect
+	github.com/aws/smithy-go v1.22.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bkielbasa/cyclop v1.2.3 // indirect
 	github.com/blizzy78/varnamelen v0.8.0 // indirect
@@ -109,6 +109,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/go-xmlfmt/xmlfmt v1.1.3 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gofrs/flock v0.12.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
