@@ -26,6 +26,7 @@ var (
 	mosquittoDomain               = flag.String("mosquittodomain", os.Getenv("MOSQUITTO_DOMAIN"), "The mosquitto domain to connect")
 	mosquittoAgentUser            = flag.String("mosquittoagentuser", os.Getenv("MOSQUITTO_AGENT_USER"), "The mosquitto agent user to connect")
 	mosquittoAgentPassword        = flag.String("mosquittoagentpassword", os.Getenv("MOSQUITTO_AGENT_PASSWORD"), "The mosquitto agent password to connect")
+	mosquittoProtocol             = flag.String("mosquittoprotocol", os.Getenv("MOSQUITTO_PROTOCOL"), "The mosquitto protocol to connect")
 	sensorSource                  = flag.String("sensorSource", os.Getenv("SENSOR_SOURCE"), "The sensor location or name")
 	mockFlag                      = flag.String("mockMode", os.Getenv("MOCK_MODE"), "Mock mode for local development")
 	sensorReadIntervalSecondsFlag = flag.String("sensorReadIntervalSeconds", os.Getenv("SENSOR_READ_INTERVAL_SECONDS"), "How often in seconds to read the sensor status")
@@ -80,7 +81,7 @@ func main() {
 		logger.Fatalf("converting SENSOR_READ_INTERVAL_SECONDS to int: %s", err)
 	}
 
-	mosquittoClient := configureMosquittoClient(*mosquittoDomain, *mosquittoAgentUser, *mosquittoAgentPassword, *logger)
+	mosquittoClient := configureMosquittoClient(*mosquittoDomain, *mosquittoAgentUser, *mosquittoAgentPassword, *mosquittoProtocol, *logger)
 	if err := mosquittoClient.Connect(); err != nil {
 		logger.Fatalf("error connecting to mosquitto server: %s", err)
 	}
@@ -201,8 +202,12 @@ func getStatusFileName(sensorSource string) string {
 	return fmt.Sprintf("%s/.pi-sensor-status-%s", os.Getenv("HOME"), sensorSource)
 }
 
-func configureMosquittoClient(domain, user, password string, logger zap.SugaredLogger) mqtt.MqttClient {
-	mosquittoAddr := fmt.Sprintf("mqtts://%s:%s@%s:1883", user, password, domain)
+func configureMosquittoClient(domain, user, password, protocol string, logger zap.SugaredLogger) mqtt.MqttClient {
+	mosquittoProtocol := "mqtts"
+	if protocol != "" {
+		mosquittoProtocol = protocol
+	}
+	mosquittoAddr := fmt.Sprintf("%s://%s:%s@%s:1883", mosquittoProtocol, user, password, domain)
 
 	// todo: remove this after using prod certbot cert
 	insecureSkipVerify := false

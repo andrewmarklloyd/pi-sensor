@@ -51,6 +51,7 @@ func runServer() {
 		MosquittoServerDomain:   viper.GetString("MOSQUITTO_DOMAIN"),
 		MosquittoServerUser:     viper.GetString("MOSQUITTO_SERVER_USER"),
 		MosquittoServerPassword: viper.GetString("MOSQUITTO_SERVER_PASSWORD"),
+		MosquittoProtocol:       viper.GetString("MOSQUITTO_PROTOCOL"),
 		RedisURL:                viper.GetString("REDIS_URL"),
 		RedisTLSURL:             viper.GetString("REDIS_TLS_URL"),
 		PostgresURL:             viper.GetString("DATABASE_URL"),
@@ -305,7 +306,11 @@ func createClients(serverConfig config.ServerConfig) (clients.ServerClients, err
 		return clients.ServerClients{}, fmt.Errorf("creating postgres client: %s", err)
 	}
 
-	mosquittoAddr := fmt.Sprintf("mqtt://%s:%s@%s:1883", serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
+	mosquittoProtocol := "mqtts"
+	if serverConfig.MosquittoProtocol != "" {
+		mosquittoProtocol = serverConfig.MosquittoProtocol
+	}
+	mosquittoAddr := fmt.Sprintf("%s://%s:%s@%s:1883", mosquittoProtocol, serverConfig.MosquittoServerUser, serverConfig.MosquittoServerPassword, serverConfig.MosquittoServerDomain)
 
 	insecureSkipVerifyMosquitto := false
 	mosquittoClient := mqtt.NewMQTTClient(mosquittoAddr, insecureSkipVerifyMosquitto, func(client mqttC.Client) {
