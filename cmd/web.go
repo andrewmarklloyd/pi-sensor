@@ -34,7 +34,7 @@ const (
 	unauthPath           = "/unauth"
 )
 
-var sessionStore *sessions.CookieStore
+var sessionStore sessions.Store[any]
 
 type WebServer struct {
 	httpServer    *http.Server
@@ -61,7 +61,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 		Endpoint:     googleOAuth2.Endpoint,
 		Scopes:       []string{"profile", "email"},
 	}
-	sessionStore = sessions.NewCookieStore([]byte(serverConfig.GoogleConfig.SessionSecret), nil)
+	sessionStore = sessions.NewCookieStore[any](nil, []byte(serverConfig.GoogleConfig.SessionSecret), nil)
 	stateConfig := gologin.DefaultCookieConfig
 	router.Handle("/health", http.HandlerFunc(healthHandler)).Methods(get)
 	router.Handle("/api/sensor/restart", requireLogin(http.HandlerFunc(w.sensorRestartHandler))).Methods(post)
@@ -348,8 +348,8 @@ func issueSession(serverConfig config.ServerConfig) http.Handler {
 			return
 		}
 		session := sessionStore.New(sessionName)
-		session.Values[sessionUserKey] = googleUser.Id
-		session.Values["user-email"] = googleUser.Email
+		session.Set(sessionUserKey, googleUser.Id)
+		session.Set("user-email", googleUser.Email)
 		session.Save(w)
 		http.Redirect(w, req, "/", http.StatusFound)
 	}
