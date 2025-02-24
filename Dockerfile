@@ -16,7 +16,7 @@ COPY build/pi-sensor-server /app/
 RUN chmod +x /app/pi-sensor-server
 COPY build/op-limit-check-entry /app/
 RUN chmod +x /app/op-limit-check-entry
-COPY frontend/dist /app/frontend/build
+COPY frontend/dist /app/frontend/dist
 COPY entrypoint.sh /entrypoint.sh
 COPY .env.server.tmpl /app/.env.server.tmpl
 WORKDIR /app
