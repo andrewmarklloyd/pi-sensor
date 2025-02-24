@@ -9,11 +9,21 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22.0'
+          go-version-file: 'go.mod'
+          cache-dependency-path: "go.sum"
       - name: Check
         run: |
           make vet
           make test
+      - name: Read .nvmrc
+        run: echo "NVMRC=$(cat frontend/.nvmrc)" >> $GITHUB_OUTPUT
+        id: nvm
+      - name: Use Node.js (.nvmrc)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "${{ steps.nvm.outputs.NVMRC }}"
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
       - name: Run build
         run: |
           make build-ci
