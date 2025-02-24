@@ -1,10 +1,13 @@
 import { React, Component } from 'react';
 import { Link } from "react-router-dom";
 import { translateStatus, timeSince } from "./DataModel";
-
-import {
-  StampCard,
-} from "tabler-react";
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
+import LockIcon from '@mui/icons-material/Lock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
+import Stack from '@mui/material/Stack';
+import OfflineBoltIcon from '@mui/icons-material/OfflineBolt';
 
 class Sensor extends Component {
   constructor(props) {
@@ -52,27 +55,46 @@ class Sensor extends Component {
 
   render() {
     return (
-      <StampCard
-        color={this.state.color !== "" ? this.state.color : this.props.color}
-        icon={this.state.icon !== "" ? this.state.icon : this.props.icon}
-        header={
-          <Link
-          to={{
-            pathname: "/sensor",
-            state: {
-              source: this.props.source,
-              timesince: this.props.timesince,
-              armed: this.props.armed,
-              timestamp: this.props.timestamp,
-              version: this.props.version
-            }
-          }}>
-            {this.props.source}
-          </Link>
-        }
-        footer={this.state.timesince !== "" ? this.state.timesince : this.props.timesince}
-      />
+      <Card sx={{ m: 0.5 }}>
+        <CardContent>
+          <Stack direction="row" spacing={3}>
+            {getIcon(this)}
+            <div>
+              <Typography sx={{ fontSize: 20 }}>
+                <Link
+                to={{
+                  pathname: "/sensor",
+                  state: {
+                    source: this.props.source,
+                    timesince: this.props.timesince,
+                    armed: this.props.armed,
+                    timestamp: this.props.timestamp,
+                    version: this.props.version
+                  }
+                }}>
+                  {this.props.source}
+                </Link>
+              </Typography>
+              <Typography>
+                {this.state.timesince !== "" ? this.state.timesince : this.props.timesince}
+              </Typography>
+            </div>
+          </Stack>
+        </CardContent>
+      </Card>
     );
+  }
+}
+
+function getIcon(component) {
+  let fill = component.state.color !== "" ? component.state.color : component.props.color
+  let i = component.state.icon !== "" ? component.state.icon : component.props.icon
+  if (i === "lock") {
+    return <LockIcon style={{fill: fill}} />
+  } else if (i === "unlock") {
+    return <LockOpenIcon style={{fill: fill}} />
+  } else {
+    return <OfflineBoltIcon style={{fill: fill}} />
   }
 }
 

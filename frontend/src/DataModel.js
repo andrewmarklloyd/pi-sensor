@@ -7,7 +7,7 @@ function translateStatus(status) {
     icon = "lock"
     color = "green"
   } else {
-    icon = "zap-off"
+    icon = "unknown"
     color = "grey"
   }
   return {

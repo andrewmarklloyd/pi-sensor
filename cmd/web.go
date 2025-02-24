@@ -75,7 +75,7 @@ func newWebServer(serverConfig config.ServerConfig, clients clients.ServerClient
 	router.HandleFunc("/logout", logoutHandler)
 	router.HandleFunc(unauthPath, unauthHandler).Methods(get)
 	spa := spaHandler{
-		staticPath: "frontend/build",
+		staticPath: "frontend/dist",
 		indexPath:  "index.html",
 	}
 	router.PathPrefix("/").Handler(requireLogin(spa))

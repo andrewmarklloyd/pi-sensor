@@ -1,14 +1,9 @@
 // @flow
 
 import React, { Component } from "react";
-
-import {
-  Page,
-  Grid,
-  Card,
-} from "tabler-react";
-
-import SiteWrapper from "./SiteWrapper";
+import Grid2 from '@mui/material/Grid2';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 import Sensor from "./Sensor";
 import { translateStatus, timeSince } from "./DataModel";
 
@@ -26,12 +21,6 @@ class Home extends Component {
     }
 
     socket = new WebSocket(`${url}/ws/`);
-    socket.onopen = () => {
-      console.log("connection opened")
-    };
-    socket.onclose = function () {
-      console.log("closed connection")
-    };
   }
 
   componentDidMount() {
@@ -67,26 +56,25 @@ class Home extends Component {
 
   render() {
     return (
-      <SiteWrapper>
-        <Page.Content>
+      <div>
+        <Grid2 container spacing={2}>
         {this.state.data.length > 0 ? (
-          <Grid.Row cards={true}>
-          <Grid.Col sm={6} lg={3}>
+          <div>
             {this.state.data.map(item => (
               <Sensor key={item.source} source={item.source} socket={socket} status={item.status} icon={item.icon} color={item.color} timestamp={item.timestamp} timesince={item.timesince} armed={item.armed} version={item.version}/>
             ))
             }
-          </Grid.Col>
-        </Grid.Row>
+          </div>
+            
         ) : (
-          <Card>
-          <Card.Header>
-              <Card.Title>No sensors currently connected</Card.Title>
-          </Card.Header>
+        <Card>
+          <CardContent>No sensors currently connected</CardContent>
         </Card>
-        )}
-        </Page.Content>
-      </SiteWrapper>
+        )
+        }
+        </Grid2>
+      </div>
+      
     );
   }
 }
