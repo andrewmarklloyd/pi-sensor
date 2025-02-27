@@ -175,9 +175,13 @@ func main() {
 
 			if outletEnabled && device != nil {
 				if currentStatus == gpio.OPEN {
-					device.TurnOn()
+					if err := device.TurnOn(); err != nil {
+						logger.Errorf("turning device on: %s", err.Error())
+					}
 				} else if currentStatus == gpio.CLOSED {
-					device.TurnOff()
+					if err := device.TurnOff(); err != nil {
+						logger.Errorf("turning device off: %s", err.Error())
+					}
 				}
 			}
 		}
@@ -242,5 +246,8 @@ func getHS100Device() (*hs100.Hs100, error) {
 		}
 	}
 
+	if device == nil {
+		return nil, fmt.Errorf("device name %s could not be found", deviceName)
+	}
 	return device, nil
 }
