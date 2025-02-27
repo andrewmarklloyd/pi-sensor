@@ -1,13 +1,20 @@
 import React, { Component } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Button from '@mui/material/Button';
 import { trimVersion, unixToDate } from "./DataModel";
+import { useLocation } from 'react-router';
 
 class SensorPage extends Component {
   constructor(props) {
     super(props)
+    console.log(this.props)
+    console.log(this.location)
+    console.log(this.state)
+    let location = useLocation()
+    console.log(location)
+    console.log(state)
     this.state = this.props.location.state
     var component = this
     fetch("/api/sensor/getOpenTimeout?source="+component.state.source, {

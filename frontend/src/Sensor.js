@@ -1,5 +1,5 @@
 import { React, Component } from 'react';
-import { Link } from "react-router-dom";
+import { Link, href } from "react-router";
 import { translateStatus, timeSince } from "./DataModel";
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -61,17 +61,27 @@ class Sensor extends Component {
             {getIcon(this)}
             <div>
               <Typography sx={{ fontSize: 20 }}>
+                {/*       <Link to={href("/products/:id", { id: "asdf" })} /> */}
                 <Link
-                to={{
-                  pathname: "/sensor",
-                  state: {
-                    source: this.props.source,
-                    timesince: this.props.timesince,
-                    armed: this.props.armed,
-                    timestamp: this.props.timestamp,
-                    version: this.props.version
-                  }
-                }}>
+                  to={href("/sensor",{a:"b"})}
+                  // state= {{
+                  //   source: this.props.source,
+                  //   timesince: this.props.timesince,
+                  //   armed: this.props.armed,
+                  //   timestamp: this.props.timestamp,
+                  //   version: this.props.version
+                  // }}
+                  // to={{
+                  //   pathname: "/sensor",
+                  //   state: {
+                  //     source: this.props.source,
+                  //     timesince: this.props.timesince,
+                  //     armed: this.props.armed,
+                  //     timestamp: this.props.timestamp,
+                  //     version: this.props.version
+                  //   }
+                  // }}
+                  >
                   {this.props.source}
                 </Link>
               </Typography>

@@ -19,7 +19,8 @@ export GOOGLE_CLIENT_ID=$(op read op://pi-sensor-server/config/GOOGLE_CLIENT_ID)
 export GOOGLE_CLIENT_SECRET=$(op read op://pi-sensor-server/config/GOOGLE_CLIENT_SECRET)
 export REDIRECT_URL=http://localhost:8080/google/callback
 export AUTHORIZED_USERS=$(op read op://pi-sensor-server/config/AUTHORIZED_USERS)
-
+# random uuid
+export SESSION_SECRET=0c433325-afeb-4a84-85aa-a88edc069d00
 
 if [[ ${1} != source ]]; then
     cd frontend/

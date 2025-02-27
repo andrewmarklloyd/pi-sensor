@@ -4,7 +4,7 @@ import ResponsiveAppBar from './components/AppBar';
 import HomePage from "./HomePage";
 import SensorPage from "./SensorPage";
 import ReportPage from "./ReportPage";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router";
 
 import Footer from './components/Footer';
 
@@ -12,7 +12,10 @@ function App() {
   return (
     <React.StrictMode>
       <ResponsiveAppBar></ResponsiveAppBar>
-      <BrowserRouter>
+      <BrowserRouter 
+      future={{
+        v7_startTransition: true,
+      }}>
         <Routes>
           <Route path="/" element={<HomePage/>} />
           <Route path="/sensor" element={<SensorPage/>} />
