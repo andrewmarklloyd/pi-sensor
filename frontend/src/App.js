@@ -12,10 +12,7 @@ function App() {
   return (
     <React.StrictMode>
       <ResponsiveAppBar></ResponsiveAppBar>
-      <BrowserRouter 
-      future={{
-        v7_startTransition: true,
-      }}>
+      <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage/>} />
           <Route path="/sensor" element={<SensorPage/>} />
