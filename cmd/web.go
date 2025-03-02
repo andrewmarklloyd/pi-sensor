@@ -362,7 +362,7 @@ func logoutHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func unauthHandler(w http.ResponseWriter, req *http.Request) {
-	http.ServeFile(w, req, filepath.Join("frontend/build", "unauth.html"))
+	http.ServeFile(w, req, filepath.Join("frontend/dist", "unauth.html"))
 }
 
 // requireLogin redirects unauthenticated users to the login route.

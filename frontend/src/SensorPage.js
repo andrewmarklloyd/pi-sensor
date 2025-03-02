@@ -1,58 +1,15 @@
-import React, { Component } from "react";
-import { Link } from "react-router";
+import { React, useState } from "react";
+import { Link, useLocation } from "react-router";
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Button from '@mui/material/Button';
 import { trimVersion, unixToDate } from "./DataModel";
-import { useLocation } from 'react-router';
 
-class SensorPage extends Component {
-  constructor(props) {
-    super(props)
-    console.log(this.props)
-    console.log(this.location)
-    console.log(this.state)
-    let location = useLocation()
-    console.log(location)
-    console.log(state)
-    this.state = this.props.location.state
-    var component = this
-    fetch("/api/sensor/getOpenTimeout?source="+component.state.source, {
-      method: 'GET',
-      credentials: 'same-origin',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      referrerPolicy: 'no-referrer'
-    })
-    .then(r => r.json())
-    .then(res => {
-      if (res.status === "success") {
-        component.state.openTimeout = res.openTimeout
-        component.setState(component.state)
-      } else {
-        console.log("error getting openTimeout: ", res.error)
-      }
-    })
-  }
+const SensorPage = () => {
+  let location = useLocation()
+  const [state, setState] = useState(location.state)
 
-  restartSensor(source) {
-    if (window.confirm('Are you sure you wish to restart the sensor?')) {
-      fetch("/api/sensor/restart", {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        referrerPolicy: 'no-referrer',
-        body: JSON.stringify({source: source})
-      })
-      .then(r => r.json())
-    }
-  }
-
-  toggleArm(source) {
-    var component = this
+  function toggleArm(source) {
     if (window.confirm('Are you sure you wish to toggle arm/disarm?')) {
       fetch("/api/sensor/arming", {
         method: 'POST',
@@ -65,17 +22,18 @@ class SensorPage extends Component {
       })
       .then(r => r.json())
       .then(res => {
-        component.state.armed = res.armed
-        component.setState(component.state)
+        state.armed = res.armed
+        setState(state);
       })
     }
   }
 
-  handleChange(a) {
-    this.setState({openTimeout: parseInt(a.target.value)})
+  function handleChange(a) {
+    state.openTimeout = parseInt(a.target.value)
+    setState(state)
   }
 
-  submitOpenTimeout(event) {
+  function submitOpenTimeout(event) {
     event.preventDefault();
     fetch("/api/sensor/openTimeout", {
       method: 'POST',
@@ -84,7 +42,7 @@ class SensorPage extends Component {
         'Content-Type': 'application/json'
       },
       referrerPolicy: 'no-referrer',
-      body: JSON.stringify({source: this.state.source, openTimeout: this.state.openTimeout})
+      body: JSON.stringify({source: state.source, openTimeout: state.openTimeout})
     })
     .then(r => r.json())
     .then(res => {
@@ -96,40 +54,51 @@ class SensorPage extends Component {
     })
   }
 
-  render() {
-    return (
-      <div>
-        <Card sx={{ m: 0.5 }}>
-          <CardContent>
-            <h2>Sensor: {this.state.source}</h2>
-            <p>Last activity: {unixToDate(this.state.timestamp)}</p>
-                <p>Alerting: {this.state.armed === "true" ? "Armed" : "Disarmed"}</p>
-                <p>Version: {trimVersion(this.state.version)}</p>
-                <div>
-                  <button onClick={() => this.restartSensor(this.state.source)}>
-                    Restart
-                  </button>
-                </div>
-                <div>
-                  <button onClick={() => this.toggleArm(this.state.source)}>
-                    Arm/Disarm
-                  </button>
-                </div>
-                <div>
-                  <form onSubmit={this.submitOpenTimeout.bind(this)}>
-                    <label>
-                      Open Timeout:
-                      <input type="number" min="1" max="60" value={this.state.openTimeout} onChange={this.handleChange.bind(this)} />
-                    </label>
-                    <input type="submit" value="Submit" />
-                  </form>
-                </div>
-          </CardContent>
-        </Card>
-        <Link to={{pathname: "/"}}><Button variant="outlined" >Back</Button></Link>
-      </div>
-    );
-  }
+  fetch("/api/sensor/getOpenTimeout?source="+state.source, {
+    method: 'GET',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    referrerPolicy: 'no-referrer'
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.status === "success") {
+      state.openTimeout = res.openTimeout
+      setState(state)
+    } else {
+      console.log("error getting openTimeout: ", res.error)
+    }
+  })
+
+  return (
+    <div>
+    <Card sx={{ m: 0.5 }}>
+      <CardContent>
+        <h2>Sensor: {state.source}</h2>
+        <p>Last activity: {unixToDate(state.timestamp)}</p>
+            <p>Alerting: {state.armed === "true" ? "Armed" : "Disarmed"}</p>
+            <p>Version: {trimVersion(state.version)}</p>
+            <div>
+              <button onClick={() => toggleArm(state.source)}>
+                Arm/Disarm
+              </button>
+            </div>
+            <div>
+              <form onSubmit={submitOpenTimeout.bind(this)}>
+                <label>
+                  Open Timeout:
+                  <input type="number" min="1" max="60" value={state.openTimeout} onChange={handleChange.bind(this)} />
+                </label>
+                <input type="submit" value="Submit" />
+              </form>
+            </div>
+      </CardContent>
+    </Card>
+    <Link to={{pathname: "/"}}><Button variant="outlined" >Back</Button></Link>
+  </div>
+  )
 }
 
 export default SensorPage;
