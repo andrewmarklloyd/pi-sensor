@@ -42,9 +42,11 @@
     "@rsbuild/plugin-react": "^1.1.1"
   },
   "optionalDependencies": {
-    "@nx/nx-darwin-arm64": "17.0.3",
-    "@nx/nx-darwin-x64": "17.0.3",
-    "@nx/nx-linux-x64-gnu": "17.0.3",
-    "@nx/nx-win32-x64-msvc": "17.0.3"
+    "@rspack/binding-darwin-arm64": "1.2.3",
+    "@rspack/binding-darwin-x64": "1.2.3",
+    "@rspack/binding-linux-arm64-gnu": "1.2.3",
+    "@rspack/binding-linux-arm64-musl": "1.2.3",
+    "@rspack/binding-linux-x64-gnu": "1.2.3",
+    "@rspack/binding-linux-x64-musl": "1.2.3"
   }
 }
