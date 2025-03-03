@@ -1,5 +1,5 @@
 import { React, Component } from 'react';
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { translateStatus, timeSince } from "./DataModel";
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -62,16 +62,17 @@ class Sensor extends Component {
             <div>
               <Typography sx={{ fontSize: 20 }}>
                 <Link
-                to={{
-                  pathname: "/sensor",
-                  state: {
+                  to={{
+                    pathname: "/sensor",
+                  }}
+                  state= {{
                     source: this.props.source,
                     timesince: this.props.timesince,
                     armed: this.props.armed,
                     timestamp: this.props.timestamp,
                     version: this.props.version
-                  }
-                }}>
+                  }}
+                  >
                   {this.props.source}
                 </Link>
               </Typography>

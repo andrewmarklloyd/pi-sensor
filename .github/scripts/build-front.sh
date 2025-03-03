@@ -9,5 +9,5 @@ newname="prod.service-worker.$(uuidgen | cut -c25-36).js"
 sed -i "s/service-worker.js/${newname}/g" public/index.html
 cp public/service-worker.js public/${newname}
 
-npm install
+npm install --include=optional
 npm run build

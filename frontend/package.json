@@ -11,8 +11,7 @@
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-router-dom": "^7.2.0"
+    "react-router": "^7.2.0"
   },
   "scripts": {
     "start": "rsbuild dev",
@@ -41,5 +40,13 @@
     "@mui/x-data-grid": "^7.27.0",
     "@rsbuild/core": "^1.2.11",
     "@rsbuild/plugin-react": "^1.1.1"
+  },
+  "optionalDependencies": {
+    "@rspack/binding-darwin-arm64": "1.2.3",
+    "@rspack/binding-darwin-x64": "1.2.3",
+    "@rspack/binding-linux-arm64-gnu": "1.2.3",
+    "@rspack/binding-linux-arm64-musl": "1.2.3",
+    "@rspack/binding-linux-x64-gnu": "1.2.3",
+    "@rspack/binding-linux-x64-musl": "1.2.3"
   }
 }
