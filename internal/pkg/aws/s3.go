@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 
 	sConfig "github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
@@ -13,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	smithyendpoints "github.com/aws/smithy-go/endpoints"
 )
 
 const (
@@ -34,6 +36,25 @@ type BucketInfo struct {
 	Size             int64
 }
 
+type resolverV2 struct {
+	Domain     string
+	BucketName string
+}
+
+func (r *resolverV2) ResolveEndpoint(ctx context.Context, params s3.EndpointParameters) (
+	smithyendpoints.Endpoint, error,
+) {
+	spacesURL := fmt.Sprintf("https://%s.%s", r.BucketName, r.Domain)
+	u, err := url.Parse(spacesURL)
+	if err != nil {
+		return smithyendpoints.Endpoint{}, err
+	}
+
+	return smithyendpoints.Endpoint{
+		URI: *u,
+	}, nil
+}
+
 func NewClient(serverConfig sConfig.ServerConfig) (Client, error) {
 	ctx := context.Background()
 	cfg, err := config.LoadDefaultConfig(ctx,
@@ -44,14 +65,14 @@ func NewClient(serverConfig sConfig.ServerConfig) (Client, error) {
 	}
 
 	cfg.Region = serverConfig.S3Config.Region
-	cfg.EndpointResolverWithOptions = aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-		return aws.Endpoint{
-			URL:           serverConfig.S3Config.URL,
-			SigningRegion: serverConfig.S3Config.Region,
-		}, nil
+	client := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.EndpointResolverV2 = &resolverV2{
+			Domain:     serverConfig.S3Config.Domain,
+			BucketName: serverConfig.S3Config.Bucket,
+		}
+		// until DO spaces supports
+		o.DisableLogOutputChecksumValidationSkipped = true
 	})
-
-	client := s3.NewFromConfig(cfg)
 
 	return Client{
 		S3:                     client,
