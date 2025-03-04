@@ -12,3 +12,4 @@ build/
 run.sh
 door-light
 .terraform/
+bin/
