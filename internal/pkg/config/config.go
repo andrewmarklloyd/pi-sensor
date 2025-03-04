@@ -35,6 +35,7 @@ type S3Config struct {
 	SecretAccessKey   string
 	Region            string
 	URL               string
+	Domain            string
 	Bucket            string
 	MaxRetentionRows  int
 	RetentionEnabled  bool
