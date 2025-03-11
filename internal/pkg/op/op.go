@@ -8,8 +8,7 @@ import (
 )
 
 func GetRateLimit() (bool, string, error) {
-	var cmd *exec.Cmd
-	cmd = exec.Command("op", "service-account", "ratelimit")
+	cmd := exec.Command("op", "service-account", "ratelimit")
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {

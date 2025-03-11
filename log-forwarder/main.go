@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -74,7 +74,7 @@ func main() {
 	go tailSystemdLogs(logChannel, units)
 	for log := range logChannel {
 		if log.Error != nil {
-			fmt.Println(fmt.Sprintf("error receiving logs from journalctl channel: %s", log.Error))
+			fmt.Printf("error receiving logs from journalctl channel: %s\n", log.Error)
 			break
 		}
 
@@ -85,7 +85,7 @@ func main() {
 	}
 }
 
-func tailSystemdLogs(ch chan syslog, systemdUnits []string) error {
+func tailSystemdLogs(ch chan syslog, systemdUnits []string) {
 	argsSlice := []string{}
 	for _, s := range systemdUnits {
 		argsSlice = append(argsSlice, "-u")
@@ -95,7 +95,8 @@ func tailSystemdLogs(ch chan syslog, systemdUnits []string) error {
 	cmd := exec.Command("journalctl", argsSlice...)
 	cmdReader, err := cmd.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("creating command stdout pipe: %s", err)
+		fmt.Printf("creating command stdout pipe: %s\n", err.Error())
+		os.Exit(1)
 	}
 
 	scanner := bufio.NewScanner(cmdReader)
@@ -114,15 +115,15 @@ func tailSystemdLogs(ch chan syslog, systemdUnits []string) error {
 	}()
 
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("starting command: %s", err)
+		fmt.Printf("starting command: %s\n", err)
+		os.Exit(1)
 	}
 
 	if err := cmd.Wait(); err != nil {
 		close(ch)
-		return fmt.Errorf("waiting for command: %s", err)
+		fmt.Printf("waiting for command: %s\n", err)
+		os.Exit(1)
 	}
-
-	return nil
 }
 
 func sendLogs(log, ddAPIKey string) error {
@@ -152,7 +153,7 @@ func sendLogs(log, ddAPIKey string) error {
 	if err != nil {
 		return err
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

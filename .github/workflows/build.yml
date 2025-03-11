@@ -15,6 +15,11 @@ jobs:
         run: |
           make vet
           make test
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64
+          args: --timeout=5m
       - name: Read .nvmrc
         run: echo "NVMRC=$(cat frontend/.nvmrc)" >> $GITHUB_OUTPUT
         id: nvm

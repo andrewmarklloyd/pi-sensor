@@ -21,11 +21,8 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	viper.SetConfigFile(".env")
 }
 
 func initConfig() {
-	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
-	viper.ReadInConfig()
 }

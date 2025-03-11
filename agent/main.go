@@ -44,15 +44,26 @@ func main() {
 	}
 	// need a temporary init structured logger before reading sensorSource
 	initLogger := l.Sugar().Named("pi-sensor-agent-init")
-	defer initLogger.Sync()
+	defer func() {
+		err := initLogger.Sync()
+		if err != nil {
+			fmt.Printf("error syncing pi-sensor-agent-init logger: %s\n", err.Error())
+		}
+	}()
 
 	flag.Parse()
 	if *sensorSource == "" {
 		initLogger.Fatal("SENSOR_SOURCE env var is required")
 	}
 
-	logger := l.Sugar().Named(fmt.Sprintf("pi_sensor_agent-%s", *sensorSource))
-	defer logger.Sync()
+	lName := fmt.Sprintf("pi_sensor_agent-%s", *sensorSource)
+	logger := l.Sugar().Named(lName)
+	defer func() {
+		err := logger.Sync()
+		if err != nil {
+			fmt.Printf("error syncing %s logger: %s\n", lName, err.Error())
+		}
+	}()
 
 	// todo: uncomment and improve after able to use command on rpi
 	// limited, resetDuration, err := op.GetRateLimit()
@@ -128,12 +139,15 @@ func main() {
 		}
 	}()
 
-	mosquittoClient.Subscribe(config.SensorRestartTopic, func(messageString string) {
+	err = mosquittoClient.Subscribe(config.SensorRestartTopic, func(messageString string) {
 		if *sensorSource == messageString {
 			logger.Info("Received restart message, restarting app now")
 			os.Exit(0)
 		}
 	})
+	if err != nil {
+		logger.Fatalf("error subscribing to topic %s: %s", config.SensorRestartTopic, err)
+	}
 
 	statusFile := getStatusFileName(*sensorSource)
 

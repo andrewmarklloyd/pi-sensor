@@ -109,8 +109,8 @@ func (c *Client) GetSensorStatus(source string, page int) ([]config.SensorStatus
 		}
 		messages = append(messages, m)
 	}
-	err = rows.Err()
-	return messages, numPages, nil
+
+	return messages, numPages, rows.Err()
 }
 
 func (c *Client) GetRowCount() (int, error) {

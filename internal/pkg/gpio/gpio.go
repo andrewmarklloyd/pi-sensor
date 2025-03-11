@@ -1,10 +1,8 @@
 package gpio
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
-	"time"
 
 	"github.com/stianeikeland/go-rpio"
 )
@@ -24,7 +22,7 @@ func NewPinClient(pinNumber int, mockMode bool) PinClient {
 	pin := rpio.Pin(pinNumber)
 	err := rpio.Open()
 	if err != nil {
-		log.Println(fmt.Sprintf("Unable to open gpio: %s, continuing but running in test mode.", err.Error()))
+		log.Printf("Unable to open gpio: %s, continuing but running in test mode.\n", err.Error())
 	} else {
 		pin.Input()
 		pin.PullUp()
@@ -39,7 +37,6 @@ func NewPinClient(pinNumber int, mockMode bool) PinClient {
 func (c *PinClient) CurrentStatus() string {
 	var pinState int
 	if c.mockMode {
-		rand.Seed(time.Now().Unix())
 		randStatus := []string{
 			CLOSED,
 			OPEN,

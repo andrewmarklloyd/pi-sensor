@@ -25,7 +25,6 @@ import (
 
 var (
 	logger           *zap.SugaredLogger
-	forwarderLogger  *zap.SugaredLogger
 	version          = "unknown"
 	sensorConfigChan = make(chan config.SensorConfig, 1)
 	sensorConfigMap  = make(map[string]int32)
@@ -40,11 +39,14 @@ const (
 func runServer() {
 	l, _ := zap.NewProduction()
 	logger = l.Sugar().Named("pi_sensor_server")
-	defer logger.Sync()
-	logger.Infof("Running server version: %s", version)
+	defer func() {
+		err := logger.Sync()
+		if err != nil {
+			fmt.Printf("error syncing pi_sensor_server logger: %s\n", err.Error())
+		}
+	}()
 
-	forwarderLogger = l.Sugar().Named("pi_sensor_agent")
-	defer forwarderLogger.Sync()
+	logger.Infof("Running server version: %s", version)
 
 	serverConfig := config.ServerConfig{
 		AppName:                 viper.GetString("APP_NAME"),
@@ -113,15 +115,18 @@ func runServer() {
 	}(sensorConfigMap)
 
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	serverClients.Mosquitto.Subscribe(config.SensorStatusTopic, func(message string) {
+	err = serverClients.Mosquitto.Subscribe(config.SensorStatusTopic, func(message string) {
 		err := handleSensorStatusSubscribe(serverClients, webServer, serverConfig, message, delayTimerMap)
 		if err != nil {
 			logger.Errorf("handling sensor status message: %s", err)
 		}
 	})
+	if err != nil {
+		logger.Fatalf("error subscribing to topic %s: %s", config.SensorStatusTopic, err)
+	}
 
 	var heartbeatTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	serverClients.Mosquitto.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
+	err = serverClients.Mosquitto.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
 		var h config.Heartbeat
 		err := json.Unmarshal([]byte(messageString), &h)
 		if err != nil {
@@ -142,6 +147,9 @@ func runServer() {
 		timer := time.AfterFunc(config.HeartbeatTimeout, func() { handleHeartbeatTimeout(h, serverClients, serverConfig, webServer) })
 		heartbeatTimerMap[h.Name] = timer
 	})
+	if err != nil {
+		logger.Fatalf("error subscribing to topic %s: %s", config.SensorHeartbeatTopic, err)
+	}
 
 	if serverConfig.S3Config.FullBackupEnabled {
 		runFullBackup(serverClients)
@@ -511,20 +519,21 @@ func handleOpenTimeout(serverConfig config.ServerConfig, s config.SensorStatus, 
 	}
 }
 
-func buildTokenMetadata() []config.TokenMetadata {
-	return []config.TokenMetadata{
-		{
-			Name:       "github-ci",
-			Owner:      "digitalocean",
-			Expiration: viper.GetString("DO_TOKEN_EXP_GITHUB_CI"),
-		},
-		{
-			Name:       "github-ci",
-			Owner:      "tailscale",
-			Expiration: viper.GetString("TS_TOKEN_EXP_GITHUB_CI"),
-		},
-	}
-}
+// commented out in case it's needed later
+// func buildTokenMetadata() []config.TokenMetadata {
+// 	return []config.TokenMetadata{
+// 		{
+// 			Name:       "github-ci",
+// 			Owner:      "digitalocean",
+// 			Expiration: viper.GetString("DO_TOKEN_EXP_GITHUB_CI"),
+// 		},
+// 		{
+// 			Name:       "github-ci",
+// 			Owner:      "tailscale",
+// 			Expiration: viper.GetString("TS_TOKEN_EXP_GITHUB_CI"),
+// 		},
+// 	}
+// }
 
 func sendPushNotification(serverConfig config.ServerConfig, msg config.NTFYMessage) error {
 	req, _ := http.NewRequest("POST", fmt.Sprintf("https://ntfy.sh/%s", serverConfig.NTFYConfig.Topic), strings.NewReader(msg.Body))

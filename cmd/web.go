@@ -169,7 +169,13 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 		logger.Errorf("error publishing ha sensor arming: %s", err)
 	}
 
-	s.serverClients.Redis.WriteArming(p.Source, armed, req.Context())
+	err = s.serverClients.Redis.WriteArming(p.Source, armed, req.Context())
+	if err != nil {
+		logger.Errorf("error writing arming to redis: %s", err)
+		fmt.Fprintf(w, `{"status":"error", "error":"%s"}`, err.Error())
+		return
+	}
+
 	fmt.Fprintf(w, `{"status":"success", "armed":"%s"}`, armed)
 }
 
@@ -350,7 +356,11 @@ func issueSession(serverConfig config.ServerConfig) http.Handler {
 		session := sessionStore.New(sessionName)
 		session.Set(sessionUserKey, googleUser.Id)
 		session.Set("user-email", googleUser.Email)
-		session.Save(w)
+		if err := session.Save(w); err != nil {
+			logger.Errorf("error saving session: %s", err.Error())
+			http.Redirect(w, req, unauthPath, http.StatusFound)
+			return
+		}
 		http.Redirect(w, req, "/", http.StatusFound)
 	}
 	return http.HandlerFunc(fn)
