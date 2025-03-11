@@ -85,7 +85,7 @@ func main() {
 	}
 }
 
-func tailSystemdLogs(ch chan syslog, systemdUnits []string) error {
+func tailSystemdLogs(ch chan syslog, systemdUnits []string) {
 	argsSlice := []string{}
 	for _, s := range systemdUnits {
 		argsSlice = append(argsSlice, "-u")
@@ -95,7 +95,8 @@ func tailSystemdLogs(ch chan syslog, systemdUnits []string) error {
 	cmd := exec.Command("journalctl", argsSlice...)
 	cmdReader, err := cmd.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("creating command stdout pipe: %s", err)
+		fmt.Printf("creating command stdout pipe: %s\n", err.Error())
+		os.Exit(1)
 	}
 
 	scanner := bufio.NewScanner(cmdReader)
@@ -114,15 +115,15 @@ func tailSystemdLogs(ch chan syslog, systemdUnits []string) error {
 	}()
 
 	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("starting command: %s", err)
+		fmt.Printf("starting command: %s\n", err)
+		os.Exit(1)
 	}
 
 	if err := cmd.Wait(); err != nil {
 		close(ch)
-		return fmt.Errorf("waiting for command: %s", err)
+		fmt.Printf("waiting for command: %s\n", err)
+		os.Exit(1)
 	}
-
-	return nil
 }
 
 func sendLogs(log, ddAPIKey string) error {
