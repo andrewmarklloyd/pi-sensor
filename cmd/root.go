@@ -27,5 +27,5 @@ func init() {
 func initConfig() {
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
-	viper.ReadInConfig()
+	// viper.ReadInConfig()
 }
