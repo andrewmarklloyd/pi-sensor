@@ -25,7 +25,6 @@ import (
 
 var (
 	logger           *zap.SugaredLogger
-	forwarderLogger  *zap.SugaredLogger
 	version          = "unknown"
 	sensorConfigChan = make(chan config.SensorConfig, 1)
 	sensorConfigMap  = make(map[string]int32)
@@ -40,11 +39,14 @@ const (
 func runServer() {
 	l, _ := zap.NewProduction()
 	logger = l.Sugar().Named("pi_sensor_server")
-	defer logger.Sync()
-	logger.Infof("Running server version: %s", version)
+	defer func() {
+		err := logger.Sync()
+		if err != nil {
+			fmt.Printf("error syncing pi_sensor_server logger: %s\n", err.Error())
+		}
+	}()
 
-	forwarderLogger = l.Sugar().Named("pi_sensor_agent")
-	defer forwarderLogger.Sync()
+	logger.Infof("Running server version: %s", version)
 
 	serverConfig := config.ServerConfig{
 		AppName:                 viper.GetString("APP_NAME"),
