@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -74,7 +74,7 @@ func main() {
 	go tailSystemdLogs(logChannel, units)
 	for log := range logChannel {
 		if log.Error != nil {
-			fmt.Println(fmt.Sprintf("error receiving logs from journalctl channel: %s", log.Error))
+			fmt.Printf("error receiving logs from journalctl channel: %s\n", log.Error)
 			break
 		}
 
@@ -153,7 +153,7 @@ func sendLogs(log, ddAPIKey string) error {
 	if err != nil {
 		return err
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

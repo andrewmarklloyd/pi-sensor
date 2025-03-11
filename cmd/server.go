@@ -519,20 +519,21 @@ func handleOpenTimeout(serverConfig config.ServerConfig, s config.SensorStatus, 
 	}
 }
 
-func buildTokenMetadata() []config.TokenMetadata {
-	return []config.TokenMetadata{
-		{
-			Name:       "github-ci",
-			Owner:      "digitalocean",
-			Expiration: viper.GetString("DO_TOKEN_EXP_GITHUB_CI"),
-		},
-		{
-			Name:       "github-ci",
-			Owner:      "tailscale",
-			Expiration: viper.GetString("TS_TOKEN_EXP_GITHUB_CI"),
-		},
-	}
-}
+// commented out in case it's needed later
+// func buildTokenMetadata() []config.TokenMetadata {
+// 	return []config.TokenMetadata{
+// 		{
+// 			Name:       "github-ci",
+// 			Owner:      "digitalocean",
+// 			Expiration: viper.GetString("DO_TOKEN_EXP_GITHUB_CI"),
+// 		},
+// 		{
+// 			Name:       "github-ci",
+// 			Owner:      "tailscale",
+// 			Expiration: viper.GetString("TS_TOKEN_EXP_GITHUB_CI"),
+// 		},
+// 	}
+// }
 
 func sendPushNotification(serverConfig config.ServerConfig, msg config.NTFYMessage) error {
 	req, _ := http.NewRequest("POST", fmt.Sprintf("https://ntfy.sh/%s", serverConfig.NTFYConfig.Topic), strings.NewReader(msg.Body))

@@ -356,7 +356,11 @@ func issueSession(serverConfig config.ServerConfig) http.Handler {
 		session := sessionStore.New(sessionName)
 		session.Set(sessionUserKey, googleUser.Id)
 		session.Set("user-email", googleUser.Email)
-		session.Save(w)
+		if err := session.Save(w); err != nil {
+			logger.Errorf("error saving session: %s", err.Error())
+			http.Redirect(w, req, unauthPath, http.StatusFound)
+			return
+		}
 		http.Redirect(w, req, "/", http.StatusFound)
 	}
 	return http.HandlerFunc(fn)
