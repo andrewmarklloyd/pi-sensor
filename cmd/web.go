@@ -169,7 +169,13 @@ func (s WebServer) sensorArmingHandler(w http.ResponseWriter, req *http.Request)
 		logger.Errorf("error publishing ha sensor arming: %s", err)
 	}
 
-	s.serverClients.Redis.WriteArming(p.Source, armed, req.Context())
+	err = s.serverClients.Redis.WriteArming(p.Source, armed, req.Context())
+	if err != nil {
+		logger.Errorf("error writing arming to redis: %s", err)
+		fmt.Fprintf(w, `{"status":"error", "error":"%s"}`, err.Error())
+		return
+	}
+
 	fmt.Fprintf(w, `{"status":"success", "armed":"%s"}`, armed)
 }
 

@@ -113,15 +113,18 @@ func runServer() {
 	}(sensorConfigMap)
 
 	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	serverClients.Mosquitto.Subscribe(config.SensorStatusTopic, func(message string) {
+	err = serverClients.Mosquitto.Subscribe(config.SensorStatusTopic, func(message string) {
 		err := handleSensorStatusSubscribe(serverClients, webServer, serverConfig, message, delayTimerMap)
 		if err != nil {
 			logger.Errorf("handling sensor status message: %s", err)
 		}
 	})
+	if err != nil {
+		logger.Fatalf("error subscribing to topic %s: %s", config.SensorStatusTopic, err)
+	}
 
 	var heartbeatTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
-	serverClients.Mosquitto.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
+	err = serverClients.Mosquitto.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
 		var h config.Heartbeat
 		err := json.Unmarshal([]byte(messageString), &h)
 		if err != nil {
@@ -142,6 +145,9 @@ func runServer() {
 		timer := time.AfterFunc(config.HeartbeatTimeout, func() { handleHeartbeatTimeout(h, serverClients, serverConfig, webServer) })
 		heartbeatTimerMap[h.Name] = timer
 	})
+	if err != nil {
+		logger.Fatalf("error subscribing to topic %s: %s", config.SensorHeartbeatTopic, err)
+	}
 
 	if serverConfig.S3Config.FullBackupEnabled {
 		runFullBackup(serverClients)
