@@ -57,7 +57,13 @@ class Home extends Component {
   render() {
     return (
       <div>
-        <Grid2 container spacing={2}>
+        <Grid2
+          container
+          spacing={2}
+          sx={{
+            justifyContent: "center",
+            alignItems: "center",
+          }}>
         {this.state.data.length > 0 ? (
           <div>
             {this.state.data.map(item => (
