@@ -1,7 +1,7 @@
 // @flow
 
 import React, { Component } from "react";
-import Grid2 from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Sensor from "./Sensor";
@@ -57,7 +57,7 @@ class Home extends Component {
   render() {
     return (
       <div>
-        <Grid2
+        <Grid
           container
           spacing={2}
           sx={{
@@ -78,7 +78,7 @@ class Home extends Component {
         </Card>
         )
         }
-        </Grid2>
+        </Grid>
       </div>
       
     );
