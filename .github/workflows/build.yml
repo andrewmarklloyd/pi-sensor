@@ -52,5 +52,5 @@ jobs:
           SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
           echo ${GH_TOKEN} | docker login ghcr.io -u 'andrewmarklloyd' --password-stdin
           image="ghcr.io/andrewmarklloyd/pi-sensor:${SHORT_SHA}"
-          docker build -t ${image} .
+          docker build --build-arg GO_VERSION=$(go mod edit -json | jq -r '.Go') -t ${image} .
           docker push ${image}
