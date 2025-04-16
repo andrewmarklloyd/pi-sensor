@@ -1,5 +1,5 @@
 FROM golang:1.22-alpine as builder
-RUN go install github.com/andrewmarklloyd/do-app-firewall-entrypoint@latest
+RUN go install github.com/andrewmarklloyd/do-app-firewall-entrypoint@v0.1.0
 
 RUN apk add curl
 ENV OP_VERSION=v2.26.1
