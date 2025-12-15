@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -166,7 +167,7 @@ func sendLogs(log, ddAPIKey string) error {
 	}
 
 	if res.Error != "" {
-		return fmt.Errorf(res.Error)
+		return errors.New(res.Error)
 	}
 
 	return nil
