@@ -13,3 +13,4 @@ run.sh
 door-light
 .terraform/
 bin/
+internal/cmd/update-cert/assets/cert-server
