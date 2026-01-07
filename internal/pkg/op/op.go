@@ -38,6 +38,8 @@ func GetRateLimit() (bool, time.Duration, error) {
 		return true, time.Hour, err
 	}
 
+	fmt.Println(string(out))
+
 	return false, time.Hour, nil
 }
 
