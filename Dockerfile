@@ -3,7 +3,7 @@ FROM golang:${GO_VERSION}-alpine as builder
 RUN go install github.com/andrewmarklloyd/do-app-firewall-entrypoint@v0.1.0
 
 RUN apk add curl
-ENV OP_VERSION=v2.26.1
+ENV OP_VERSION=v2.32.0
 RUN curl -sSfo op.zip \
   https://cache.agilebits.com/dist/1P/op2/pkg/${OP_VERSION}/op_linux_amd64_${OP_VERSION}.zip \
   && unzip -od /usr/local/bin/ op.zip \
