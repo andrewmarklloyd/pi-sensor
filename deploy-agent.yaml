@@ -13,12 +13,12 @@
       cmd: op --version
     register: result
     changed_when: false
-    failed_when: result.rc != 0 and result.rc != 127
+    failed_when: result.rc != 0 and result.rc != 127 and result.rc != 132
   - name: Set default version, if there is no
     set_fact:
       result:
         stdout_lines: "0.0.0_000"
-    when: "'command not found' in result.stdout"
+    when: "'command not found' in result.stdout or result.rc == 132"
   - name: Install or upgrade op cli
     shell: |
       curl -sSfo /tmp/op.zip "https://cache.agilebits.com/dist/1P/op2/pkg/v{{ OP_VERSION }}/op_linux_arm_v{{ OP_VERSION }}.zip"
