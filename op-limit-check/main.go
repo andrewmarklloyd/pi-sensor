@@ -20,11 +20,9 @@ func main() {
 		os.Exit(0)
 	}
 
-	fmt.Printf("being rate limited by 1password until %s, starting maintenance web server\n", resetDuration)
+	fmt.Printf("being rate limited by 1password until %s from now, starting maintenance web server\n", resetDuration)
 
-	// todo: capture sleep time from output
-	// for example 11 hours etc
-	ticker := time.NewTicker(1 * time.Hour)
+	ticker := time.NewTicker(resetDuration)
 	go func() {
 		for range ticker.C {
 			os.Exit(0)
