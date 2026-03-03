@@ -8,11 +8,12 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/feature/s3/transfermanager"
+
 	sConfig "github.com/andrewmarklloyd/pi-sensor/internal/pkg/config"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	smithyendpoints "github.com/aws/smithy-go/endpoints"
 )
@@ -28,6 +29,7 @@ type Client struct {
 	RetentionTmpWritePath  string
 	FullBackupFileKey      string
 	FullBackupTmpWritePath string
+	s3tm                   *transfermanager.Client
 }
 
 type BucketInfo struct {
@@ -81,6 +83,7 @@ func NewClient(serverConfig sConfig.ServerConfig) (Client, error) {
 		RetentionTmpWritePath:  fmt.Sprintf("/tmp/%s-retention.json", serverConfig.AppName),
 		FullBackupFileKey:      fmt.Sprintf("%s/%s-full-backup.json", backupPrefix, serverConfig.AppName),
 		FullBackupTmpWritePath: fmt.Sprintf("/tmp/%s-full-backup.json", serverConfig.AppName),
+		s3tm:                   transfermanager.New(client),
 	}, nil
 }
 
@@ -90,8 +93,7 @@ func (c *Client) UploadBackupFile(ctx context.Context, tmpWritePath, backupFileK
 		return fmt.Errorf("opening tmp file: %s", err)
 	}
 
-	uploader := manager.NewUploader(c.S3)
-	_, err = uploader.Upload(ctx, &s3.PutObjectInput{
+	_, err = c.s3tm.UploadObject(ctx, &transfermanager.UploadObjectInput{
 		Bucket: aws.String(c.Bucket),
 		Key:    aws.String(backupFileKey),
 		Body:   file,
@@ -136,10 +138,10 @@ func (c *Client) DownloadOrCreateBackupFile(ctx context.Context, tmpWritePath, b
 		return fmt.Errorf("checking if backup file exists in s3: %w", err)
 	}
 	if exists {
-		downloader := manager.NewDownloader(c.S3)
-		_, err = downloader.Download(ctx, tmpFile, &s3.GetObjectInput{
-			Bucket: aws.String(c.Bucket),
-			Key:    aws.String(backupFileKey),
+		_, err := c.s3tm.DownloadObject(ctx, &transfermanager.DownloadObjectInput{
+			Bucket:   aws.String(c.Bucket),
+			Key:      aws.String(backupFileKey),
+			WriterAt: tmpFile,
 		})
 		if err != nil {
 			return fmt.Errorf("downloading backup file from S3: %s", err)
