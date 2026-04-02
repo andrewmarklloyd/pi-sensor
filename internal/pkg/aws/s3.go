@@ -170,7 +170,7 @@ func (c *Client) WriteBackupFile(statuses []sConfig.SensorStatus, append bool, t
 		if err != nil {
 			return fmt.Errorf("marshalling sensor status: %s", err)
 		}
-		_, err = datawriter.WriteString(fmt.Sprintf("%s\n", string(j)))
+		_, err = fmt.Fprintf(datawriter, "%s\n", string(j))
 		if err != nil {
 			return fmt.Errorf("writing string to datawriter: %s", err)
 		}

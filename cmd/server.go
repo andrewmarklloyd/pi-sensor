@@ -114,7 +114,7 @@ func runServer() {
 		sensorConfigMap[cfg.Source] = cfg.OpenTimeoutMinutes
 	}(sensorConfigMap)
 
-	var delayTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
+	var delayTimerMap = make(map[string]*time.Timer)
 	err = serverClients.Mosquitto.Subscribe(config.SensorStatusTopic, func(message string) {
 		err := handleSensorStatusSubscribe(serverClients, webServer, serverConfig, message, delayTimerMap)
 		if err != nil {
@@ -125,7 +125,7 @@ func runServer() {
 		logger.Fatalf("error subscribing to topic %s: %s", config.SensorStatusTopic, err)
 	}
 
-	var heartbeatTimerMap map[string]*time.Timer = make(map[string]*time.Timer)
+	var heartbeatTimerMap = make(map[string]*time.Timer)
 	err = serverClients.Mosquitto.Subscribe(config.SensorHeartbeatTopic, func(messageString string) {
 		var h config.Heartbeat
 		err := json.Unmarshal([]byte(messageString), &h)
@@ -444,7 +444,7 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 		armedString = ""
 	}
 
-	armed := true
+	var armed = true
 	if armedString == "" || armedString == "false" {
 		armed = false
 	}
@@ -470,7 +470,8 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 		}
 	}
 
-	if currentStatus.Status == config.OPEN {
+	switch currentStatus.Status {
+	case config.OPEN:
 		openTimeout, ok := sensorConfigMap[currentStatus.Source]
 		if !ok {
 			openTimeout = int32(config.DefaultOpenTimeoutMinutes)
@@ -481,12 +482,12 @@ func handleSensorStatusSubscribe(serverClients clients.ServerClients, webServer 
 			handleOpenTimeout(serverConfig, currentStatus, armed, serverConfig.MockMode, openTimeout)
 		})
 		delayTimerMap[currentStatus.Source] = timer
-	} else if currentStatus.Status == config.CLOSED {
+	case config.CLOSED:
 		currentTimer := delayTimerMap[currentStatus.Source]
 		if currentTimer != nil {
 			currentTimer.Stop()
 		}
-	} else {
+	default:
 		logger.Errorf("Message status '%s' not recognized", currentStatus.Status)
 	}
 

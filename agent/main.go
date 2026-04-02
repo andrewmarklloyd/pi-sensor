@@ -188,11 +188,12 @@ func main() {
 			}
 
 			if outletEnabled && device != nil {
-				if currentStatus == gpio.OPEN {
+				switch currentStatus {
+				case gpio.OPEN:
 					if err := device.TurnOn(); err != nil {
 						logger.Errorf("turning device on: %s", err.Error())
 					}
-				} else if currentStatus == gpio.CLOSED {
+				case gpio.CLOSED:
 					if err := device.TurnOff(); err != nil {
 						logger.Errorf("turning device off: %s", err.Error())
 					}

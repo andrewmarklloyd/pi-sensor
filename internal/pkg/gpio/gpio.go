@@ -46,12 +46,14 @@ func (c *PinClient) CurrentStatus() string {
 	}
 	pinState = int(c.pin.Read())
 
-	if pinState == 0 {
+	switch pinState {
+	case 0:
 		return CLOSED
-	} else if pinState == 1 {
+	case 1:
 		return OPEN
+	default:
+		return UNKNOWN
 	}
-	return UNKNOWN
 }
 
 func (c *PinClient) Cleanup() {

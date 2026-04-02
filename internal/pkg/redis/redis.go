@@ -76,7 +76,7 @@ func (c *Client) ReadAllArming(ctx context.Context) (map[string]string, error) {
 			return armingState, err
 		}
 
-		armingState[strings.Replace(k, armingPrefix, "", -1)] = val
+		armingState[strings.ReplaceAll(k, armingPrefix, "")] = val
 	}
 
 	return armingState, nil
