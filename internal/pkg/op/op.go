@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -22,11 +23,29 @@ func parseRateLimitOutput(out string) (bool, time.Duration, error) {
 	scanner := bufio.NewScanner(strings.NewReader(out))
 	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())
+		if len(fields) == 0 || fields[0] == "TYPE" {
+			continue
+		}
 		if len(fields) < 6 {
 			return true, time.Hour, fmt.Errorf("less than 6 fields were found when running ratelimit command")
 		}
-		if fields[4] == "0" {
-			dur, err := parseOPResetDuration(strings.Join(fields[5:], " "))
+
+		limit, _ := strconv.Atoi(fields[2])
+		used, _ := strconv.Atoi(fields[3])
+		remaining, _ := strconv.Atoi(fields[4])
+		reset := strings.Join(fields[5:], " ")
+
+		slog.Info("rate limit status",
+			"type", fields[0],
+			"action", fields[1],
+			"limit", limit,
+			"used", used,
+			"remaining", remaining,
+			"reset", reset,
+		)
+
+		if remaining == 0 {
+			dur, err := parseOPResetDuration(reset)
 			if err != nil {
 				return true, time.Hour, err
 			}
@@ -37,8 +56,6 @@ func parseRateLimitOutput(out string) (bool, time.Duration, error) {
 	if err := scanner.Err(); err != nil {
 		return true, time.Hour, err
 	}
-
-	fmt.Println(out)
 
 	return false, time.Hour, nil
 }
