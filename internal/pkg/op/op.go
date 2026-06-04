@@ -11,15 +11,15 @@ import (
 )
 
 func GetRateLimit() (bool, time.Duration, error) {
-	cmd := exec.Command("op", "service-account", "ratelimit")
-
-	out, err := cmd.CombinedOutput()
+	out, err := getRateLimitOutput()
 	if err != nil {
-		fmt.Println(string(out))
 		return true, time.Hour, err
 	}
+	return parseRateLimitOutput(out)
+}
 
-	scanner := bufio.NewScanner(strings.NewReader(string(out)))
+func parseRateLimitOutput(out string) (bool, time.Duration, error) {
+	scanner := bufio.NewScanner(strings.NewReader(out))
 	for scanner.Scan() {
 		fields := strings.Fields(scanner.Text())
 		if len(fields) < 6 {
@@ -38,9 +38,20 @@ func GetRateLimit() (bool, time.Duration, error) {
 		return true, time.Hour, err
 	}
 
-	fmt.Println(string(out))
+	fmt.Println(out)
 
 	return false, time.Hour, nil
+}
+
+func getRateLimitOutput() (string, error) {
+	cmd := exec.Command("op", "service-account", "ratelimit")
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+
+	return string(out), nil
 }
 
 // parseOPResetDuration parses the "RESET" field from
