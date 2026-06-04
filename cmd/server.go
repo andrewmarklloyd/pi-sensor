@@ -33,7 +33,7 @@ var (
 const (
 	dataRetentionCronFrequency = 12 * time.Hour
 	fullBackupCronFrequency    = 6 * time.Hour
-	tokenExpMetricFreq         = 10 * time.Minute
+	tokenExpMetricFreq         = 30 * time.Minute
 )
 
 func runServer() {
@@ -187,9 +187,17 @@ func configureCronJobs(serverClients clients.ServerClients, serverConfig config.
 	}
 
 	if !serverConfig.MockMode {
+		envTokenMetadata := buildTokenMetadata()
+
 		t := time.NewTicker(tokenExpMetricFreq)
 		go func() {
 			for range t.C {
+				for _, tm := range envTokenMetadata {
+					if err := serverClients.DDClient.PublishTokenDaysLeft(context.Background(), tm); err != nil {
+						logger.Errorf("error publishing token '%s' days left: %s", tm.Name, err)
+					}
+				}
+
 				tm, err := crypto.GetCertTokenMetadataExp(serverConfig.MosquittoServerDomain, "1883")
 				if err != nil {
 					logger.Errorf("error publishing token '%s' days left: %s", tm.Name, err)
@@ -520,21 +528,15 @@ func handleOpenTimeout(serverConfig config.ServerConfig, s config.SensorStatus, 
 	}
 }
 
-// commented out in case it's needed later
-// func buildTokenMetadata() []config.TokenMetadata {
-// 	return []config.TokenMetadata{
-// 		{
-// 			Name:       "github-ci",
-// 			Owner:      "digitalocean",
-// 			Expiration: viper.GetString("DO_TOKEN_EXP_GITHUB_CI"),
-// 		},
-// 		{
-// 			Name:       "github-ci",
-// 			Owner:      "tailscale",
-// 			Expiration: viper.GetString("TS_TOKEN_EXP_GITHUB_CI"),
-// 		},
-// 	}
-// }
+func buildTokenMetadata() []config.TokenMetadata {
+	return []config.TokenMetadata{
+		{
+			Name:       "do-app-firewall-entrypoint",
+			Owner:      "digitalocean",
+			Expiration: viper.GetString("DO_TOKEN_EXP_APP_FIREWALL_ENTRYPOINT"),
+		},
+	}
+}
 
 func sendPushNotification(serverConfig config.ServerConfig, msg config.NTFYMessage) error {
 	req, _ := http.NewRequest("POST", fmt.Sprintf("https://ntfy.sh/%s", serverConfig.NTFYConfig.Topic), strings.NewReader(msg.Body))
