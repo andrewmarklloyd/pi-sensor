@@ -61,7 +61,7 @@ func GetCertTokenMetadataExp(host, port string) (config.TokenMetadata, error) {
 		"tcp",
 		host+":"+port,
 		&tls.Config{
-			InsecureSkipVerify: false,
+			InsecureSkipVerify: true, // We are only interested in the cert expiration date, not verifying the cert itself
 		})
 	if err != nil {
 		return config.TokenMetadata{}, err
