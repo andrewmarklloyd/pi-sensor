@@ -1,0 +1,36 @@
+name: Check Deprecated Packages
+
+on:
+  workflow_call:
+
+jobs:
+  deprecated-package-scan:
+    name: Deprecated Package Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+      - name: Check for deprecated Go modules
+        shell: bash
+        run: |
+          FOUND=0
+
+          while IFS= read -r module; do
+            [ -z "$module" ] && continue
+            deprecated=$(go list -m -u -f '{{.Deprecated}}' "$module" 2>/dev/null)
+            [ -z "$deprecated" ] && continue
+
+            echo "::warning file=go.mod::Deprecated module: ${module}"
+            printf '%s\n\n' "$deprecated"
+            FOUND=$((FOUND + 1))
+          done < <(
+            go mod edit -json | jq -r '.Require[] | select(.Indirect | not) | .Path'
+          )
+
+          if [ "$FOUND" -gt 0 ]; then
+            echo "Found $FOUND deprecated module(s). See warnings above."
+            exit 1
+          fi
+          echo "No deprecated modules found."
